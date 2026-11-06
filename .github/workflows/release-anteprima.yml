@@ -60,6 +60,8 @@ jobs:
         with:
           path: tools/geo/dati/download
           key: geodati-pilota-v4
+          restore-keys: |
+            geodati-pilota-
 
       - name: Installa le librerie Python
         run: pip install -r tools/geo/requirements.txt

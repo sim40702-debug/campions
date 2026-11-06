@@ -139,28 +139,29 @@ def scarica_file(url, percorso, tentativi=3):
 
 
 def chiedi_overpass(query, percorso):
-    # Manda una richiesta a Overpass (OpenStreetMap) e salva la risposta in JSON
+    # Manda una richiesta a Overpass (OpenStreetMap) e salva la risposta in JSON.
+    # Se un server non risponde (errore 429, 502, 504...) prova il prossimo.
     if percorso.exists():
         print("  Gia' scaricato: " + percorso.name)
         with open(percorso, encoding="utf-8") as file:
             return json.load(file)
-    for tentativo in range(1, 4):
-        try:
-            risposta = requests.post(config.OVERPASS_URL, data={"data": query},
-                                     timeout=900,
-                                     headers={"User-Agent": config.NOME_PROGRAMMA})
-            if risposta.status_code == 429:
-                print("  Overpass occupato, aspetto 60 secondi...")
-                time.sleep(60)
-                continue
-            risposta.raise_for_status()
-            dati = risposta.json()
-            with open(percorso, "w", encoding="utf-8") as file:
-                json.dump(dati, file)
-            return dati
-        except requests.RequestException as errore:
-            print("  Errore Overpass (tentativo " + str(tentativo) + "): " + str(errore))
-            time.sleep(30 * tentativo)
+    server = [config.OVERPASS_URL] + config.OVERPASS_RISERVA
+    for giro in range(1, 4):
+        for indirizzo in server:
+            try:
+                risposta = requests.post(indirizzo, data={"data": query}, timeout=900,
+                                         headers={"User-Agent": config.NOME_PROGRAMMA})
+                if risposta.status_code != 200:
+                    print("  " + indirizzo.split("/")[2] + " risponde " + str(risposta.status_code) + ", provo un altro server")
+                    continue
+                dati = risposta.json()
+                with open(percorso, "w", encoding="utf-8") as file:
+                    json.dump(dati, file)
+                return dati
+            except (requests.RequestException, ValueError) as errore:
+                print("  " + indirizzo.split("/")[2] + ": " + str(errore)[:120] + ", provo un altro server")
+        print("  Nessun server ha risposto (giro " + str(giro) + "), aspetto " + str(60 * giro) + " secondi...")
+        time.sleep(60 * giro)
     raise RuntimeError("Overpass non risponde. Riprova piu' tardi.")
 
 

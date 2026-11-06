@@ -63,6 +63,12 @@ TIPI_STRADA = [
 # --- Servizi online (dati aperti) -------------------------------------------
 STAC_SWISSALTI3D = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.swisstopo.swissalti3d/items"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Se il server principale non risponde, si provano questi (stessi dati OpenStreetMap)
+OVERPASS_RISERVA = [
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+]
 COPERNICUS_URL = "https://copernicus-dem-30m.s3.amazonaws.com"
 
 # Nome del programma inviato ai server (regola di cortesia di Overpass)
