@@ -96,7 +96,7 @@ export function aggiungiStrade(strade, scena) {
     }
   }
 
-  scena.add(creaMesh(asfalto.posizioni, asfalto.indici, 0x3b3d42, -2));
+  scena.add(creaMesh(asfalto.posizioni, asfalto.indici, 0x4f5157, -2));
   scena.add(creaMesh(gallerie.posizioni, gallerie.indici, 0x6b5a3a, -2));
   scena.add(creaMesh(righe.posizioni, righe.indici, 0xf2f2f2, -4));
 }

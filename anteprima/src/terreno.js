@@ -101,17 +101,60 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto
     }
   }
 
+  // Calcolo la luce (normali) solo sulla griglia vera
+  const griglia = new THREE.BufferGeometry();
+  griglia.setAttribute("position", new THREE.BufferAttribute(posizioni, 3));
+  griglia.setIndex(indici);
+  griglia.computeVertexNormals();
+  const normali = griglia.attributes.normal.array;
+
+  // "Gonna": lungo i 4 bordi aggiungo una striscia che scende di 40 m.
+  // Copre le fessure tra pezzi vicini con dettaglio diverso (prima si vedevano linee scure).
+  const bordo = [];
+  for (let i = 0; i < lato; i++) bordo.push(i);                                  // nord
+  for (let i = 1; i < lato; i++) bordo.push(i * lato + lato - 1);                // est
+  for (let i = lato - 2; i >= 0; i--) bordo.push((lato - 1) * lato + i);         // sud
+  for (let i = lato - 2; i >= 0; i--) bordo.push(i * lato);                      // ovest
+
+  const totale = lato * lato + bordo.length;
+  const pos2 = new Float32Array(totale * 3);
+  const col2 = new Float32Array(totale * 3);
+  const nor2 = new Float32Array(totale * 3);
+  pos2.set(posizioni);
+  col2.set(colori);
+  nor2.set(normali);
+  for (let k = 0; k < bordo.length; k++) {
+    const da = bordo[k] * 3;
+    const a = (lato * lato + k) * 3;
+    pos2[a] = posizioni[da];
+    pos2[a + 1] = posizioni[da + 1] - 40;
+    pos2[a + 2] = posizioni[da + 2];
+    col2[a] = colori[da];
+    col2[a + 1] = colori[da + 1];
+    col2[a + 2] = colori[da + 2];
+    nor2[a] = normali[da];
+    nor2[a + 1] = normali[da + 1];
+    nor2[a + 2] = normali[da + 2];
+    if (k > 0) {
+      const sopra1 = bordo[k - 1];
+      const sopra2 = bordo[k];
+      const sotto1 = lato * lato + k - 1;
+      const sotto2 = lato * lato + k;
+      indici.push(sopra1, sotto1, sopra2, sopra2, sotto1, sotto2);
+    }
+  }
+
   const geometria = new THREE.BufferGeometry();
-  geometria.setAttribute("position", new THREE.BufferAttribute(posizioni, 3));
-  geometria.setAttribute("color", new THREE.BufferAttribute(colori, 3));
+  geometria.setAttribute("position", new THREE.BufferAttribute(pos2, 3));
+  geometria.setAttribute("color", new THREE.BufferAttribute(col2, 3));
+  geometria.setAttribute("normal", new THREE.BufferAttribute(nor2, 3));
   geometria.setIndex(indici);
-  geometria.computeVertexNormals();
   return geometria;
 }
 
 // Mette il terreno nella scena: ogni pezzo ha 2 livelli di dettaglio (vicino / lontano)
 export function aggiungiTerreno(terreno, scena) {
-  const materiale = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const materiale = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const quadPezzo = (terreno.punti - 1) / PEZZI_PER_LATO;
   const latoPezzo = quadPezzo * terreno.passo;
 
