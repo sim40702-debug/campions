@@ -150,6 +150,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
       - name: Controlla che i dati siano dentro l'app
+        working-directory: anteprima
         shell: bash
         run: |
           echo "::warning::cartelle in dist (${{ matrix.nome }}): $(find dist -maxdepth 5 -type d -name app -o -maxdepth 5 -type d -name '*.app' | tr '\n' ' ')"
