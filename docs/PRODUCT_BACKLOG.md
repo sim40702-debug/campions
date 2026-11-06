@@ -1,6 +1,6 @@
 # Product Backlog – MOTO RACING WORLD
 
-Ultimo aggiornamento: inizio Sprint A (6 novembre 2026)
+Ultimo aggiornamento: Sprint E1 (6 novembre 2026)
 
 Priorità: **1 = più importante**. Stato: Da fare / In corso / Fatto.
 
@@ -47,11 +47,11 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
 | TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
 | TI-17 | Guardrail, barriere, segnaletica lungo le strade | D | 2 | Pilota fatto (0.3.1); resto del Ticino da fare |
-| TI-18 | Ottimizzazione streaming e HLOD | E | 1 | Da fare |
+| TI-18 | Ottimizzazione streaming e HLOD | E | 1 | Pilota: qualità regolabile (0.5.0); Unreal da fare |
 | TI-19 | Test di esplorazione di tutte le regioni | E | 1 | Da fare |
 | TI-20 | Verifica automatica strade e terreno rispetto alle fonti | E | 1 | Da fare |
 | TI-21 | Test multiplayer (server dedicato) | E | 1 | Da fare |
-| TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Da fare |
+| TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Pilota: test nell'app (0.5.0), aspetta i risultati del Mac |
 | TI-23 | Funziona su Mac e su Windows (script, progetto Unreal, gioco finito) | A–E | 1 | In corso |
 | TI-24 | Anteprima giocabile del pilota (Three.js + Electron), release automatiche su GitHub | A | 1 | Fatto (0.1.0–0.1.4) |
 | TI-25 | Collisioni della moto con gli edifici | D | 2 | Fatto (0.2.0) |

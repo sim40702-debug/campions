@@ -185,6 +185,7 @@ export function aggiungiTerreno(terreno, scena) {
   const materiale = new THREE.MeshLambertMaterial({ vertexColors: true });
   const quadPezzo = (terreno.punti - 1) / PEZZI_PER_LATO;
   const latoPezzo = quadPezzo * terreno.passo;
+  const tuttiILivelli = [];
 
   for (let py = 0; py < PEZZI_PER_LATO; py++) {
     for (let px = 0; px < PEZZI_PER_LATO; px++) {
@@ -204,6 +205,7 @@ export function aggiungiTerreno(terreno, scena) {
       livelli.addLevel(vicino, 0);
       livelli.addLevel(lontano, latoPezzo * 1.2);
       scena.add(livelli);
+      tuttiILivelli.push(livelli);
     }
   }
 
@@ -215,4 +217,13 @@ export function aggiungiTerreno(terreno, scena) {
   lago.rotation.x = -Math.PI / 2;
   lago.position.y = terreno.info.livello_lago;
   scena.add(lago);
+
+  return { livelli: tuttiILivelli, latoPezzo: latoPezzo };
+}
+
+// Fino a che distanza il terreno usa il dettaglio pieno (menu Impostazioni)
+export function impostaDettaglioTerreno(terrenoMesh, fattore) {
+  for (const livelli of terrenoMesh.livelli) {
+    livelli.levels[1].distance = terrenoMesh.latoPezzo * fattore;
+  }
 }

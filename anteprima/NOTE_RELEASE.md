@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.4.0) – Sprint C1
+### Novità di questa versione (0.5.0) – Sprint E1
+
+- **Impostazioni** (tasto Esc o pulsante in alto a destra): qualità grafica Bassa, Media o Alta. Regola risoluzione, alberi, visibilità e dettaglio del terreno; viene ricordata.
+- **Contatore FPS** (tasto F), con triangoli e disegni.
+- **Test prestazioni** (nelle Impostazioni): 40 secondi di volo sopra il pilota, poi il risultato da copiare e mandare.
+
+### Novità della 0.4.0 – Sprint C1
 
 - **Gallerie vere**: dentro la montagna c'è il tubo in cemento con le luci sul soffitto e i portali agli ingressi (per esempio la galleria Mappo-Morettina). In galleria la telecamera resta bassa.
 - **Piloni** sotto i ponti (per esempio i ponti sulla Maggia).
@@ -64,6 +70,8 @@ Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comu
 - Frecce o **WASD**: guida
 - **C**: cambia telecamera (dietro, alta, casco)
 - **R**: torna sulla strada più vicina
+- **F**: mostra gli FPS
+- **Esc**: impostazioni
 - **H**: nasconde l'aiuto
 
 ### Cosa c'è

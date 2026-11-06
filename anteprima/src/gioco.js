@@ -10,6 +10,8 @@ import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
 import { aggiungiOpere } from "./opere.js";
+import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
+import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
@@ -129,7 +131,7 @@ async function avvia() {
   try {
     mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
-    aggiungiTerreno(terreno, scena);
+    const terrenoMesh = aggiungiTerreno(terreno, scena);
 
     mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
@@ -157,18 +159,35 @@ async function avvia() {
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
 
+    // Impostazioni e test delle prestazioni
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh };
+    applicaQualita(qualitaSalvata(), mondo);
+    const test = creaTest();
+    preparaMenu(mondo, function () {
+      avviaTest(test);
+    });
+    preparaRisultato();
+
     nascondiCaricamento();
     const orologio = new THREE.Clock();
 
     function ciclo() {
-      const dt = Math.min(orologio.getDelta(), 0.05);
+      const vero = orologio.getDelta();          // tempo vero del fotogramma (per gli FPS)
+      const dt = Math.min(vero, 0.05);           // tempo per la fisica (mai troppo grande)
       if (richiestaReset) {
         mettiSullaStrada(moto, strade, moto.x, moto.z);
         richiestaReset = false;
       }
-      aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
-      aggiornaAlberi(alberi, moto.x, moto.z, dt);
-      aggiornaTelecamera(moto, terreno, edifici, dt);
+      if (test.attivo) {
+        // durante il test la telecamera vola da sola
+        const punto = aggiornaTest(test, vero, telecamera, terreno, disegnatore);
+        aggiornaAlberi(alberi, punto.x, punto.z, dt);
+      } else {
+        aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
+        aggiornaAlberi(alberi, moto.x, moto.z, dt);
+        aggiornaTelecamera(moto, terreno, edifici, dt);
+      }
+      aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);
       requestAnimationFrame(ciclo);

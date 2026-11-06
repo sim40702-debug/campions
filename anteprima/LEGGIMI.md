@@ -47,4 +47,9 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/edifici.js` | Edifici e collisioni |
 | `src/alberi.js` | Boschi e alberi vicino alla moto |
 | `src/aggiorna.js` | Pulsante e pannello "Aggiorna" |
+| `src/dettagli.js` | Semafori, cartelli, lampioni, strisce, località |
+| `src/acqua.js` | Fiumi, torrenti, stagni |
+| `src/opere.js` | Gallerie (tubo, luci, portali) e piloni dei ponti |
+| `src/impostazioni.js` | Menu qualità grafica |
+| `src/prestazioni.js` | Contatore FPS e test prestazioni |
 | `NOTE_RELEASE.md` | Testo della pagina della release |

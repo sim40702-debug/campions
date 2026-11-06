@@ -27,10 +27,11 @@
   <canvas id="minimappa" width="220" height="220"></canvas>
 
   <div id="aiuto">
-    Frecce o WASD: guida &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; H: nascondi aiuto
+    Frecce o WASD: guida &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; F: FPS &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; H: nascondi aiuto
   </div>
 
   <div id="aggiorna">
+    <button id="pulsanteMenu">Impostazioni</button>
     <button id="pulsanteAggiorna">Aggiorna</button>
     <div id="pannelloAggiorna">
       <div id="testoAggiorna">Versione ...</div>
@@ -38,6 +39,27 @@
       <button id="installaAggiorna">Scarica e installa</button>
     </div>
   </div>
+
+  <div id="menu" class="finestra">
+    <h2>Impostazioni</h2>
+    <p>Qualità grafica</p>
+    <div id="sceltaQualita"></div>
+    <p class="piccolo">Bassa: più veloce, alberi solo vicino. Alta: più alberi e si vede più lontano.</p>
+    <button id="avviaTest">Test prestazioni (40 s)</button>
+    <button id="chiudiMenu">Chiudi</button>
+    <p class="piccolo">Tasti: F = FPS · Esc = questo menu</p>
+  </div>
+
+  <div id="risultatoTest" class="finestra">
+    <h2>Risultato del test</h2>
+    <pre id="testoRisultato"></pre>
+    <button id="copiaRisultato">Copia</button>
+    <button id="chiudiRisultato">Chiudi</button>
+    <p class="piccolo">Copia il risultato e mandalo a Claude per lo Sprint Report.</p>
+  </div>
+
+  <div id="testInCorso"></div>
+  <div id="fps"></div>
 
   <div id="crediti">
     Fonte: Ufficio federale di topografia swisstopo &middot; &copy; OpenStreetMap contributors (ODbL)

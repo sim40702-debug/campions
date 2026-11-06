@@ -8,8 +8,8 @@ import { stradaSotto } from "./strade.js";
 import { dentroEdificio } from "./edifici.js";
 
 const CELLA = 250;            // metri
-const RAGGIO = 900;           // fino a che distanza ci sono gli alberi
-const ALBERI_PER_CELLA = 650; // tentativi per cella (circa 1 albero ogni 100 m2)
+let RAGGIO = 900;             // fino a che distanza ci sono gli alberi (impostazioni)
+let ALBERI_PER_CELLA = 650;   // tentativi per cella (circa 1 albero ogni 100 m2)
 const QUOTA_CONIFERE = 1100;  // sopra questa quota: abeti e larici
 
 function creaForma(chioma, coloreChioma) {
@@ -170,4 +170,16 @@ export function aggiornaAlberi(mondo, x, z, dt) {
       mondo.celle.delete(chiave);
     }
   }
+}
+
+// Cambia distanza e densita' degli alberi (menu Impostazioni) e ricrea quelli vicini
+export function impostaAlberi(mondo, raggio, densita) {
+  RAGGIO = raggio;
+  ALBERI_PER_CELLA = Math.round(650 * densita);
+  for (const gruppo of mondo.celle.values()) {
+    mondo.scena.remove(gruppo);
+    for (const istanze of gruppo.children) istanze.dispose();
+  }
+  mondo.celle.clear();
+  mondo.attesa = 0;
 }

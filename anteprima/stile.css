@@ -101,6 +101,7 @@ canvas {
 }
 
 #aggiorna button {
+  margin-left: 6px;
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
@@ -144,4 +145,67 @@ canvas {
 #installaAggiorna {
   display: none;
   margin-top: 8px;
+}
+
+.finestra {
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  min-width: 320px;
+  padding: 20px 24px;
+  border-radius: 10px;
+  background: rgba(20, 30, 40, 0.95);
+  color: white;
+}
+
+.finestra h2 {
+  margin-top: 0;
+  color: #e8323c;
+}
+
+.finestra button {
+  margin: 4px 6px 4px 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #3a4656;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.finestra button.scelto {
+  background: #e8323c;
+}
+
+.finestra .piccolo {
+  font-size: 12px;
+  color: #b8c0cc;
+}
+
+.finestra pre {
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+#testInCorso,
+#fps {
+  display: none;
+  position: fixed;
+  left: 20px;
+  top: 64px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #7dff9a;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+#testInCorso {
+  top: 100px;
+  color: #ffd75a;
 }
