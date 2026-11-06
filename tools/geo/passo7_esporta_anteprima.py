@@ -20,12 +20,15 @@
 # Coordinate dell'anteprima (metri), centro = centro del settore pilota:
 #   x verso EST, y verso l'ALTO (quota reale), z verso SUD
 #
-# Uso:  python passo7_esporta_anteprima.py
+# Uso:  python passo7_esporta_anteprima.py --anteprima   (Locarnese 16 x 12 km)
+#       python passo7_esporta_anteprima.py --pilota      (solo il pilota 8 x 8 km)
 
 import json
 
 import numpy as np
 from PIL import Image
+
+Image.MAX_IMAGE_PIXELS = None   # le heightmap grandi non sono un pericolo
 from rasterio.features import rasterize
 from rasterio.transform import Affine
 from shapely.geometry import LineString, Point, Polygon, box
@@ -172,7 +175,7 @@ def esporta_edifici(lista, suolo, centro_est, centro_nord):
     return edifici
 
 
-def esporta_verde(percorso, area, zona, punti, passo, centro_est, centro_nord):
+def esporta_verde(percorso, area, zona, forma, passo, centro_est, centro_nord):
     est_min, est_max, nord_min, nord_max = area
     boschi = []
     alberi = []
@@ -189,9 +192,9 @@ def esporta_verde(percorso, area, zona, punti, passo, centro_est, centro_nord):
     trasformazione = Affine(passo, 0, est_min - passo / 2, 0, -passo, nord_max + passo / 2)
     forme = [(g, 1) for g in boschi if not g.is_empty]
     if forme:
-        maschera = rasterize(forme, out_shape=(punti, punti), transform=trasformazione, fill=0, dtype="uint8")
+        maschera = rasterize(forme, out_shape=forma, transform=trasformazione, fill=0, dtype="uint8")
     else:
-        maschera = np.zeros((punti, punti), dtype=np.uint8)
+        maschera = np.zeros(forma, dtype=np.uint8)
     return maschera, alberi
 
 
@@ -336,6 +339,10 @@ def scrivi(nome, dati):
 
 
 def main():
+    argomenti = utilita.leggi_argomenti("Prepara i dati per l'anteprima")
+    if not argomenti.pilota:
+        argomenti.pilota = True   # senza opzioni: il pilota
+    nome = utilita.nome_area(True)
     area = utilita.area_di_lavoro(True)
     est_min, est_max, nord_min, nord_max = area
     centro_est = (est_min + est_max) / 2
@@ -343,10 +350,10 @@ def main():
     zona = box(est_min, nord_min, est_max, nord_max)
     osm = config.CARTELLA_DOWNLOAD / "osm"
 
-    percorso_png = config.CARTELLA_UNREAL / "pilota" / "terreno_pilota.png"
-    percorso_strade = osm / "strade_pilota.json"
+    percorso_png = config.CARTELLA_UNREAL / nome / ("terreno_" + nome + ".png")
+    percorso_strade = osm / ("strade_" + nome + ".json")
     if not percorso_png.exists() or not percorso_strade.exists():
-        print("Mancano i dati: esegui prima i passi 1, 2 e 3 con --pilota.")
+        print("Mancano i dati: esegui prima i passi 1, 2 e 3 con --" + nome + ".")
         raise SystemExit(1)
     CARTELLA_ANTEPRIMA.mkdir(parents=True, exist_ok=True)
 
@@ -356,7 +363,7 @@ def main():
     ridotte = quote[::2, ::2].copy()                                       # circa 4 m
 
     print("2) Edifici (servono per la larghezza delle strade)...")
-    percorso_edifici = osm / "edifici_pilota.json"
+    percorso_edifici = osm / ("edifici_" + nome + ".json")
     lista_edifici = []
     vie_edifici = []
     if percorso_edifici.exists():
@@ -372,7 +379,7 @@ def main():
     vie.limita_larghezze(pezzi, vie_edifici, larghezza_strada)
 
     pezzi_ferrovia = []
-    percorso_trasporti = osm / "trasporti_pilota.json"
+    percorso_trasporti = osm / ("trasporti_" + nome + ".json")
     if percorso_trasporti.exists():
         elementi = utilita.leggi_json(percorso_trasporti).get("elements", [])
         pezzi_ferrovia = vie.raccogli_pezzi(elementi, zona, trasforma, lambda tag: "railway" in tag)
@@ -420,9 +427,12 @@ def main():
     valori = np.clip(np.round((ridotte - QUOTA_BASE) / SCALA_QUOTA), 0, 65535).astype("<u2")
     valori.tofile(CARTELLA_ANTEPRIMA / "terreno.bin")
     info = {
-        "punti": int(ridotte.shape[0]),
+        "colonne": int(ridotte.shape[1]),
+        "righe": int(ridotte.shape[0]),
         "passo_m": config.PASSO_M * 2,
-        "lato_m": est_max - est_min,
+        "lato_x_m": est_max - est_min,
+        "lato_z_m": nord_max - nord_min,
+        "area": nome,
         "quota_base": QUOTA_BASE,
         "scala_quota": SCALA_QUOTA,
         "centro_lv95": [centro_est, centro_nord],
@@ -442,9 +452,9 @@ def main():
     print("   " + str(len(edifici)) + " edifici, chiese: " + str(chiese) + ", campanili: " + str(campanili))
 
     print("6) Boschi e alberi...")
-    percorso_verde = osm / "verde_pilota.json"
+    percorso_verde = osm / ("verde_" + nome + ".json")
     if percorso_verde.exists():
-        maschera, alberi = esporta_verde(percorso_verde, area, zona, int(ridotte.shape[0]),
+        maschera, alberi = esporta_verde(percorso_verde, area, zona, ridotte.shape,
                                          config.PASSO_M * 2, centro_est, centro_nord)
         maschera.astype(np.uint8).tofile(CARTELLA_ANTEPRIMA / "bosco.bin")
         scrivi("alberi.json", {"alberi": alberi})
@@ -452,7 +462,7 @@ def main():
         print("   Bosco: " + str(round(superficie, 1)) + " km2, alberi singoli: " + str(len(alberi) // 2))
 
     print("7) Segnaletica, lampioni e localita'...")
-    percorso_dettagli = osm / "dettagli_pilota.json"
+    percorso_dettagli = osm / ("dettagli_" + nome + ".json")
     if percorso_dettagli.exists():
         dettagli = esporta_dettagli(percorso_dettagli, zona, centro_est, centro_nord)
         scrivi("dettagli.json", dettagli)
@@ -461,7 +471,7 @@ def main():
         print("   localita': " + str(len(dettagli["localita"])))
 
     print("8) Fiumi, torrenti e stagni...")
-    percorso_acqua = osm / "acqua_pilota.json"
+    percorso_acqua = osm / ("acqua_" + nome + ".json")
     if percorso_acqua.exists():
         acqua = esporta_acqua(percorso_acqua, suolo, zona, centro_est, centro_nord)
         scrivi("acqua.json", acqua)

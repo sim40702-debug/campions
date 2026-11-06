@@ -13,12 +13,17 @@ const pennello = minimappa.getContext("2d");
 
 let sfondoMinimappa = null;
 let scala = 1;
-let mezzoLato = 1;
+let mezzoX = 1;
+let mezzoZ = 1;
 
 // Disegna una volta sola tutte le strade in un'immagine di sfondo
 export function preparaMinimappa(strade, terreno, localita, trasporti) {
-  mezzoLato = terreno.meta;
-  scala = minimappa.width / (terreno.meta * 2);
+  // La minimappa ha le stesse proporzioni dell'area (per esempio 16 x 12 km)
+  mezzoX = terreno.metaX;
+  mezzoZ = terreno.metaZ;
+  scala = 260 / (terreno.metaX * 2);
+  minimappa.width = Math.round(terreno.metaX * 2 * scala);
+  minimappa.height = Math.round(terreno.metaZ * 2 * scala);
   sfondoMinimappa = document.createElement("canvas");
   sfondoMinimappa.width = minimappa.width;
   sfondoMinimappa.height = minimappa.height;
@@ -29,8 +34,8 @@ export function preparaMinimappa(strade, terreno, localita, trasporti) {
     const p = strada.p;
     p2.beginPath();
     for (let i = 0; i < p.length; i += 3) {
-      const x = (p[i] + mezzoLato) * scala;
-      const y = (p[i + 2] + mezzoLato) * scala;
+      const x = (p[i] + mezzoX) * scala;
+      const y = (p[i + 2] + mezzoZ) * scala;
       if (i === 0) {
         p2.moveTo(x, y);
       } else {
@@ -46,8 +51,8 @@ export function preparaMinimappa(strade, terreno, localita, trasporti) {
     p2.setLineDash([3, 2]);
     p2.beginPath();
     for (let i = 0; i + 2 < p.length; i += passo) {
-      const x = (p[i] + mezzoLato) * scala;
-      const y = (p[i + 2] + mezzoLato) * scala;
+      const x = (p[i] + mezzoX) * scala;
+      const y = (p[i + 2] + mezzoZ) * scala;
       if (i === 0) p2.moveTo(x, y); else p2.lineTo(x, y);
     }
     p2.stroke();
@@ -63,8 +68,8 @@ export function preparaMinimappa(strade, terreno, localita, trasporti) {
   p2.textAlign = "center";
   for (const l of localita || []) {
     if (l.t !== "town" && l.t !== "city" && l.t !== "village") continue;
-    const x = (l.x + mezzoLato) * scala;
-    const y = (l.z + mezzoLato) * scala;
+    const x = (l.x + mezzoX) * scala;
+    const y = (l.z + mezzoZ) * scala;
     p2.lineWidth = 3;
     p2.strokeStyle = "rgba(20, 30, 40, 0.9)";
     p2.strokeText(l.n, x, y);
@@ -100,8 +105,8 @@ export function aggiornaInterfaccia(moto, terreno, localita) {
   if (sfondoMinimappa) {
     pennello.drawImage(sfondoMinimappa, 0, 0);
   }
-  const x = (moto.x + mezzoLato) * scala;
-  const y = (moto.z + mezzoLato) * scala;
+  const x = (moto.x + mezzoX) * scala;
+  const y = (moto.z + mezzoZ) * scala;
   pennello.fillStyle = "#ff3030";
   pennello.beginPath();
   pennello.arc(x, y, 4, 0, Math.PI * 2);

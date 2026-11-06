@@ -19,16 +19,32 @@ def crea_cartelle():
     config.CARTELLA_UNREAL.mkdir(parents=True, exist_ok=True)
 
 
+# "pilota" (8 x 8 km, per Unreal) oppure "anteprima" (16 x 12 km, per il gioco Three.js)
+MODO_PICCOLO = "pilota"
+
+
 def leggi_argomenti(descrizione):
-    # Ogni script accetta --pilota per lavorare solo sul settore pilota 8 x 8 km
+    # Ogni script accetta:
+    #   --pilota     solo il settore pilota 8 x 8 km
+    #   --anteprima  l'area dell'anteprima giocabile 16 x 12 km (Locarnese)
+    global MODO_PICCOLO
     parser = argparse.ArgumentParser(description=descrizione)
     parser.add_argument("--pilota", action="store_true",
                         help="lavora solo sul settore pilota (Locarno 8 x 8 km)")
-    return parser.parse_args()
+    parser.add_argument("--anteprima", action="store_true",
+                        help="lavora sull'area dell'anteprima (Locarnese 16 x 12 km)")
+    argomenti = parser.parse_args()
+    if argomenti.anteprima:
+        MODO_PICCOLO = "anteprima"
+        argomenti.pilota = True   # stesso codice del pilota, area piu' grande
+    return argomenti
 
 
 def area_di_lavoro(pilota):
     # Restituisce (est_min, est_max, nord_min, nord_max) in metri LV95
+    if pilota and MODO_PICCOLO == "anteprima":
+        return (config.ANTEPRIMA_EST_MIN, config.ANTEPRIMA_EST_MAX,
+                config.ANTEPRIMA_NORD_MIN, config.ANTEPRIMA_NORD_MAX)
     if pilota:
         return (config.PILOTA_EST_MIN, config.PILOTA_EST_MAX,
                 config.PILOTA_NORD_MIN, config.PILOTA_NORD_MAX)
@@ -38,7 +54,7 @@ def area_di_lavoro(pilota):
 
 def nome_area(pilota):
     if pilota:
-        return "pilota"
+        return MODO_PICCOLO
     return "ticino"
 
 

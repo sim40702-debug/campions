@@ -14,7 +14,7 @@ Funziona su **Mac e Windows**: script Python in `tools/geo` (vedi `tools/geo/LEG
 
 - Stima del mondo: [`docs/stima/stima-mondo-ticino.md`](docs/stima/stima-mondo-ticino.md) (anche in PDF nella stessa cartella)
 - Product Backlog: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT_BACKLOG.md)
-- Sprint: [`docs/sprint-G1/`](docs/sprint-G1/) (garage moto), [`docs/sprint-F1/`](docs/sprint-F1/) (correzioni, teleferiche, chiese), [`docs/sprint-E1/`](docs/sprint-E1/) (prestazioni), [`docs/sprint-C1/`](docs/sprint-C1/) (acqua, gallerie, ponti), [`docs/sprint-D2/`](docs/sprint-D2/) (segnaletica), [`docs/sprint-D1/`](docs/sprint-D1/) (edifici e boschi). Sprint A: [`docs/sprint-A/`](docs/sprint-A/) (parte Unreal in attesa del PC, D7). Sprint 0: [`docs/sprint-0/`](docs/sprint-0/)
+- Sprint: [`docs/sprint-H1/`](docs/sprint-H1/) (Tenero, gallerie, foto aeree), [`docs/sprint-G1/`](docs/sprint-G1/) (garage moto), [`docs/sprint-F1/`](docs/sprint-F1/) (correzioni, teleferiche, chiese), [`docs/sprint-E1/`](docs/sprint-E1/) (prestazioni), [`docs/sprint-C1/`](docs/sprint-C1/) (acqua, gallerie, ponti), [`docs/sprint-D2/`](docs/sprint-D2/) (segnaletica), [`docs/sprint-D1/`](docs/sprint-D1/) (edifici e boschi). Sprint A: [`docs/sprint-A/`](docs/sprint-A/) (parte Unreal in attesa del PC, D7). Sprint 0: [`docs/sprint-0/`](docs/sprint-0/)
 - Bug Tracker: [`docs/BUG_TRACKER.md`](docs/BUG_TRACKER.md)
 - Fonti e licenze: [`docs/FONTI_E_LICENZE.md`](docs/FONTI_E_LICENZE.md)
 

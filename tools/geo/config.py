@@ -31,6 +31,13 @@ PILOTA_EST_MAX = 2_708_000
 PILOTA_NORD_MIN = 1_110_000
 PILOTA_NORD_MAX = 1_118_000
 
+# --- Area dell'anteprima giocabile (Three.js): Locarnese 16 x 12 km ---------
+# Da Ponte Brolla/Tegna a Tenero/Gordola, da Ascona alla Cimetta.
+ANTEPRIMA_EST_MIN = 2_696_000
+ANTEPRIMA_EST_MAX = 2_712_000
+ANTEPRIMA_NORD_MIN = 1_110_000
+ANTEPRIMA_NORD_MAX = 1_122_000
+
 # --- Settori e terreno (decisione D2: circa 2 m) ---------------------------
 LATO_SETTORE_M = 4000          # ogni settore e' 4 x 4 km
 QUAD_PER_SETTORE = 2032        # 16 componenti Unreal da 127 quad

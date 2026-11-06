@@ -2,7 +2,7 @@
 // Il terreno si vede solo da sopra: dentro la montagna si vede solo il tubo della galleria.
 
 import * as THREE from "three";
-import { quotaTerreno } from "./terreno.js";
+import { quotaTerreno, dentroArea } from "./terreno.js";
 
 const ALTEZZA_GALLERIA = 5;
 const OGNI_QUANTI_PUNTI_LUCE = 6;    // i punti delle strade sono ogni 4 m: una luce ogni 24 m
@@ -61,7 +61,6 @@ export function aggiungiOpere(strade, scena, terreno) {
   const portali = [];
   const luci = [];
   const piloni = [];
-  const limite = terreno.meta - 3;
 
   for (const strada of strade.lista) {
     const p = strada.p;
@@ -82,7 +81,7 @@ export function aggiungiOpere(strade, scena, terreno) {
       // Portali solo dove la galleria finisce davvero (non al bordo della mappa)
       for (const [indice, verso] of [[0, -1], [punti - 1, 1]]) {
         const x = p[indice * 3], z = p[indice * 3 + 2];
-        if (Math.abs(x) < limite && Math.abs(z) < limite) {
+        if (dentroArea(terreno, x, z, 3)) {
           aggiungiPortale(portali, sezione(p, indice, strada.w), verso);
         }
       }

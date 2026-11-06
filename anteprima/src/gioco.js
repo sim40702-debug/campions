@@ -2,7 +2,7 @@
 // File principale: crea la scena, carica i dati e fa girare il gioco.
 
 import * as THREE from "three";
-import { caricaTerreno, aggiungiTerreno, quotaTerreno } from "./terreno.js";
+import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
@@ -134,7 +134,7 @@ async function avvia() {
   try {
     mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
-    const terrenoMesh = aggiungiTerreno(terreno, scena);
+    const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore);
 
     mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
@@ -165,6 +165,7 @@ async function avvia() {
     const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
+    preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
     const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh };
@@ -191,9 +192,11 @@ async function avvia() {
         // durante il test la telecamera vola da sola
         const punto = aggiornaTest(test, vero, telecamera, terreno, disegnatore);
         aggiornaAlberi(alberi, punto.x, punto.z, dt);
+        aggiornaTerreno(terrenoMesh, punto.x, punto.z, vero);
       } else {
         aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
         aggiornaAlberi(alberi, moto.x, moto.z, dt);
+        aggiornaTerreno(terrenoMesh, moto.x, moto.z, vero);
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
       tempoGioco = tempoGioco + vero;

@@ -13,6 +13,8 @@ import random
 import numpy as np
 import rasterio
 from PIL import Image
+
+Image.MAX_IMAGE_PIXELS = None   # le heightmap grandi non sono un pericolo
 from rasterio.windows import Window
 
 import config
@@ -49,7 +51,8 @@ def immagini_da_controllare(pilota):
     # Restituisce una lista di (percorso PNG, est_min, nord_max)
     if pilota:
         area = utilita.area_di_lavoro(True)
-        percorso = config.CARTELLA_UNREAL / "pilota" / "terreno_pilota.png"
+        nome = utilita.nome_area(True)
+        percorso = config.CARTELLA_UNREAL / nome / ("terreno_" + nome + ".png")
         return [(percorso, area[0], area[3])]
     cartella = config.CARTELLA_UNREAL / "ticino" / "terreno"
     lista = []

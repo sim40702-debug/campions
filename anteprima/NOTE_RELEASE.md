@@ -1,9 +1,16 @@
 ## MOTO RACING WORLD – Anteprima Ticino
 
-Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
+Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.7.0) – Sprint G1
+### Novità di questa versione (0.8.0) – Sprint H1
+
+- **Mappa più grande: Locarnese 16 × 12 km**, fino a **Tenero e Gordola**, Losone, Tegna, Verscio, Cardada e Cimetta.
+- **Foto aeree SWISSIMAGE** di swisstopo sul terreno: dall'alto il gioco assomiglia alla realtà.
+- **Gallerie** sempre sotto terra (almeno 7 m di montagna sopra): non passano più sopra le strade.
+- Terreno dettagliato creato solo vicino alla moto: meno memoria.
+
+### Novità della 0.7.0 – Sprint G1
 
 - **Garage** (tasto G o pulsante "Garage"): 5 moto originali con prestazioni diverse:
   MRW SM 690 (supermotard), MRW Naked 890, MRW Sport 1000 RR (sportiva), MRW Enduro 450, MRW Scooter 125.
@@ -119,4 +126,4 @@ Avversari, multiplayer, il resto del Ticino.
 
 ### Fonti
 
-Fonte: Ufficio federale di topografia swisstopo · © OpenStreetMap contributors (ODbL)
+Fonte: Ufficio federale di topografia swisstopo (swissALTI3D, SWISSIMAGE) · © OpenStreetMap contributors (ODbL)

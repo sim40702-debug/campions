@@ -8,6 +8,7 @@
 #
 # Uso:
 #   python passo2_scarica_osm.py --pilota   (strade solo nel settore pilota)
+#   python passo2_scarica_osm.py --anteprima (area dell'anteprima, Locarnese 16 x 12 km)
 #   python passo2_scarica_osm.py            (strade di tutto il Ticino)
 #
 # Dati: (c) OpenStreetMap contributors, licenza ODbL
@@ -109,23 +110,23 @@ def main():
 
     if argomenti.pilota:
         print("3) Edifici del pilota...")
-        edifici = utilita.chiedi_overpass(query_edifici(), cartella / "edifici_pilota.json")
+        edifici = utilita.chiedi_overpass(query_edifici(), cartella / ("edifici_" + utilita.nome_area(True) + ".json"))
         print("   Edifici scaricati: " + str(len(edifici.get("elements", []))))
 
         print("4) Boschi e alberi del pilota...")
-        verde = utilita.chiedi_overpass(query_verde(), cartella / "verde_pilota.json")
+        verde = utilita.chiedi_overpass(query_verde(), cartella / ("verde_" + utilita.nome_area(True) + ".json"))
         print("   Elementi scaricati: " + str(len(verde.get("elements", []))))
 
         print("5) Segnaletica, lampioni e localita' del pilota...")
-        dettagli = utilita.chiedi_overpass(query_dettagli(), cartella / "dettagli_pilota.json")
+        dettagli = utilita.chiedi_overpass(query_dettagli(), cartella / ("dettagli_" + utilita.nome_area(True) + ".json"))
         print("   Elementi scaricati: " + str(len(dettagli.get("elements", []))))
 
         print("6) Laghi, fiumi e torrenti del pilota...")
-        acqua = utilita.chiedi_overpass(query_acqua(), cartella / "acqua_pilota.json")
+        acqua = utilita.chiedi_overpass(query_acqua(), cartella / ("acqua_" + utilita.nome_area(True) + ".json"))
         print("   Elementi scaricati: " + str(len(acqua.get("elements", []))))
 
         print("7) Teleferiche, funicolari e ferrovie del pilota...")
-        trasporti = utilita.chiedi_overpass(query_trasporti(), cartella / "trasporti_pilota.json")
+        trasporti = utilita.chiedi_overpass(query_trasporti(), cartella / ("trasporti_" + utilita.nome_area(True) + ".json"))
         print("   Elementi scaricati: " + str(len(trasporti.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))

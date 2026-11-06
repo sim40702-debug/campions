@@ -59,24 +59,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tools/geo/dati/download
-          key: geodati-pilota-v4
+          key: geodati-anteprima-v1
           restore-keys: |
-            geodati-pilota-
+            geodati-
 
       - name: Installa le librerie Python
         run: pip install -r tools/geo/requirements.txt
 
-      - name: Passi 1-7 sul settore pilota
+      - name: Passi 1-8 sull'area dell'anteprima (Locarnese 16 x 12 km)
         working-directory: tools/geo
         shell: bash
         run: |
           set -o pipefail
-          for passo in passo1_scarica_altimetria passo2_scarica_osm passo3_crea_terreno passo4_crea_confini passo5_misura_strade passo6_verifica_terreno; do
+          for passo in passo1_scarica_altimetria passo2_scarica_osm passo3_crea_terreno passo6_verifica_terreno passo7_esporta_anteprima passo8_foto_aeree; do
             echo "===== $passo =====" | tee -a registro.txt
-            python -u $passo.py --pilota 2>&1 | tee -a registro.txt
+            python -u $passo.py --anteprima 2>&1 | tee -a registro.txt
           done
-          echo "===== passo7_esporta_anteprima =====" | tee -a registro.txt
-          python -u passo7_esporta_anteprima.py 2>&1 | tee -a registro.txt
 
       - name: Se un passo fallisce, scrivi l'errore (visibile anche senza accesso)
         if: failure()
@@ -88,13 +86,10 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo '## Registro dei passi (settore pilota)' >> $GITHUB_STEP_SUMMARY
+          echo '## Registro dei passi (anteprima)' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat tools/geo/registro.txt >> $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
-          if [ -f tools/geo/dati/per_unreal/pilota/misure_strade.md ]; then
-            cat tools/geo/dati/per_unreal/pilota/misure_strade.md >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Salva il registro
         if: always()
@@ -103,9 +98,6 @@ jobs:
           name: registro-pilota
           path: |
             tools/geo/registro.txt
-            tools/geo/dati/per_unreal/pilota/misure_strade.md
-            tools/geo/dati/per_unreal/pilota/impostazioni_unreal.json
-            tools/geo/dati/per_unreal/pilota/confini/settori.json
           if-no-files-found: ignore
 
       - name: Salva i dati per l'anteprima
@@ -207,11 +199,8 @@ jobs:
       - name: Prepara dati e registro per la release
         shell: bash
         run: |
-          cd extra/anteprima-dati && zip -r ../../uscita/dati-anteprima-pilota.zip . && cd ../..
+          cd extra/anteprima-dati && zip -r ../../uscita/dati-anteprima.zip . && cd ../..
           cp extra/registro-pilota/registro.txt uscita/registro-pilota.txt
-          if [ -f extra/registro-pilota/dati/per_unreal/pilota/misure_strade.md ]; then
-            cp extra/registro-pilota/dati/per_unreal/pilota/misure_strade.md uscita/misure-strade-pilota.md
-          fi
           ls -la uscita
 
       - name: Pubblica la release

@@ -48,6 +48,10 @@ Su Windows scrivi `python` al posto di `python3`.
 | 4 | `python3 passo4_crea_confini.py --pilota` | Confini, regioni, elenco settori, layer Confine | 1 minuto |
 | 5 | `python3 passo5_misura_strade.py --pilota` | Misura km di strade, ponti, gallerie, incroci | secondi |
 | 6 | `python3 passo6_verifica_terreno.py --pilota` | Controlla che il terreno segua swisstopo | 1 minuto |
+| 7 | `python3 passo7_esporta_anteprima.py --anteprima` | Prepara i dati del gioco (anteprima) | 1-3 minuti |
+| 8 | `python3 passo8_foto_aeree.py --anteprima` | Foto aeree SWISSIMAGE sul terreno | qualche minuto |
+
+Con `--anteprima` invece di `--pilota` i passi lavorano sull'area del gioco (Locarnese 16 × 12 km).
 
 Quando il pilota funziona in Unreal, si ripete **senza** `--pilota` per tutto il Ticino.
 Attenzione: per tutto il Ticino servono circa **10-20 GB** di spazio libero e il passo 3 dura a lungo (anche più di un'ora).

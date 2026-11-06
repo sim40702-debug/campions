@@ -38,15 +38,17 @@ def file_copernicus():
     return sorted(cartella.glob("*.tif"))
 
 
-def crea_griglia(indice, copernicus, est_min, nord_max, punti):
-    # Restituisce una griglia di quote (metri) di punti x punti
+def crea_griglia(indice, copernicus, est_min, nord_max, punti, punti_y=None):
+    # Restituisce una griglia di quote (metri) di punti x punti_y
+    if punti_y is None:
+        punti_y = punti
     passo = config.PASSO_M
     est_max = est_min + passo * (punti - 1)
-    nord_min = nord_max - passo * (punti - 1)
+    nord_min = nord_max - passo * (punti_y - 1)
 
     # Ogni punto della griglia e' il CENTRO di un pixel: per questo il mezzo passo
     trasformazione = Affine(passo, 0, est_min - passo / 2, 0, -passo, nord_max + passo / 2)
-    quote = np.full((punti, punti), np.nan, dtype=np.float32)
+    quote = np.full((punti_y, punti), np.nan, dtype=np.float32)
 
     # 1) swissALTI3D (2 m)
     margine = 10
@@ -74,7 +76,7 @@ def crea_griglia(indice, copernicus, est_min, nord_max, punti):
     # 2) Copernicus (30 m) dove swissALTI3D non c'e' (fuori dalla Svizzera)
     if np.isnan(quote).any() and copernicus:
         for percorso in copernicus:
-            riempimento = np.full((punti, punti), np.nan, dtype=np.float32)
+            riempimento = np.full((punti_y, punti), np.nan, dtype=np.float32)
             with rasterio.open(percorso) as file:
                 reproject(
                     source=rasterio.band(file, 1), destination=riempimento,
@@ -128,16 +130,17 @@ def main():
 
     if argomenti.pilota:
         area = utilita.area_di_lavoro(True)
-        cartella = config.CARTELLA_UNREAL / "pilota"
-        settori_per_lato = (area[1] - area[0]) // config.LATO_SETTORE_M
-        punti = settori_per_lato * config.QUAD_PER_SETTORE + 1
-        print("2) Creo la heightmap del settore pilota (" + str(punti) + " x " + str(punti) + ")...")
-        quote, mancanti = crea_griglia(indice, copernicus, area[0], area[3], punti)
-        salva_png_16bit(quote, cartella / "terreno_pilota.png")
+        nome = utilita.nome_area(True)
+        cartella = config.CARTELLA_UNREAL / nome
+        punti_x = (area[1] - area[0]) // config.LATO_SETTORE_M * config.QUAD_PER_SETTORE + 1
+        punti_y = (area[3] - area[2]) // config.LATO_SETTORE_M * config.QUAD_PER_SETTORE + 1
+        print("2) Creo la heightmap (" + nome + ", " + str(punti_x) + " x " + str(punti_y) + ")...")
+        quote, mancanti = crea_griglia(indice, copernicus, area[0], area[3], punti_x, punti_y)
+        salva_png_16bit(quote, cartella / ("terreno_" + nome + ".png"))
         print("   Quota minima " + str(round(float(quote.min()), 1)) + " m, massima " + str(round(float(quote.max()), 1)) + " m")
         if mancanti:
             print("   ATTENZIONE: " + str(mancanti) + " punti senza dati")
-        impostazioni = scrivi_impostazioni(cartella, area[0], area[3], punti, punti, 1, 1)
+        impostazioni = scrivi_impostazioni(cartella, area[0], area[3], punti_x, punti_y, 1, 1)
     else:
         area = utilita.area_di_lavoro(False)
         cartella = config.CARTELLA_UNREAL / "ticino" / "terreno"

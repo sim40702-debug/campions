@@ -17,6 +17,8 @@ FINESTRA_MEDIA = 6         # media su 6 punti prima e 6 dopo (circa 50 m in tutt
 SOTTO_STRADA_M = 0.15      # il terreno sta 15 cm sotto la strada
 BANCHINA_M = 2.5          # terreno piatto oltre il bordo della strada
 RACCORDO_M = 3.0           # poi raccordo morbido verso il terreno vero
+COPERTURA_GALLERIA_M = 7.0 # una galleria passa almeno 7 m sotto il terreno...
+RAMPA_GALLERIA_M = 80.0    # ...tranne vicino agli ingressi, dove sale piano piano
 
 
 class Griglia:
@@ -124,12 +126,14 @@ def calcola_profili(pezzi, griglia, zona):
     tutte = {"ponte": catene("ponte"), "galleria": catene("galleria")}
 
     def quota_su_catena(lista, e, n):
+        # Quota sulla linea dritta tra gli ingressi e distanza dall'ingresso piu' vicino
         punto = Point(e, n)
         for linea, q_inizio, q_fine in lista:
             if linea.distance(punto) < 0.5:
-                parte = linea.project(punto) / linea.length if linea.length else 0
-                return q_inizio + (q_fine - q_inizio) * parte
-        return None
+                fatta = linea.project(punto)
+                parte = fatta / linea.length if linea.length else 0
+                return q_inizio + (q_fine - q_inizio) * parte, min(fatta, linea.length - fatta)
+        return None, 0
 
     for pezzo in pezzi:
         coordinate = list(pezzo["linea"].coords)
@@ -137,12 +141,28 @@ def calcola_profili(pezzi, griglia, zona):
         if pezzo["ponte"] or pezzo["galleria"]:
             lista = tutte["ponte"] if pezzo["ponte"] else tutte["galleria"]
             profilo = []
+            limiti = []
             for (e, n), q_terreno in zip(coordinate, grezzo):
-                q = quota_su_catena(lista, e, n)
+                q, dai_capi = quota_su_catena(lista, e, n)
                 if q is None:
                     q = q_terreno
-                q = min(q, q_terreno) if pezzo["galleria"] else max(q, q_terreno)
+                if pezzo["galleria"]:
+                    # sotto terra: almeno 7 m di montagna sopra (meno vicino agli ingressi)
+                    limite = q_terreno - COPERTURA_GALLERIA_M * min(1.0, dai_capi / RAMPA_GALLERIA_M)
+                    q = min(q, limite)
+                    limiti.append(limite)
+                else:
+                    q = max(q, q_terreno)   # un ponte non passa mai sotto il terreno
                 profilo.append(q)
+            if pezzo["galleria"] and len(profilo) > 2:
+                # niente gradini dentro la galleria, ma sempre sotto il limite
+                liscio = []
+                for i in range(len(profilo)):
+                    vicine = profilo[max(0, i - 4): i + 5]
+                    liscio.append(min(sum(vicine) / len(vicine), limiti[i]))
+                liscio[0] = profilo[0]
+                liscio[-1] = profilo[-1]
+                profilo = liscio
         else:
             ancore = [i for i, (e, n) in enumerate(coordinate)
                       if (round(e, 3), round(n, 3)) in pezzo["incroci"]]

@@ -155,7 +155,7 @@ export function aggiornaAlberi(mondo, x, z, dt) {
       const chiave = ix + "," + iz;
       const distanza = Math.hypot((ix + 0.5) * CELLA - x, (iz + 0.5) * CELLA - z);
       if (distanza > RAGGIO || mondo.celle.has(chiave)) continue;
-      if (Math.abs(ix * CELLA) > mondo.terreno.meta + CELLA || Math.abs(iz * CELLA) > mondo.terreno.meta + CELLA) continue;
+      if (Math.abs(ix * CELLA) > mondo.terreno.metaX + CELLA || Math.abs(iz * CELLA) > mondo.terreno.metaZ + CELLA) continue;
       // Massimo 3 celle nuove alla volta, cosi' il gioco non si blocca
       if (create >= 3) continue;
       const gruppo = creaCella(mondo, ix, iz);

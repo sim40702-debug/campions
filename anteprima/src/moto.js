@@ -134,10 +134,11 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const dirZ = -Math.cos(moto.angolo);
   let nuovaX = moto.x + dirX * moto.velocita * dt;
   let nuovaZ = moto.z + dirZ * moto.velocita * dt;
-  const limite = terreno.meta - 5;
-  if (Math.abs(nuovaX) > limite || Math.abs(nuovaZ) > limite) {
-    nuovaX = Math.min(Math.max(nuovaX, -limite), limite);
-    nuovaZ = Math.min(Math.max(nuovaZ, -limite), limite);
+  const limiteX = terreno.metaX - 5;
+  const limiteZ = terreno.metaZ - 5;
+  if (Math.abs(nuovaX) > limiteX || Math.abs(nuovaZ) > limiteZ) {
+    nuovaX = Math.min(Math.max(nuovaX, -limiteX), limiteX);
+    nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
     moto.velocita = 0;
   }
   // Contro un edificio: la moto si ferma e rimbalza un po' indietro

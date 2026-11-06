@@ -1,5 +1,5 @@
 // Prestazioni: contatore FPS (tasto F) e test automatico.
-// Il test fa volare la telecamera sopra il pilota per 40 secondi
+// Il test fa volare la telecamera sopra il Locarnese per 45 secondi
 // (citta', lago, boschi in collina) e misura gli FPS.
 
 import * as THREE from "three";
@@ -32,17 +32,17 @@ export function aggiornaFps(dt, disegnatore) {
   }
 }
 
-// Percorso del test (metri, coordinate dell'anteprima)
-const PERCORSO = [
-  [733, -141],     // partenza, Locarno
-  [500, -100],     // Piazza Grande
-  [-1100, 1350],   // Ascona
-  [-2500, -1900],  // Ponte Brolla
-  [1000, -1500],   // collina sopra Orselina (bosco)
-  [2500, -700],    // Minusio
-  [733, -141]      // ritorno
+// Percorso del test in coordinate svizzere LV95 (est, nord)
+const PERCORSO_LV95 = [
+  [2704733, 1114141],   // partenza, Locarno
+  [2704500, 1114100],   // Piazza Grande
+  [2702900, 1112650],   // Ascona
+  [2701500, 1115900],   // Ponte Brolla
+  [2705000, 1115500],   // collina sopra Orselina (bosco)
+  [2709000, 1115300],   // Tenero
+  [2704733, 1114141]    // ritorno
 ];
-const DURATA = 40;
+const DURATA = 45;
 
 export function creaTest() {
   return { attivo: false, tempo: 0, tempiFotogrammi: [], triangoliMax: 0, disegniMax: 0, risultato: null };
@@ -64,6 +64,9 @@ export function aggiornaTest(test, dt, telecamera, terreno, disegnatore) {
   test.triangoliMax = Math.max(test.triangoliMax, disegnatore.info.render.triangles);
   test.disegniMax = Math.max(test.disegniMax, disegnatore.info.render.calls);
 
+  // da LV95 alle coordinate del gioco
+  const [ce, cn] = terreno.info.centro_lv95;
+  const PERCORSO = PERCORSO_LV95.map(function ([e, n]) { return [e - ce, -(n - cn)]; });
   const avanzamento = Math.min(test.tempo / DURATA, 0.9999) * (PERCORSO.length - 1);
   const i = Math.floor(avanzamento);
   const f = avanzamento - i;
@@ -97,7 +100,7 @@ async function mostraRisultato(test) {
   const memoria = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "n.d.";
   const testo = [
     "MOTO RACING WORLD - Anteprima Ticino " + versione,
-    "Test prestazioni (40 s sopra il pilota di Locarno)",
+    "Test prestazioni (45 s sopra il Locarnese)",
     "Qualita': " + QUALITA[qualitaSalvata()].nome,
     "Schermo: " + window.innerWidth + " x " + window.innerHeight + " (pixel ratio " + window.devicePixelRatio + ")",
     "FPS medi: " + Math.round(media),
