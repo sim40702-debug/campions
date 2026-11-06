@@ -53,6 +53,7 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-21 | Test multiplayer (server dedicato) | E | 1 | Da fare |
 | TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Da fare |
 | TI-23 | Funziona su Mac e su Windows (script, progetto Unreal, gioco finito) | A–E | 1 | In corso |
+| TI-24 | Anteprima giocabile del pilota (Three.js + Electron), release automatiche su GitHub | A | 1 | In corso |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 

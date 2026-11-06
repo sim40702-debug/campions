@@ -7,6 +7,10 @@ Stato: **IN CORSO** – gli script sono pronti; aspettiamo che Simone li esegua 
 - Script `tools/geo/passo1` … `passo6` (Python, Mac e Windows).
 - Guida per Unreal `docs/GUIDA_UNREAL.md`.
 - `.gitignore` (i dati geografici non vanno su Git) e `.gitattributes` (Git LFS per i file Unreal).
+- `avvia_pilota.py`: un solo comando per tutti i passi del pilota, con registro.
+- **Anteprima Ticino 0.1.0** (Three.js + Electron): terreno, strade, ponti, lago, moto arcade, telecamere, quota e coordinate LV95, minimappa.
+- **Release automatiche**: il workflow GitHub scarica i dati veri, esegue i passi 1–7 e crea l'app per Mac (arm64 e Intel) e Windows (installazione e portatile).
+- Prova dell'anteprima nel browser con dati di prova: carica, si guida, telecamere e tasto R funzionano, nessun errore.
 
 ## Prove fatte
 

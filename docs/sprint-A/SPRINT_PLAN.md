@@ -18,6 +18,7 @@ Avere i dati geografici scaricati e verificati, e il **settore pilota di Locarno
 | TI-06 | Confini cantonali importati | Claude + Simone |
 | TI-07 | Terreno di tutto il Ticino | Claude + Simone |
 | TI-23 | Funziona su Mac e Windows | Claude |
+| TI-24 | Anteprima giocabile + release automatiche su GitHub | Claude |
 
 ## Compiti
 
@@ -27,6 +28,8 @@ Avere i dati geografici scaricati e verificati, e il **settore pilota di Locarno
 2. Prova dei passi 3–6 con dati di prova (vedi Sprint Report). **Fatto.**
 3. Guida per l'import in Unreal: `docs/GUIDA_UNREAL.md`. **Fatto.**
 4. `.gitignore` e Git LFS per i file di Unreal. **Fatto.**
+5. Comando unico `avvia_pilota.py`. **Fatto.**
+6. Anteprima Three.js + Electron e workflow GitHub che scarica i dati veri e crea le release Mac e Windows. **Fatto.**
 
 ### Da fare da Simone
 
@@ -46,4 +49,5 @@ Avere i dati geografici scaricati e verificati, e il **settore pilota di Locarno
 - [ ] Passo 5 su tutto il Ticino: km di strade **misurati** scritti nel Report e nella stima.
 - [ ] Terreno di tutto il Ticino importato in Unreal, con il layer Confine.
 - [ ] Funziona su Mac e su Windows (almeno gli script provati su uno dei due, il progetto aperto sull'altro quando possibile).
+- [ ] Release 0.1.0 dell'anteprima scaricata e provata da Simone su Mac (e Windows se possibile).
 - [ ] Product Backlog, Sprint Report e Bug Tracker aggiornati.

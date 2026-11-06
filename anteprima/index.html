@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>MOTO RACING WORLD - Anteprima Ticino</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="stile.css">
+  <script type="importmap">
+    { "imports": { "three": "./node_modules/three/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="caricamento">
+    <h1>MOTO RACING WORLD</h1>
+    <p>Anteprima Ticino - Locarno</p>
+    <p id="stato">Caricamento del territorio...</p>
+  </div>
+
+  <div id="hud">
+    <div id="velocita">0 <small>km/h</small></div>
+    <div id="strada"></div>
+    <div id="quota"></div>
+    <div id="coordinate"></div>
+  </div>
+
+  <canvas id="minimappa" width="220" height="220"></canvas>
+
+  <div id="aiuto">
+    Frecce o WASD: guida &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; H: nascondi aiuto
+  </div>
+
+  <div id="crediti">
+    Fonte: Ufficio federale di topografia swisstopo &middot; &copy; OpenStreetMap contributors (ODbL)
+  </div>
+
+  <script type="module" src="src/gioco.js"></script>
+</body>
+</html>

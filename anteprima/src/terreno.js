@@ -1,0 +1,147 @@
+// Terreno: legge i dati swisstopo preparati dal passo 7 e costruisce la mesh 3D.
+// Coordinate: x = est, y = quota (metri), z = sud. Il centro (0, 0) e' il centro del pilota.
+
+import * as THREE from "three";
+
+const PEZZI_PER_LATO = 4;   // 4 x 4 pezzi da 2 x 2 km
+
+export async function caricaTerreno() {
+  const rispostaInfo = await fetch("dati/terreno.json");
+  if (!rispostaInfo.ok) {
+    throw new Error("Mancano i dati del terreno (anteprima/dati/terreno.json)");
+  }
+  const info = await rispostaInfo.json();
+  const rispostaBin = await fetch("dati/terreno.bin");
+  const valori = new Uint16Array(await rispostaBin.arrayBuffer());
+
+  // Trasformo i numeri del file in quote in metri
+  const quote = new Float32Array(valori.length);
+  for (let i = 0; i < valori.length; i++) {
+    quote[i] = info.quota_base + valori[i] * info.scala_quota;
+  }
+
+  return {
+    info: info,
+    punti: info.punti,
+    passo: info.passo_m,
+    meta: info.lato_m / 2,
+    quote: quote
+  };
+}
+
+// Quota del terreno in un punto qualsiasi (media tra i 4 punti vicini)
+export function quotaTerreno(terreno, x, z) {
+  const n = terreno.punti;
+  let colonna = (x + terreno.meta) / terreno.passo;
+  let riga = (z + terreno.meta) / terreno.passo;
+  colonna = Math.min(Math.max(colonna, 0), n - 1.001);
+  riga = Math.min(Math.max(riga, 0), n - 1.001);
+  const c0 = Math.floor(colonna);
+  const r0 = Math.floor(riga);
+  const fx = colonna - c0;
+  const fy = riga - r0;
+  const q = terreno.quote;
+  const sopra = q[r0 * n + c0] * (1 - fx) + q[r0 * n + c0 + 1] * fx;
+  const sotto = q[(r0 + 1) * n + c0] * (1 - fx) + q[(r0 + 1) * n + c0 + 1] * fx;
+  return sopra * (1 - fy) + sotto * fy;
+}
+
+// Colore di un punto: sabbia vicino al lago, erba, roccia se ripido, chiaro in alto
+function coloreTerreno(quota, pendenza, livelloLago, colore) {
+  if (quota < livelloLago + 0.6) {
+    colore.setRGB(0.62, 0.57, 0.45);
+  } else if (pendenza > 0.9) {
+    colore.setRGB(0.45, 0.43, 0.40);
+  } else if (quota > 1700) {
+    colore.setRGB(0.55, 0.58, 0.45);
+  } else {
+    const variazione = (Math.sin(quota * 0.05) + 1) * 0.03;
+    colore.setRGB(0.26 + variazione, 0.42 + variazione, 0.20);
+  }
+}
+
+// Crea la geometria di un pezzo di terreno, prendendo un punto ogni "salto"
+function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto, centroX, centroZ) {
+  const n = terreno.punti;
+  const lato = quadPezzo / salto + 1;
+  const posizioni = new Float32Array(lato * lato * 3);
+  const colori = new Float32Array(lato * lato * 3);
+  const colore = new THREE.Color();
+  const q = terreno.quote;
+
+  for (let r = 0; r < lato; r++) {
+    for (let c = 0; c < lato; c++) {
+      const riga = inizioRiga + r * salto;
+      const colonna = inizioColonna + c * salto;
+      const quota = q[riga * n + colonna];
+      const indice = (r * lato + c) * 3;
+      posizioni[indice] = colonna * terreno.passo - terreno.meta - centroX;
+      posizioni[indice + 1] = quota;
+      posizioni[indice + 2] = riga * terreno.passo - terreno.meta - centroZ;
+
+      // Pendenza: differenza di quota con i punti vicini
+      const destra = q[riga * n + Math.min(colonna + 1, n - 1)];
+      const sotto = q[Math.min(riga + 1, n - 1) * n + colonna];
+      const pendenza = Math.hypot(destra - quota, sotto - quota) / terreno.passo;
+      coloreTerreno(quota, pendenza, terreno.info.livello_lago, colore);
+      colori[indice] = colore.r;
+      colori[indice + 1] = colore.g;
+      colori[indice + 2] = colore.b;
+    }
+  }
+
+  const indici = [];
+  for (let r = 0; r < lato - 1; r++) {
+    for (let c = 0; c < lato - 1; c++) {
+      const a = r * lato + c;
+      const b = a + 1;
+      const d = a + lato;
+      const e = d + 1;
+      indici.push(a, d, b, b, d, e);
+    }
+  }
+
+  const geometria = new THREE.BufferGeometry();
+  geometria.setAttribute("position", new THREE.BufferAttribute(posizioni, 3));
+  geometria.setAttribute("color", new THREE.BufferAttribute(colori, 3));
+  geometria.setIndex(indici);
+  geometria.computeVertexNormals();
+  return geometria;
+}
+
+// Mette il terreno nella scena: ogni pezzo ha 2 livelli di dettaglio (vicino / lontano)
+export function aggiungiTerreno(terreno, scena) {
+  const materiale = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const quadPezzo = (terreno.punti - 1) / PEZZI_PER_LATO;
+  const latoPezzo = quadPezzo * terreno.passo;
+
+  for (let py = 0; py < PEZZI_PER_LATO; py++) {
+    for (let px = 0; px < PEZZI_PER_LATO; px++) {
+      const centroX = (px + 0.5) * latoPezzo - terreno.meta;
+      const centroZ = (py + 0.5) * latoPezzo - terreno.meta;
+      const livelli = new THREE.LOD();
+      livelli.position.set(centroX, 0, centroZ);
+
+      const vicino = new THREE.Mesh(
+        creaGeometriaPezzo(terreno, px * quadPezzo, py * quadPezzo, quadPezzo, 1, centroX, centroZ),
+        materiale
+      );
+      const lontano = new THREE.Mesh(
+        creaGeometriaPezzo(terreno, px * quadPezzo, py * quadPezzo, quadPezzo, 4, centroX, centroZ),
+        materiale
+      );
+      livelli.addLevel(vicino, 0);
+      livelli.addLevel(lontano, latoPezzo * 1.2);
+      scena.add(livelli);
+    }
+  }
+
+  // Lago Maggiore: una superficie d'acqua alla quota del lago
+  const lago = new THREE.Mesh(
+    new THREE.PlaneGeometry(terreno.meta * 2, terreno.meta * 2),
+    new THREE.MeshLambertMaterial({ color: 0x2e6a92 })
+  );
+  lago.rotation.x = -Math.PI / 2;
+  lago.position.y = terreno.info.livello_lago;
+  scena.add(lago);
+}

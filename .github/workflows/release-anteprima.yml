@@ -1,0 +1,147 @@
+# Crea la release dell'anteprima per Mac e Windows.
+#
+# Parte da sola quando si crea un tag "anteprima-v..." (per esempio anteprima-v0.1.0),
+# oppure a mano da GitHub: Actions -> Release anteprima Ticino -> Run workflow.
+#
+# 1) "dati": scarica i dati VERI (swisstopo, OpenStreetMap) ed esegue i passi 1-7
+# 2) "app":  costruisce l'app Electron su un Mac e su un PC Windows
+# 3) "release": pubblica i file nella pagina Releases di GitHub
+
+name: Release anteprima Ticino
+
+on:
+  push:
+    tags: ["anteprima-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dati:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Riusa i dati gia' scaricati
+        uses: actions/cache@v4
+        with:
+          path: tools/geo/dati/download
+          key: geodati-pilota-v1
+
+      - name: Installa le librerie Python
+        run: pip install -r tools/geo/requirements.txt
+
+      - name: Passi 1-7 sul settore pilota
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          for passo in passo1_scarica_altimetria passo2_scarica_osm passo3_crea_terreno passo4_crea_confini passo5_misura_strade passo6_verifica_terreno; do
+            echo "===== $passo =====" | tee -a registro.txt
+            python -u $passo.py --pilota 2>&1 | tee -a registro.txt
+          done
+          echo "===== passo7_esporta_anteprima =====" | tee -a registro.txt
+          python -u passo7_esporta_anteprima.py 2>&1 | tee -a registro.txt
+
+      - name: Riassunto nella pagina del workflow
+        if: always()
+        shell: bash
+        run: |
+          echo '## Registro dei passi (settore pilota)' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat tools/geo/registro.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ -f tools/geo/dati/per_unreal/pilota/misure_strade.md ]; then
+            cat tools/geo/dati/per_unreal/pilota/misure_strade.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Salva il registro
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registro-pilota
+          path: |
+            tools/geo/registro.txt
+            tools/geo/dati/per_unreal/pilota/misure_strade.md
+            tools/geo/dati/per_unreal/pilota/impostazioni_unreal.json
+            tools/geo/dati/per_unreal/pilota/confini/settori.json
+          if-no-files-found: ignore
+
+      - name: Salva i dati per l'anteprima
+        uses: actions/upload-artifact@v4
+        with:
+          name: anteprima-dati
+          path: anteprima/dati
+
+  app:
+    needs: dati
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            comando: build:mac
+            nome: mac
+          - os: windows-latest
+            comando: build:win
+            nome: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prendi i dati preparati
+        uses: actions/download-artifact@v4
+        with:
+          name: anteprima-dati
+          path: anteprima/dati
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: anteprima/package-lock.json
+
+      - name: Installa
+        working-directory: anteprima
+        run: npm ci
+
+      - name: Costruisci l'app
+        working-directory: anteprima
+        run: npm run ${{ matrix.comando }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Salva l'app
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.nome }}
+          path: |
+            anteprima/dist/*.dmg
+            anteprima/dist/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: app
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prendi le app
+        uses: actions/download-artifact@v4
+        with:
+          pattern: app-*
+          path: uscita
+          merge-multiple: true
+
+      - name: Pubblica la release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Anteprima Ticino ${{ github.ref_name }}"
+          body_path: anteprima/NOTE_RELEASE.md
+          files: uscita/*

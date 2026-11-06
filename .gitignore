@@ -16,3 +16,8 @@ unreal/**/*.sln
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Anteprima Three.js / Electron
+anteprima/node_modules/
+anteprima/dist/
+anteprima/dati/

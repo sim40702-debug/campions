@@ -1,0 +1,86 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #9cc3e6;
+}
+
+canvas {
+  display: block;
+}
+
+#caricamento {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1b2330;
+  color: white;
+  z-index: 10;
+}
+
+#caricamento h1 {
+  margin: 0;
+  letter-spacing: 3px;
+  color: #e8323c;
+}
+
+#hud {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  color: white;
+  text-shadow: 0 1px 3px black;
+}
+
+#velocita {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+#velocita small {
+  font-size: 18px;
+}
+
+#strada {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+#quota,
+#coordinate {
+  font-size: 14px;
+}
+
+#minimappa {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  border: 2px solid white;
+  border-radius: 8px;
+  background: rgba(20, 30, 40, 0.7);
+}
+
+#aiuto {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 13px;
+}
+
+#crediti {
+  position: fixed;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 11px;
+  text-shadow: 0 1px 2px black;
+}

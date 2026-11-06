@@ -8,6 +8,8 @@ La prima mappa esplorabile è il **Canton Ticino** (Svizzera), ricostruito da da
 **Sprint A – Dati geografici, licenze, confini, terreno** (in corso).
 Sprint 0 chiuso: stima approvata, decisioni D1–D8 accettate.
 
+**Anteprima giocabile** (Mac e Windows): scaricala dalla pagina Releases, vedi `anteprima/LEGGIMI.md`.
+
 Funziona su **Mac e Windows**: script Python in `tools/geo` (vedi `tools/geo/LEGGIMI.md`), import in Unreal con `docs/GUIDA_UNREAL.md`.
 
 - Stima del mondo: [`docs/stima/stima-mondo-ticino.md`](docs/stima/stima-mondo-ticino.md) (anche in PDF nella stessa cartella)

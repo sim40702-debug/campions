@@ -1,0 +1,74 @@
+{
+  "name": "moto-racing-world-anteprima-ticino",
+  "productName": "MOTO RACING WORLD - Anteprima Ticino",
+  "version": "0.1.0",
+  "description": "Anteprima giocabile del settore pilota di Locarno con dati swisstopo e OpenStreetMap",
+  "main": "main.js",
+  "author": "Simone",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:win": "electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "ch.droneticino.motoracingworld.anteprima",
+    "productName": "MRW Anteprima Ticino",
+    "asar": false,
+    "files": [
+      "main.js",
+      "index.html",
+      "stile.css",
+      "src/**/*",
+      "dati/**/*",
+      "node_modules/three/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "identity": "-",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Installazione.${ext}"
+    },
+    "portable": {
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Portatile.${ext}"
+    }
+  }
+}
