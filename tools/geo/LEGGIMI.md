@@ -32,7 +32,12 @@ Le volte successive basta la seconda riga (attivare `.venv`).
 
 ## 3. Eseguire i passi
 
-Prima **solo il settore pilota** (Locarno 8 × 8 km), con `--pilota`.
+**Modo facile (consigliato)**: un solo comando lancia tutti i passi del pilota e salva il registro in `dati/registro_pilota.txt` (da mandare a Claude):
+
+- Mac: `python3 avvia_pilota.py`
+- Windows: `python avvia_pilota.py`
+
+**Modo passo per passo**: prima **solo il settore pilota** (Locarno 8 × 8 km), con `--pilota`.
 Su Windows scrivi `python` al posto di `python3`.
 
 | Passo | Comando | Cosa fa | Tempo indicativo |
