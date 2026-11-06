@@ -8,10 +8,13 @@ const PEZZI_PER_LATO = 4;   // 4 x 4 pezzi da 2 x 2 km
 export async function caricaTerreno() {
   const rispostaInfo = await fetch("dati/terreno.json");
   if (!rispostaInfo.ok) {
-    throw new Error("Mancano i dati del terreno (anteprima/dati/terreno.json)");
+    throw new Error("Mancano i dati del terreno: " + (await rispostaInfo.text()));
   }
   const info = await rispostaInfo.json();
   const rispostaBin = await fetch("dati/terreno.bin");
+  if (!rispostaBin.ok) {
+    throw new Error("Mancano i dati del terreno: " + (await rispostaBin.text()));
+  }
   const valori = new Uint16Array(await rispostaBin.arrayBuffer());
 
   // Trasformo i numeri del file in quote in metri

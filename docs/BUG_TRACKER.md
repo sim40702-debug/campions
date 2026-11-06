@@ -6,7 +6,9 @@ Gravità: **Alta** (blocca il gioco) / **Media** (si gioca ma è sbagliato) / **
 
 ## Bug aperti
 
-Nessun bug aperto. I passi 1 e 2 (download) non sono ancora stati provati con i server veri: se danno errore, va segnalato qui.
+| ID | Titolo | Gravità | Regione / settore | Come riprodurlo | Sprint trovato | Stato |
+|---|---|---|---|---|---|---|
+| BUG-002 | Su Mac l'anteprima si ferma con "Errore: Failed to fetch" | Alta | Anteprima | Aprire l'app su Mac (Simone, 6.11.2026) | A | Aperto: in Electron i dati non vengono trovati. 0.1.4 mostra quale file manca e controlla i dati nella release |
 
 ## Bug chiusi
 

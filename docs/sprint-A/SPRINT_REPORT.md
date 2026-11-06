@@ -79,6 +79,7 @@ L'ambiente dove lavora Claude **non può scaricare** da swisstopo, OpenStreetMap
 | 0.1.1 | La release contiene anche dati del pilota e registro delle misure |
 | 0.1.2 | Corrette gallerie e ponti (BUG-001) |
 | 0.1.3 | Terreno senza fessure tra i pezzi, asfalto più chiaro |
+| 0.1.4 | Messaggio chiaro se mancano i dati, controllo dei dati nella release (BUG-002) |
 
 ## Bug trovati
 

@@ -8,7 +8,7 @@ const CELLA = 40;   // griglia di ricerca: celle da 40 x 40 m
 export async function caricaStrade() {
   const risposta = await fetch("dati/strade.json");
   if (!risposta.ok) {
-    throw new Error("Mancano i dati delle strade (anteprima/dati/strade.json)");
+    throw new Error("Mancano i dati delle strade: " + (await risposta.text()));
   }
   const dati = await risposta.json();
 

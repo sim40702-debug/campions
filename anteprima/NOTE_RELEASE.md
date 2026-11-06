@@ -3,12 +3,11 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.1.3)
+### Novità di questa versione (0.1.4)
 
-- Terreno senza fessure tra i pezzi vicini (bordi che scendono sotto il terreno).
-- Asfalto un po' più chiaro: da lontano le strade sulle montagne non sembrano più linee nere.
-- Dalla 0.1.2: gallerie e ponti corretti (prima alcune gallerie passavano sopra la montagna).
-- La release contiene anche i dati del pilota (`dati-anteprima-pilota.zip`) e il registro delle misure (`registro-pilota.txt`).
+- Se mancano i dati, l'app dice **quale file** manca e dove lo cerca (prima diceva solo "Failed to fetch").
+- Controllo automatico: la release esce solo se i dati di Locarno sono davvero dentro l'app.
+- Dalla 0.1.3: terreno senza fessure, asfalto più chiaro. Dalla 0.1.2: gallerie e ponti corretti.
 
 ### Quale file scaricare
 

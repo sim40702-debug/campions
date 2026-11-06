@@ -3,6 +3,7 @@
 // cosi' fetch() e i moduli JavaScript funzionano uguale su Mac e Windows.
 
 const { app, BrowserWindow, protocol, net } = require("electron");
+const fs = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
 
@@ -22,10 +23,20 @@ function creaFinestra() {
 }
 
 app.whenReady().then(function () {
-  protocol.handle("app", function (richiesta) {
+  protocol.handle("app", async function (richiesta) {
     const indirizzo = new URL(richiesta.url);
     const file = path.join(__dirname, decodeURIComponent(indirizzo.pathname));
-    return net.fetch(pathToFileURL(file).toString());
+    // Se il file non c'e' rispondo "404": cosi' il gioco puo' dire QUALE file manca
+    if (!fs.existsSync(file)) {
+      console.log("File non trovato: " + file);
+      return new Response("File non trovato: " + file, { status: 404 });
+    }
+    try {
+      return await net.fetch(pathToFileURL(file).toString());
+    } catch (errore) {
+      console.log("Errore leggendo " + file + ": " + errore.message);
+      return new Response("Errore leggendo " + file, { status: 500 });
+    }
   });
   creaFinestra();
 });
