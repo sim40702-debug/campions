@@ -1,0 +1,69 @@
+# Product Backlog – MOTO RACING WORLD
+
+Ultimo aggiornamento: Sprint 0 (6 novembre 2026)
+
+Priorità: **1 = più importante**. Stato: Da fare / In corso / Fatto.
+
+## Epic principale: MAPPA COMPLETA DEL CANTON TICINO
+
+Obiettivo: il mondo principale del gioco è tutto il Canton Ticino, in scala reale, con la rete stradale reale percorribile in moto.
+
+### Le regioni (8 distretti del Ticino)
+
+Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, così ogni regione è un modulo separato:
+
+| Regione (modulo) | Contiene |
+|---|---|
+| R1 Mendrisio | Mendrisiotto, Chiasso e Basso Mendrisiotto |
+| R2 Lugano | Lugano e Luganese, Lago di Lugano |
+| R3 Locarno | Locarno e Locarnese, Valle Verzasca, Centovalli, Onsernone, Gambarogno, Lago Maggiore |
+| R4 Vallemaggia | Valle Maggia con le valli laterali (Bavona, Lavizzara, Rovana, Campo) |
+| R5 Bellinzona | Bellinzona e Bellinzonese |
+| R6 Riviera | Biasca e la Riviera |
+| R7 Blenio | Valle di Blenio |
+| R8 Leventina | Leventina e passi dell'Alto Ticino |
+
+"Alto Ticino" = R6 + R7 + R8. Nel documento "Valle Maggia" e "Vallemaggia e le sue valli laterali" sono la stessa regione: è una sola voce (R4).
+
+## Elementi del backlog
+
+| ID | Elemento | Sprint | Priorità | Stato |
+|---|---|---|---|---|
+| TI-00 | Stima dimensione mondo, settori, memoria e prestazioni | 0 | 1 | In corso |
+| TI-01 | Scaricare dati OSM, swissALTI3D, confini; registrare versioni e date | A | 1 | Da fare |
+| TI-02 | Verifica licenze e testo attribuzioni nei crediti | A | 1 | Da fare |
+| TI-03 | Script (Python) che trasforma i dati in tasselli per Unreal | A | 1 | Da fare |
+| TI-04 | Settore pilota 8×8 km (proposta: Locarno–Ascona–Ponte Brolla) | A | 1 | Da fare |
+| TI-05 | Progetto UE5 con World Partition, griglie di streaming, coordinate LV95 | A | 1 | Da fare |
+| TI-06 | Confini cantonali importati e visibili | A | 2 | Da fare |
+| TI-07 | Terreno di tutto il Ticino a 2 m dai dati altimetrici | A | 2 | Da fare |
+| TI-08 | Importazione rete stradale OSM (strade pubbliche percorribili) | B | 1 | Da fare |
+| TI-09 | Generazione strade 3D: larghezza, curve, pendenze, asfalto | B | 1 | Da fare |
+| TI-10 | Incroci, rotatorie, svincoli funzionanti | B | 1 | Da fare |
+| TI-11 | Collegamento di tutte le località; strade che escono dal Ticino finiscono al confine | B | 2 | Da fare |
+| TI-12 | Laghi (Maggiore, Lugano) e fiumi principali | C | 2 | Da fare |
+| TI-13 | Ponti e gallerie (inclusa Mappo-Morettina, diga di Melide) | C | 1 | Da fare |
+| TI-14 | Montagne lontane visibili (terreno lontano / HLOD) | C | 2 | Da fare |
+| TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | Da fare |
+| TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | Da fare |
+| TI-17 | Guardrail, barriere, segnaletica lungo le strade | D | 2 | Da fare |
+| TI-18 | Ottimizzazione streaming e HLOD | E | 1 | Da fare |
+| TI-19 | Test di esplorazione di tutte le regioni | E | 1 | Da fare |
+| TI-20 | Verifica automatica strade e terreno rispetto alle fonti | E | 1 | Da fare |
+| TI-21 | Test multiplayer (server dedicato) | E | 1 | Da fare |
+| TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Da fare |
+
+Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
+
+## Test di accettazione dell'Epic
+
+La mappa **non** è completata finché:
+
+1. Tutto il territorio ticinese previsto è rappresentato (8 regioni).
+2. Le regioni principali sono collegate tra loro.
+3. Le strade importate sono percorribili.
+4. Il terreno segue i dati altimetrici (controllo automatico a campione).
+5. Si esplora senza caricamenti troppo invasivi.
+6. Funziona in multiplayer.
+7. Le prestazioni sono misurate e documentate.
+8. Fonti e licenze sono documentate.
