@@ -1,8 +1,10 @@
 # Crea la release dell'anteprima per Mac e Windows.
 #
-# Parte da sola quando si crea un tag "anteprima-v..." (per esempio anteprima-v0.1.0),
-# oppure a mano da GitHub: Actions -> Release anteprima Ticino -> Run workflow.
+# Parte da sola quando, su "main", cambia la versione in anteprima/package.json
+# (per esempio da 0.1.0 a 0.1.1). Il tag "anteprima-v0.1.1" lo crea GitHub.
+# Si puo' anche avviare a mano: Actions -> Release anteprima Ticino -> Run workflow.
 #
+# 0) "versione": legge la versione e controlla se la release esiste gia'
 # 1) "dati": scarica i dati VERI (swisstopo, OpenStreetMap) ed esegue i passi 1-7
 # 2) "app":  costruisce l'app Electron su un Mac e su un PC Windows
 # 3) "release": pubblica i file nella pagina Releases di GitHub
@@ -11,14 +13,40 @@ name: Release anteprima Ticino
 
 on:
   push:
-    tags: ["anteprima-v*"]
+    branches: [main]
+    paths:
+      - "anteprima/**"
+      - "tools/geo/**"
+      - ".github/workflows/release-anteprima.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  versione:
+    runs-on: ubuntu-latest
+    outputs:
+      numero: ${{ steps.leggi.outputs.numero }}
+      nuova: ${{ steps.leggi.outputs.nuova }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: leggi
+        shell: bash
+        run: |
+          numero=$(node -p "require('./anteprima/package.json').version")
+          echo "numero=$numero" >> $GITHUB_OUTPUT
+          if git ls-remote --exit-code --tags origin "refs/tags/anteprima-v$numero" > /dev/null; then
+            echo "La release anteprima-v$numero esiste gia'"
+            echo "nuova=false" >> $GITHUB_OUTPUT
+          else
+            echo "Nuova release: anteprima-v$numero"
+            echo "nuova=true" >> $GITHUB_OUTPUT
+          fi
+
   dati:
+    needs: versione
+    if: needs.versione.outputs.nuova == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -126,8 +154,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: app
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [versione, app]
+    if: needs.versione.outputs.nuova == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -142,6 +170,8 @@ jobs:
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Anteprima Ticino ${{ github.ref_name }}"
+          tag_name: anteprima-v${{ needs.versione.outputs.numero }}
+          target_commitish: ${{ github.sha }}
+          name: "Anteprima Ticino ${{ needs.versione.outputs.numero }}"
           body_path: anteprima/NOTE_RELEASE.md
           files: uscita/*

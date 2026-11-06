@@ -9,7 +9,7 @@ Le release le crea GitHub da solo: vedi sotto.
 
 ## Come nasce una release
 
-1. Si crea un tag `anteprima-vX.Y.Z` (per esempio `anteprima-v0.1.0`).
+1. Si cambia la versione in `anteprima/package.json` (per esempio da 0.1.0 a 0.1.1) e si fa il push su `main`. Il tag `anteprima-vX.Y.Z` lo crea GitHub.
 2. Il workflow `.github/workflows/release-anteprima.yml`:
    - scarica i dati veri (swisstopo, OpenStreetMap) ed esegue i passi 1–7 di `tools/geo`;
    - costruisce l'app su un Mac e su un PC Windows;
