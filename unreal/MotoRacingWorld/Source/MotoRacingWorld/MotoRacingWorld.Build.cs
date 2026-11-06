@@ -12,7 +12,9 @@ public class MotoRacingWorld : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
-			"EnhancedInput"
+			"EnhancedInput",
+			"ProceduralMeshComponent",
+			"Json"
 		});
 	}
 }

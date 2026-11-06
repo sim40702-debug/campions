@@ -94,3 +94,38 @@ LOW, MEDIUM, HIGH, ULTRA, CINEMATIC = i 5 livelli di scalabilità di Unreal (0�
 - `Content/Python/mrw_crea_livello.py`: crea il livello di partenza con cielo fisico, nuvole volumetriche, nebbia volumetrica, sole, luce del cielo, post-processing con TSR ed esposizione automatica.
 
 Stato: **scritto, non ancora compilato né aperto** (Unreal non è disponibile in questo ambiente).
+
+
+---
+
+## Consegna 2 – prima versione guidabile (scritta, non ancora compilata)
+
+Obiettivo: aprire il progetto e **guidare subito nel Locarnese vero**, con fisica della moto, prima ancora dei modelli 3D definitivi.
+
+| Parte | File | Cosa fa | Stato |
+|---|---|---|---|
+| Terreno e strade | `MRWTerreno.h/.cpp` | Legge `Dati/` (stessi dati dell'anteprima 0.8.0: 16 x 12 km, quote ogni 3.94 m, 2360 strade, 48 foto aeree). Terreno lontano a bassa risoluzione, terreno vicino alla moto a piena risoluzione con collisioni (pezzi da 500 m creati e tolti mentre si guida), strade come nastri con collisioni, lago a 193.3 m | scritto, non compilato |
+| Moto e fisica | `MRWMoto.h/.cpp` | Fisica a una traccia: potenza 55 kW, cambio a 6 marce, freno anteriore/posteriore separati, aderenza asciutto/bagnato/fuori strada, piega fisica (tan piega = aderenza), impennata e stoppie col momento attorno alla ruota, controllo impennata disattivabile, salti, cadute (aderenza, urti, atterraggi, ribaltamento), ripartenza sulla strada | scritto, non compilato |
+| Comandi | `MRWMoto.cpp` | Enhanced Input creato dal codice: tastiera e controller | scritto, non compilato |
+| Telecamere | `MRWMoto.cpp` | Terza persona con ritardo morbido, prima persona nel casco | scritto, non compilato |
+| Interfaccia | `MRWHud.h/.cpp` | Velocità, marcia, giri, piega, impennata, ora e meteo, messaggi | scritto, non compilato |
+| Regole | `MRWGameMode.h/.cpp` | Moto del giocatore, benchmark al primo avvio, preset 1–5 da tastiera | scritto, non compilato |
+| Script | `mrw_scarica_dati.py`, `mrw_crea_livello.py` | Scarica i dati dalla release; crea materiali (foto aerea, asfalto e terreno che si bagnano, lago) e mette il terreno nel livello | scritto, non provato |
+
+Valori della fisica controllati con una simulazione a parte degli stessi calcoli (non è il gioco, serve solo a scegliere i numeri):
+
+| Prova | Risultato |
+|---|---|
+| 0–100 km/h, gas pieno, controllo impennata acceso | 3.2 s, davanti a terra |
+| Velocità massima (limitata dall'aria) | circa 196 km/h |
+| Gas pieno con il peso dietro (Shift) | impennata tenuta a circa 30° |
+| Gas pieno, controllo impennata spento | la moto si ribalta indietro dopo circa 1.3 s (come una moto vera senza elettronica) |
+| Frenata da 100 km/h, freno anteriore al massimo, asciutto | 33 m |
+
+La moto e il pilota per ora sono fatti con forme semplici di Unreal (cilindri e cubi), disegno originale: il modello 3D vero arriva con la fase 3, quando c'è un modello con diritti d'uso verificati.
+
+Limiti noti di questa consegna (da fare nelle prossime):
+- il terreno è una mesh procedurale, non ancora Landscape con World Partition e Nanite (fase 7);
+- le gallerie non hanno ancora pareti e volta (si vedono le strade sotto il terreno);
+- niente edifici, alberi, traffico e audio in Unreal (ci sono nell'anteprima, vanno portati);
+- le foto aeree caricate durante il gioco non hanno mipmap (in lontananza possono sfarfallare).

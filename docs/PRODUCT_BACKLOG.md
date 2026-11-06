@@ -67,6 +67,14 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-35 | Cambio automatico, marce e contagiri | G1 | 2 | Fatto (0.7.0) |
 | TI-36 | Suono del motore | G1 | 2 | Fatto (0.7.0) |
 | TI-37 | Modelli 3D delle moto più curati | G1 | 2 | Fatto (0.7.0) |
+| TI-38 | Piano tecnico Unreal Engine 5 | U1 | 1 | Fatto |
+| TI-39 | Progetto UE 5.8 Windows + Mac (Lumen, Nanite, VSM, TSR) | U1 | 1 | Scritto, da compilare |
+| TI-40 | Giorno/notte e meteo con strade bagnate | U1 | 1 | Scritto, da compilare |
+| TI-41 | 5 preset grafici e benchmark automatico | U1 | 1 | Scritto, da compilare |
+| TI-42 | Terreno, strade e lago del Locarnese in Unreal | U1 | 1 | Scritto, da compilare |
+| TI-43 | Fisica della moto (freni separati, piega, impennata, stoppie, cadute, bagnato) | U1 | 1 | Scritto, da compilare |
+| TI-44 | Comandi, telecamere, interfaccia di guida | U1 | 1 | Scritto, da compilare |
+| TI-45 | Script editor: scarica dati, crea livello e materiali | U1 | 1 | Scritto, da provare |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 
