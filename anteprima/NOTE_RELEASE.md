@@ -3,7 +3,15 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.2.1)
+### Novità di questa versione (0.3.0)
+
+- **Pulsante "Aggiorna"** in alto a destra: controlla su GitHub se c'è una versione nuova, la scarica e la installa.
+  - Mac: sostituisce l'app in Applicazioni e la riavvia (non serve più il comando `xattr`).
+  - Windows: avvia l'installazione della nuova versione (con la versione portatile scarica il nuovo file in Download).
+- All'avvio il gioco controlla da solo: se c'è una versione nuova il pulsante diventa rosso.
+- Questa versione va installata **a mano una volta**: dalle prossime basta il pulsante.
+
+### Novità della 0.2.1
 
 - La telecamera non entra più dentro i muri degli edifici: se dietro la moto c'è un edificio, si avvicina.
 

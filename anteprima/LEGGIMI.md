@@ -36,10 +36,15 @@ Su Windows scrivi `python` al posto di `python3`.
 | File | Cosa fa |
 |---|---|
 | `main.js` | Finestra Electron |
+| `aggiornamenti.js` | Pulsante Aggiorna: controlla, scarica e installa la nuova release |
+| `preload.js` | Collega il pulsante della pagina con Electron |
 | `index.html`, `stile.css` | Pagina e scritte sullo schermo |
 | `src/gioco.js` | Scena, telecamera, tastiera, ciclo del gioco |
 | `src/terreno.js` | Terreno e lago |
 | `src/strade.js` | Strade e ricerca della strada sotto la moto |
 | `src/moto.js` | Modello e guida della moto |
 | `src/interfaccia.js` | Velocità, quota, coordinate, minimappa |
+| `src/edifici.js` | Edifici e collisioni |
+| `src/alberi.js` | Boschi e alberi vicino alla moto |
+| `src/aggiorna.js` | Pulsante e pannello "Aggiorna" |
 | `NOTE_RELEASE.md` | Testo della pagina della release |

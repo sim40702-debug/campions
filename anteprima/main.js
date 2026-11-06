@@ -2,10 +2,11 @@
 // I file del gioco vengono serviti con un indirizzo "app://" invece di "file://":
 // cosi' fetch() e i moduli JavaScript funzionano uguale su Mac e Windows.
 
-const { app, BrowserWindow, protocol, net } = require("electron");
+const { app, BrowserWindow, ipcMain, protocol, net } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
+const aggiornamenti = require("./aggiornamenti.js");
 
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } }
@@ -17,10 +18,38 @@ function creaFinestra() {
     height: 800,
     title: "MOTO RACING WORLD - Anteprima Ticino",
     backgroundColor: "#9cc3e6",
-    autoHideMenuBar: true
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js")
+    }
   });
   finestra.loadURL("app://gioco/index.html");
+  return finestra;
 }
+
+// --- Aggiornamenti (pulsante "Aggiorna" nel gioco) ------------------------------
+let ultimoControllo = null;
+
+ipcMain.handle("versione", function () {
+  return app.getVersion();
+});
+
+ipcMain.handle("controlla-aggiornamenti", async function () {
+  ultimoControllo = await aggiornamenti.controlla();
+  return ultimoControllo;
+});
+
+ipcMain.handle("installa-aggiornamento", async function (evento) {
+  if (ultimoControllo === null || !ultimoControllo.disponibile) {
+    ultimoControllo = await aggiornamenti.controlla();
+  }
+  if (!ultimoControllo.disponibile) {
+    return "nessuno";
+  }
+  return aggiornamenti.installa(ultimoControllo, function (percento) {
+    evento.sender.send("avanzamento-aggiornamento", percento);
+  });
+});
 
 app.whenReady().then(function () {
   protocol.handle("app", async function (richiesta) {

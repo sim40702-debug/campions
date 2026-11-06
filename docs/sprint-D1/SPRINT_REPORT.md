@@ -38,3 +38,10 @@ Gli edifici scartati (circa 300) sono troppo piccoli (meno di 6 m²), hanno il c
 |---|---|
 | 0.2.0 | Edifici, boschi, alberi, parapetti, collisioni |
 | 0.2.1 | Telecamera fuori dai muri (BUG-003) |
+| 0.3.0 | Pulsante "Aggiorna" nell'app (richiesta di Simone, TI-26) |
+
+## Aggiunta durante lo Sprint (richiesta del Product Owner)
+
+Pulsante "Aggiorna" (TI-26): controlla l'ultima release su GitHub, scarica il file giusto per il computer (Mac chip Apple o Intel, Windows installazione o portatile) e lo installa.
+Prove fatte: confronto delle versioni (5 casi), controllo su GitHub e download completo con barra di avanzamento nell'app Electron.
+Non provato qui: la sostituzione dell'app su Mac (`hdiutil` e `ditto` esistono solo su Mac) e l'installer su Windows. Da confermare con il primo aggiornamento vero (0.3.0 -> 0.3.1).

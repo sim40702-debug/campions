@@ -44,8 +44,8 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cosÃ
 | TI-12 | Laghi (Maggiore, Lugano) e fiumi principali | C | 2 | Da fare |
 | TI-13 | Ponti e gallerie (inclusa Mappo-Morettina, diga di Melide) | C | 1 | Da fare |
 | TI-14 | Montagne lontane visibili (terreno lontano / HLOD) | C | 2 | Da fare |
-| TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | In corso (pilota: Sprint D1) |
-| TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | In corso (pilota: Sprint D1) |
+| TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
+| TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
 | TI-17 | Guardrail, barriere, segnaletica lungo le strade | D | 2 | In corso (parapetti ponti nel pilota) |
 | TI-18 | Ottimizzazione streaming e HLOD | E | 1 | Da fare |
 | TI-19 | Test di esplorazione di tutte le regioni | E | 1 | Da fare |
@@ -54,7 +54,8 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cosÃ
 | TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Da fare |
 | TI-23 | Funziona su Mac e su Windows (script, progetto Unreal, gioco finito) | Aâ€“E | 1 | In corso |
 | TI-24 | Anteprima giocabile del pilota (Three.js + Electron), release automatiche su GitHub | A | 1 | Fatto (0.1.0â€“0.1.4) |
-| TI-25 | Collisioni della moto con gli edifici | D | 2 | In corso (Sprint D1) |
+| TI-25 | Collisioni della moto con gli edifici | D | 2 | Fatto (0.2.0) |
+| TI-26 | Pulsante "Aggiorna" nell'app (controlla, scarica e installa da GitHub) | D1 | 1 | Fatto (0.3.0) |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in piÃ¹ Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 
