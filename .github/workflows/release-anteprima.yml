@@ -59,7 +59,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tools/geo/dati/download
-          key: geodati-pilota-v2
+          key: geodati-pilota-v3
 
       - name: Installa le librerie Python
         run: pip install -r tools/geo/requirements.txt

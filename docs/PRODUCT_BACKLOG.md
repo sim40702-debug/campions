@@ -46,7 +46,7 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos√
 | TI-14 | Montagne lontane visibili (terreno lontano / HLOD) | C | 2 | Da fare |
 | TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
 | TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
-| TI-17 | Guardrail, barriere, segnaletica lungo le strade | D | 2 | In corso (parapetti ponti nel pilota) |
+| TI-17 | Guardrail, barriere, segnaletica lungo le strade | D | 2 | Pilota fatto (0.3.1); resto del Ticino da fare |
 | TI-18 | Ottimizzazione streaming e HLOD | E | 1 | Da fare |
 | TI-19 | Test di esplorazione di tutte le regioni | E | 1 | Da fare |
 | TI-20 | Verifica automatica strade e terreno rispetto alle fonti | E | 1 | Da fare |
@@ -56,6 +56,7 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos√
 | TI-24 | Anteprima giocabile del pilota (Three.js + Electron), release automatiche su GitHub | A | 1 | Fatto (0.1.0‚Äì0.1.4) |
 | TI-25 | Collisioni della moto con gli edifici | D | 2 | Fatto (0.2.0) |
 | TI-26 | Pulsante "Aggiorna" nell'app (controlla, scarica e installa da GitHub) | D1 | 1 | Fatto (0.3.0) |
+| TI-27 | Nome della localit√† sullo schermo e paesi sulla minimappa | D2 | 3 | Fatto (0.3.1) |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in pi√π Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 

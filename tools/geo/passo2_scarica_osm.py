@@ -2,7 +2,8 @@
 #
 # - Confine del Canton Ticino e degli 8 distretti (le nostre regioni)
 # - Strade pubbliche asfaltate (decisione D3)
-# - Solo per il pilota: edifici, boschi e alberi (Sprint D1)
+# - Solo per il pilota: edifici, boschi e alberi (Sprint D1),
+#   segnaletica, lampioni, localita' (Sprint D2), fiumi e acqua (Sprint C1)
 #
 # Uso:
 #   python passo2_scarica_osm.py --pilota   (strade solo nel settore pilota)
@@ -61,6 +62,23 @@ def query_verde():
             + ");\nout geom;\n")
 
 
+def query_dettagli():
+    f = filtro_pilota()
+    return ("[out:json][timeout:900];\n(\n"
+            + '  node["highway"~"^(traffic_signals|stop|give_way|street_lamp|crossing)$"]' + f + ";\n"
+            + '  node["place"~"^(city|town|village|suburb|hamlet|neighbourhood|quarter)$"]' + f + ";\n"
+            + ");\nout;\n")
+
+
+def query_acqua():
+    f = filtro_pilota()
+    return ("[out:json][timeout:900];\n(\n"
+            + '  way["natural"="water"]' + f + ";\n"
+            + '  relation["natural"="water"]' + f + ";\n"
+            + '  way["waterway"~"^(river|stream|canal)$"]' + f + ";\n"
+            + ");\nout geom;\n")
+
+
 def main():
     argomenti = utilita.leggi_argomenti("Scarica confini e strade da OpenStreetMap")
     utilita.crea_cartelle()
@@ -87,6 +105,14 @@ def main():
         print("4) Boschi e alberi del pilota...")
         verde = utilita.chiedi_overpass(query_verde(), cartella / "verde_pilota.json")
         print("   Elementi scaricati: " + str(len(verde.get("elements", []))))
+
+        print("5) Segnaletica, lampioni e localita' del pilota...")
+        dettagli = utilita.chiedi_overpass(query_dettagli(), cartella / "dettagli_pilota.json")
+        print("   Elementi scaricati: " + str(len(dettagli.get("elements", []))))
+
+        print("6) Laghi, fiumi e torrenti del pilota...")
+        acqua = utilita.chiedi_overpass(query_acqua(), cartella / "acqua_pilota.json")
+        print("   Elementi scaricati: " + str(len(acqua.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))
 

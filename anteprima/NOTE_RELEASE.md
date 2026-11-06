@@ -3,7 +3,15 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.3.0)
+### Novità di questa versione (0.3.1) – Sprint D2
+
+- **Segnaletica** di OpenStreetMap: semafori, stop, precedenze, sul bordo della strada e girati verso chi arriva.
+- **Lampioni** con il braccio sopra la strada.
+- **Strisce pedonali gialle**, come in Svizzera.
+- **Guardrail** dove la strada ha una scarpata di lato.
+- **Nome della località** sullo schermo (sopra il nome della strada) e **nomi dei paesi** sulla minimappa.
+
+### Novità della 0.3.0
 
 - **Pulsante "Aggiorna"** in alto a destra: controlla su GitHub se c'è una versione nuova, la scarica e la installa.
   - Mac: sostituisce l'app in Applicazioni e la riavvia (non serve più il comando `xattr`).

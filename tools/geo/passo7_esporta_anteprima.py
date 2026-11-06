@@ -10,6 +10,7 @@
 #   edifici.json  contorni degli edifici con quota di base e di tetto (Sprint D1)
 #   bosco.bin     dove c'e' bosco (1) o no (0), stessa griglia del terreno
 #   alberi.json   alberi singoli mappati in OSM
+#   dettagli.json semafori, stop, precedenze, lampioni, strisce, localita' (Sprint D2)
 #
 # Coordinate dell'anteprima (metri), centro = centro del settore pilota:
 #   x verso EST, y verso l'ALTO (quota reale), z verso SUD
@@ -160,6 +161,29 @@ def esporta_verde(percorso, area, zona, punti, passo, centro_est, centro_nord):
     else:
         maschera = np.zeros((punti, punti), dtype=np.uint8)
     return maschera, alberi
+
+
+def esporta_dettagli(percorso, zona, centro_est, centro_nord):
+    # Nodi OSM -> liste di coordinate locali [x, z, x, z, ...] per tipo
+    risultato = {"semafori": [], "stop": [], "precedenza": [], "lampioni": [], "strisce": [], "localita": []}
+    tipi = {"traffic_signals": "semafori", "stop": "stop", "give_way": "precedenza",
+            "street_lamp": "lampioni", "crossing": "strisce"}
+    for elemento in utilita.leggi_json(percorso).get("elements", []):
+        if elemento.get("type") != "node":
+            continue
+        e, n = utilita.DA_WGS84_A_LV95.transform(elemento["lon"], elemento["lat"])
+        if not zona.contains(Point(e, n)):
+            continue
+        x = round(e - centro_est, 1)
+        z = round(-(n - centro_nord), 1)
+        tag = elemento.get("tags", {})
+        if "place" in tag and tag.get("name"):
+            risultato["localita"].append({"n": tag["name"], "t": tag["place"], "x": x, "z": z})
+        elif tag.get("highway") in tipi:
+            lista = risultato[tipi[tag["highway"]]]
+            lista.append(x)
+            lista.append(z)
+    return risultato
 
 
 def larghezza_strada(tag):
@@ -355,6 +379,19 @@ def main():
         print("   Bosco: " + str(round(superficie, 1)) + " km2, alberi singoli: " + str(len(alberi) // 2))
     else:
         print("   Manca verde_pilota.json (passo 2): niente boschi")
+
+    print("5) Segnaletica, lampioni e localita'...")
+    percorso_dettagli = config.CARTELLA_DOWNLOAD / "osm" / "dettagli_pilota.json"
+    if percorso_dettagli.exists():
+        dettagli = esporta_dettagli(percorso_dettagli, zona, centro_est, centro_nord)
+        dettagli["fonte"] = "(c) OpenStreetMap contributors, ODbL"
+        with open(CARTELLA_ANTEPRIMA / "dettagli.json", "w", encoding="utf-8") as file:
+            json.dump(dettagli, file, ensure_ascii=False, separators=(",", ":"))
+        for chiave in ["semafori", "stop", "precedenza", "lampioni", "strisce"]:
+            print("   " + chiave + ": " + str(len(dettagli[chiave]) // 2))
+        print("   localita': " + str(len(dettagli["localita"])))
+    else:
+        print("   Manca dettagli_pilota.json (passo 2)")
 
     print("Fatto. File in: " + str(CARTELLA_ANTEPRIMA))
 

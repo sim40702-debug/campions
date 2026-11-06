@@ -2,6 +2,7 @@
 // le disegna come nastri di asfalto e permette di sapere "su che strada sono".
 
 import * as THREE from "three";
+import { quotaTerreno } from "./terreno.js";
 
 const CELLA = 40;   // griglia di ricerca: celle da 40 x 40 m
 
@@ -105,11 +106,51 @@ function aggiungiParapetti(p, larghezza, posizioni, indici) {
   }
 }
 
-export function aggiungiStrade(strade, scena) {
+// Guardrail: dove a lato della strada il terreno scende di piu' di 1.5 m
+const TIPI_CON_GUARDRAIL = ["motorway", "trunk", "primary", "secondary", "tertiary", "unclassified",
+  "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link"];
+
+function aggiungiGuardrail(strada, terreno, nastro, paletti) {
+  const p = strada.p;
+  const punti = p.length / 3;
+  for (const lato of [-1, 1]) {
+    let prima = null;   // ultimo punto con guardrail
+    for (let i = 0; i < punti; i++) {
+      const a = Math.max(i - 1, 0) * 3;
+      const b = Math.min(i + 1, punti - 1) * 3;
+      let dx = p[b] - p[a];
+      let dz = p[b + 2] - p[a + 2];
+      const lunghezza = Math.hypot(dx, dz) || 1;
+      dx = dx / lunghezza;
+      dz = dz / lunghezza;
+      const distanza = strada.w / 2 + 0.4;
+      const x = p[i * 3] - dz * lato * distanza;
+      const z = p[i * 3 + 2] + dx * lato * distanza;
+      const y = p[i * 3 + 1];
+      const fuori = quotaTerreno(terreno, p[i * 3] - dz * lato * (distanza + 2), p[i * 3 + 2] + dx * lato * (distanza + 2));
+      if (y - fuori > 1.5) {
+        if (prima !== null) {
+          const primo = nastro.posizioni.length / 3;
+          nastro.posizioni.push(prima.x, prima.y + 0.5, prima.z, prima.x, prima.y + 0.8, prima.z,
+                                x, y + 0.5, z, x, y + 0.8, z);
+          nastro.indici.push(primo, primo + 2, primo + 1, primo + 1, primo + 2, primo + 3);
+        }
+        paletti.push(x, y, z);
+        prima = { x: x, y: y, z: z };
+      } else {
+        prima = null;
+      }
+    }
+  }
+}
+
+export function aggiungiStrade(strade, scena, terreno) {
   const asfalto = { posizioni: [], indici: [] };
   const righe = { posizioni: [], indici: [] };
   const gallerie = { posizioni: [], indici: [] };
   const parapetti = { posizioni: [], indici: [] };
+  const guardrail = { posizioni: [], indici: [] };
+  const paletti = [];
 
   for (const strada of strade.lista) {
     const gruppo = strada.g ? gallerie : asfalto;
@@ -119,9 +160,25 @@ export function aggiungiStrade(strade, scena) {
     }
     if (strada.b) {
       aggiungiParapetti(strada.p, strada.w, parapetti.posizioni, parapetti.indici);
+    } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
+      aggiungiGuardrail(strada, terreno, guardrail, paletti);
     }
   }
   scena.add(creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0));
+  scena.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
+
+  // Paletti del guardrail: tutti insieme in una "InstancedMesh" (veloce)
+  if (paletti.length > 0) {
+    const forma = new THREE.BoxGeometry(0.12, 0.8, 0.12);
+    forma.translate(0, 0.4, 0);
+    const istanze = new THREE.InstancedMesh(forma, new THREE.MeshLambertMaterial({ color: 0x8d9096 }), paletti.length / 3);
+    const matrice = new THREE.Matrix4();
+    for (let i = 0; i < paletti.length; i += 3) {
+      matrice.makeTranslation(paletti[i], paletti[i + 1], paletti[i + 2]);
+      istanze.setMatrixAt(i / 3, matrice);
+    }
+    scena.add(istanze);
+  }
 
   scena.add(creaMesh(asfalto.posizioni, asfalto.indici, 0x4f5157, -2));
   scena.add(creaMesh(gallerie.posizioni, gallerie.indici, 0x6b5a3a, -2));
@@ -184,6 +241,44 @@ export function puntoStradaVicino(strade, x, z) {
       if (distanza < distanzaMigliore) {
         distanzaMigliore = distanza;
         migliore = { x: p[i], y: p[i + 1], z: p[i + 2], dx: p[i + 3] - p[i], dz: p[i + 5] - p[i + 2] };
+      }
+    }
+  }
+  return migliore;
+}
+
+// Strada piu' vicina entro "raggio" metri: punto sulla strada, direzione e larghezza
+// (serve per mettere cartelli e strisce nel posto giusto)
+export function stradaVicina(strade, x, z, raggio) {
+  const celle = Math.ceil(raggio / CELLA);
+  const cx = Math.floor(x / CELLA);
+  const cz = Math.floor(z / CELLA);
+  let migliore = null;
+  for (let ix = cx - celle; ix <= cx + celle; ix++) {
+    for (let iz = cz - celle; iz <= cz + celle; iz++) {
+      const pezzi = strade.griglia.get(ix + "," + iz);
+      if (!pezzi) continue;
+      for (const [s, i] of pezzi) {
+        const strada = strade.lista[s];
+        const p = strada.p;
+        const ax = p[i], az = p[i + 2], bx = p[i + 3], bz = p[i + 5];
+        const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+        let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
+        t = Math.min(Math.max(t, 0), 1);
+        const px = ax + (bx - ax) * t;
+        const pz = az + (bz - az) * t;
+        const distanza = Math.hypot(x - px, z - pz);
+        if (distanza > raggio || (migliore !== null && distanza >= migliore.distanza)) continue;
+        const lunghezza = Math.sqrt(lungo) || 1;
+        migliore = {
+          x: px, z: pz,
+          y: p[i + 1] + (p[i + 4] - p[i + 1]) * t,
+          dirX: (bx - ax) / lunghezza,
+          dirZ: (bz - az) / lunghezza,
+          larghezza: strada.w,
+          distanza: distanza,
+          galleria: strada.g
+        };
       }
     }
   }

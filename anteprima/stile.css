@@ -44,6 +44,13 @@ canvas {
   font-size: 18px;
 }
 
+#localita {
+  font-size: 15px;
+  color: #ffd75a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 #strada {
   font-size: 20px;
   margin-bottom: 4px;

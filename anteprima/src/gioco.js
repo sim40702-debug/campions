@@ -7,6 +7,7 @@ import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
+import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
@@ -122,12 +123,16 @@ async function avvia() {
 
     mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
-    aggiungiStrade(strade, scena);
-    preparaMinimappa(strade, terreno);
+    aggiungiStrade(strade, scena, terreno);
 
     mostraStato("Caricamento degli edifici (OpenStreetMap)...");
     const edifici = await caricaEdifici();
     aggiungiEdifici(edifici, scena);
+
+    mostraStato("Segnaletica e lampioni...");
+    const dettagli = await caricaDettagli();
+    aggiungiDettagli(dettagli, scena, terreno, strade);
+    preparaMinimappa(strade, terreno, dettagli.localita);
 
     mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
@@ -150,7 +155,7 @@ async function avvia() {
       aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
       aggiornaAlberi(alberi, moto.x, moto.z, dt);
       aggiornaTelecamera(moto, terreno, edifici, dt);
-      aggiornaInterfaccia(moto, terreno);
+      aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);
       requestAnimationFrame(ciclo);
     }

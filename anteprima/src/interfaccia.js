@@ -1,6 +1,7 @@
 // Scritte sullo schermo (velocita', quota, coordinate) e minimappa.
 
 const elVelocita = document.getElementById("velocita");
+const elLocalita = document.getElementById("localita");
 const elStrada = document.getElementById("strada");
 const elQuota = document.getElementById("quota");
 const elCoordinate = document.getElementById("coordinate");
@@ -12,7 +13,7 @@ let scala = 1;
 let mezzoLato = 1;
 
 // Disegna una volta sola tutte le strade in un'immagine di sfondo
-export function preparaMinimappa(strade, terreno) {
+export function preparaMinimappa(strade, terreno, localita) {
   mezzoLato = terreno.meta;
   scala = minimappa.width / (terreno.meta * 2);
   sfondoMinimappa = document.createElement("canvas");
@@ -35,9 +36,23 @@ export function preparaMinimappa(strade, terreno) {
     }
     p2.stroke();
   }
+  // Nomi dei paesi (solo citta' e villaggi, non i quartieri)
+  p2.font = "bold 10px Arial";
+  p2.textAlign = "center";
+  for (const l of localita || []) {
+    if (l.t !== "town" && l.t !== "city" && l.t !== "village") continue;
+    const x = (l.x + mezzoLato) * scala;
+    const y = (l.z + mezzoLato) * scala;
+    p2.lineWidth = 3;
+    p2.strokeStyle = "rgba(20, 30, 40, 0.9)";
+    p2.strokeText(l.n, x, y);
+    p2.fillStyle = "#ffd75a";
+    p2.fillText(l.n, x, y);
+  }
 }
 
-export function aggiornaInterfaccia(moto, terreno) {
+export function aggiornaInterfaccia(moto, terreno, localita) {
+  elLocalita.textContent = localita;
   elVelocita.innerHTML = Math.round(Math.abs(moto.velocita) * 3.6) + " <small>km/h</small>";
   if (moto.suStrada) {
     elStrada.textContent = moto.nomeStrada || "Strada senza nome";
