@@ -60,6 +60,8 @@ unreal/MotoRacingWorld/
 
 LOW, MEDIUM, HIGH, ULTRA, CINEMATIC = i 5 livelli di scalabilità di Unreal (0–4). In più: risoluzione, V-Sync, limite FPS, anti-aliasing, ombre, texture, riflessi, effetti, post-processing. Rilevamento automatico dell'hardware (benchmark di Unreal) e proposta del preset; 4K solo se il benchmark lo permette.
 
+**PC di prova di Simone:** i5 12 core, 16 GB RAM, RTX 3060 Ti (8 GB). Obiettivo: HIGH a 1440p o ULTRA a 1080p a 60 FPS, con TSR. In ULTRA e CINEMATIC Lumen usa il ray tracing hardware (file `Config/DefaultScalability.ini`); sul Mac resta sempre software. 16 GB di RAM sono il minimo per l'editor: chiudere gli altri programmi durante compilazione e shader.
+
 ---
 
 ## Le fasi (ordine delle priorità del documento)
