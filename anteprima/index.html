@@ -17,7 +17,9 @@
   </div>
 
   <div id="hud">
-    <div id="velocita">0 <small>km/h</small></div>
+    <div id="nomeMoto"></div>
+    <div id="contagiri"><div id="giriBarra"></div></div>
+    <div id="velocita">0 <small>km/h</small><span id="marcia">1</span></div>
     <div id="localita"></div>
     <div id="strada"></div>
     <div id="quota"></div>
@@ -27,10 +29,11 @@
   <canvas id="minimappa" width="220" height="220"></canvas>
 
   <div id="aiuto">
-    Frecce o WASD: guida &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; F: FPS &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; H: nascondi aiuto
+    Frecce o WASD: guida &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; F: FPS &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; H: nascondi aiuto
   </div>
 
   <div id="aggiorna">
+    <button id="pulsanteGarage">Garage</button>
     <button id="pulsanteMenu">Impostazioni</button>
     <button id="pulsanteAggiorna">Aggiorna</button>
     <div id="pannelloAggiorna">
@@ -48,6 +51,13 @@
     <button id="avviaTest">Test prestazioni (40 s)</button>
     <button id="chiudiMenu">Chiudi</button>
     <p class="piccolo">Tasti: F = FPS · Esc = questo menu</p>
+  </div>
+
+  <div id="garage" class="finestra">
+    <h2>Garage</h2>
+    <div id="listaMoto"></div>
+    <button id="chiudiGarage">Chiudi</button>
+    <p class="piccolo">Clicca su una moto per sceglierla. Tasti: G = garage · M = suono sì/no</p>
   </div>
 
   <div id="risultatoTest" class="finestra">

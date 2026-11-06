@@ -209,3 +209,93 @@ canvas {
   top: 100px;
   color: #ffd75a;
 }
+
+#nomeMoto {
+  font-size: 13px;
+  color: #d8dde5;
+}
+
+#contagiri {
+  width: 220px;
+  height: 8px;
+  margin: 4px 0 2px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#giriBarra {
+  width: 0%;
+  height: 100%;
+  border-radius: 4px;
+  background: #7dff9a;
+}
+
+#marcia {
+  display: inline-block;
+  margin-left: 14px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 34px;
+  vertical-align: middle;
+}
+
+#listaMoto {
+  display: grid;
+  grid-template-columns: repeat(3, 230px);
+  gap: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.schedaMoto {
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #2a3442;
+  cursor: pointer;
+}
+
+.schedaMoto:hover {
+  border-color: #6c7a8c;
+}
+
+.schedaMoto.scelta {
+  border-color: #e8323c;
+}
+
+.schedaMoto h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.schedaMoto p {
+  margin: 2px 0;
+  font-size: 12px;
+  color: #b8c0cc;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.barra span {
+  width: 90px;
+}
+
+.barra div {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #445;
+}
+
+.barra i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: #e8323c;
+}

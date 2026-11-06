@@ -3,6 +3,9 @@
 const elVelocita = document.getElementById("velocita");
 const elLocalita = document.getElementById("localita");
 const elStrada = document.getElementById("strada");
+const elMarcia = document.getElementById("marcia");
+const elGiri = document.getElementById("giriBarra");
+const elNomeMoto = document.getElementById("nomeMoto");
 const elQuota = document.getElementById("quota");
 const elCoordinate = document.getElementById("coordinate");
 const minimappa = document.getElementById("minimappa");
@@ -73,6 +76,13 @@ export function preparaMinimappa(strade, terreno, localita, trasporti) {
 export function aggiornaInterfaccia(moto, terreno, localita) {
   elLocalita.textContent = localita;
   elVelocita.innerHTML = Math.round(Math.abs(moto.velocita) * 3.6) + " <small>km/h</small>";
+  // Marcia e contagiri (rosso vicino al limitatore)
+  const s = moto.scheda;
+  elMarcia.textContent = moto.velocita < -0.3 ? "R" : (s.marce.length === 1 ? "A" : moto.marcia);
+  const quota = (moto.giri - s.minimo) / (s.limitatore - s.minimo);
+  elGiri.style.width = Math.round(Math.min(1, Math.max(0, quota)) * 100) + "%";
+  elGiri.style.background = quota > 0.85 ? "#e8323c" : "#7dff9a";
+  elNomeMoto.textContent = s.nome + " · " + Math.round(moto.giri / 100) * 100 + " giri/min";
   if (moto.suStrada) {
     elStrada.textContent = moto.nomeStrada || "Strada senza nome";
   } else {

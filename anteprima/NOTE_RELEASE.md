@@ -3,7 +3,15 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.6.1)
+### Novità di questa versione (0.7.0) – Sprint G1
+
+- **Garage** (tasto G o pulsante "Garage"): 5 moto originali con prestazioni diverse:
+  MRW SM 690 (supermotard), MRW Naked 890, MRW Sport 1000 RR (sportiva), MRW Enduro 450, MRW Scooter 125.
+- **Marce e contagiri** (cambio automatico).
+- **Suono del motore** che segue i giri (tasto M per spegnerlo).
+- Moto più curate: ruote con razze e dischi, forcella che sterza, ruote che girano, piega in curva realistica.
+
+### Novità della 0.6.1
 
 - Funicolare: i 18 pezzi di OpenStreetMap ora sono uniti in un solo percorso con le sue due vetture.
 - Download più sicuro: se il server di OpenStreetMap non risponde se ne usa un altro.
@@ -91,6 +99,8 @@ Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comu
 - Frecce o **WASD**: guida
 - **C**: cambia telecamera (dietro, alta, casco)
 - **R**: torna sulla strada più vicina
+- **G**: garage (scegli la moto)
+- **M**: suono sì/no
 - **F**: mostra gli FPS
 - **Esc**: impostazioni
 - **H**: nasconde l'aiuto

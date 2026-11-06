@@ -62,6 +62,11 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-30 | Ferrovie (massicciata e binari) | F1 | 2 | Fatto (0.6.0) |
 | TI-31 | Chiese (tetto a due falde) e campanili (guglia) | F1 | 3 | Fatto (0.6.0) |
 | TI-32 | Tetti a due falde e a padiglione per le case | F1 | 3 | Fatto (0.6.0) |
+| TI-33 | Garage con 5 moto originali | G1 | 1 | Fatto (0.7.0) |
+| TI-34 | Prestazioni diverse per moto | G1 | 1 | Fatto (0.7.0) |
+| TI-35 | Cambio automatico, marce e contagiri | G1 | 2 | Fatto (0.7.0) |
+| TI-36 | Suono del motore | G1 | 2 | Fatto (0.7.0) |
+| TI-37 | Modelli 3D delle moto più curati | G1 | 2 | Fatto (0.7.0) |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 

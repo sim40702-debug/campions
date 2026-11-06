@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
+import { motoSalvata, preparaGarage } from "./garage.js";
+import { aggiornaSuono } from "./audio.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -158,7 +160,7 @@ async function avvia() {
     mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
 
-    const moto = creaMoto(scena);
+    const moto = creaMoto(scena, motoSalvata());
     const partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
@@ -172,6 +174,7 @@ async function avvia() {
       avviaTest(test);
     });
     preparaRisultato();
+    preparaGarage(moto);
 
     nascondiCaricamento();
     const orologio = new THREE.Clock();
@@ -195,6 +198,7 @@ async function avvia() {
       }
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);
+      aggiornaSuono(moto, test.attivo);
       aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);
