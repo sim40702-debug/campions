@@ -3,7 +3,12 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.6.0) – Sprint F1
+### Novità di questa versione (0.6.1)
+
+- Funicolare: i 18 pezzi di OpenStreetMap ora sono uniti in un solo percorso con le sue due vetture.
+- Download più sicuro: se il server di OpenStreetMap non risponde se ne usa un altro.
+
+### Novità della 0.6.0 – Sprint F1
 
 **Correzioni**
 - Niente più **erba sulle strade**: il terreno sotto strade e binari viene spianato.

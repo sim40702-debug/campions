@@ -71,10 +71,53 @@ function vettoriDa(p, passo) {
   return punti;
 }
 
+// Unisce i pezzi di una linea (in OSM spesso e' divisa in tanti tratti) in catene continue
+function unisciPezzi(pezzi) {
+  const rimasti = pezzi.map(function (p) { return p.slice(); });
+  const catene = [];
+  while (rimasti.length > 0) {
+    let catena = rimasti.shift();
+    let aggiunto = true;
+    while (aggiunto) {
+      aggiunto = false;
+      for (let i = 0; i < rimasti.length; i++) {
+        const pezzo = rimasti[i];
+        const inizio = catena[0], fine = catena[catena.length - 1];
+        if (fine.distanceTo(pezzo[0]) < 1.5) catena = catena.concat(pezzo.slice(1));
+        else if (fine.distanceTo(pezzo[pezzo.length - 1]) < 1.5) catena = catena.concat(pezzo.slice().reverse().slice(1));
+        else if (inizio.distanceTo(pezzo[pezzo.length - 1]) < 1.5) catena = pezzo.slice(0, -1).concat(catena);
+        else if (inizio.distanceTo(pezzo[0]) < 1.5) catena = pezzo.slice().reverse().slice(0, -1).concat(catena);
+        else continue;
+        rimasti.splice(i, 1);
+        aggiunto = true;
+        break;
+      }
+    }
+    catene.push(catena);
+  }
+  return catene;
+}
+
 // --- Ferrovie e funicolari -----------------------------------------------------
 function aggiungiFerrovie(ferrovie, scena, mobili) {
   const massicciata = [];
   const rotaie = [];
+
+  // Funicolari: tutti i pezzi (anche quelli in galleria) uniti, poi due vetture per linea
+  const pezziFunicolare = ferrovie.filter(function (f) { return f.t === "funicular"; })
+    .map(function (f) { return vettoriDa(f.p, 3); })
+    .filter(function (punti) { return punti.length >= 2; });
+  for (const catena of unisciPezzi(pezziFunicolare)) {
+    const percorso = creaPercorso(catena.map(function (v) { return v.clone().setY(v.y + 1.4); }));
+    if (percorso.totale < 50) continue;
+    for (let k = 0; k < 2; k++) {
+      const vettura = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 9),
+        new THREE.MeshLambertMaterial({ color: k === 0 ? 0xc8232c : 0xf0f0f0 }));
+      scena.add(vettura);
+      mobili.push({ tipo: "funicolare", oggetto: vettura, percorso: percorso, fase: k * 0.5, velocita: 4 });
+    }
+  }
+
   for (const f of ferrovie) {
     if (f.g) continue;   // in galleria non si vede
     const punti = vettoriDa(f.p, 3);
@@ -83,16 +126,6 @@ function aggiungiFerrovie(ferrovie, scena, mobili) {
     nastro(massicciata, punti, 3.2, 0, 0);
     nastro(rotaie, punti, 0.08, -scartamento, 0.15);
     nastro(rotaie, punti, 0.08, scartamento, 0.15);
-    if (f.t === "funicular") {
-      // due vetture che si incrociano a meta' percorso
-      const percorso = creaPercorso(punti.map(function (v) { return v.clone().setY(v.y + 1.4); }));
-      for (let k = 0; k < 2; k++) {
-        const vettura = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 9),
-          new THREE.MeshLambertMaterial({ color: k === 0 ? 0xc8232c : 0xf0f0f0 }));
-        scena.add(vettura);
-        mobili.push({ tipo: "funicolare", oggetto: vettura, percorso: percorso, fase: k * 0.5, velocita: 4 });
-      }
-    }
   }
   if (massicciata.length > 0) scena.add(mesh(massicciata, 0x7a7065, -3));
   if (rotaie.length > 0) scena.add(mesh(rotaie, 0x3c3c3c, -5));
