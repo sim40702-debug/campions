@@ -3,7 +3,11 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.2.0) – Sprint D1
+### Novità di questa versione (0.2.1)
+
+- La telecamera non entra più dentro i muri degli edifici: se dietro la moto c'è un edificio, si avvicina.
+
+### Novità della 0.2.0 – Sprint D1
 
 - **Edifici veri** di OpenStreetMap: case, palazzi, chiese, capannoni, con l'altezza presa da OSM (piani o altezza) o stimata dal tipo di edificio.
 - **Boschi**: gli alberi compaiono vicino alla moto (latifoglie in basso, abeti sopra i 1'100 m); da lontano il bosco si vede dal colore verde scuro del terreno.

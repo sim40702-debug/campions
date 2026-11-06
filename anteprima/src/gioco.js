@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
-import { caricaEdifici, aggiungiEdifici } from "./edifici.js";
+import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 
@@ -64,7 +64,7 @@ window.addEventListener("keyup", function (evento) {
 });
 
 // --- Telecamera che segue la moto ---------------------------------------------
-function aggiornaTelecamera(moto, terreno, dt) {
+function aggiornaTelecamera(moto, terreno, edifici, dt) {
   const dirX = -Math.sin(moto.angolo);
   const dirZ = -Math.cos(moto.angolo);
   let dietro = 7;
@@ -84,7 +84,25 @@ function aggiornaTelecamera(moto, terreno, dt) {
   const obiettivo = new THREE.Vector3(moto.x - dirX * dietro, moto.y + alto, moto.z - dirZ * dietro);
   // La telecamera non deve finire sotto il terreno
   obiettivo.y = Math.max(obiettivo.y, quotaTerreno(terreno, obiettivo.x, obiettivo.z) + 1.5);
-  telecamera.position.lerp(obiettivo, 1 - Math.exp(-dt * 5));
+
+  // ...e nemmeno dentro un edificio: se tra la moto e la telecamera c'e' un muro,
+  // la telecamera si ferma prima del muro
+  const testa = new THREE.Vector3(moto.x, moto.y + 1.6, moto.z);
+  const punto = new THREE.Vector3();
+  let bloccata = false;
+  for (let passo = 1; passo <= 20; passo++) {
+    punto.lerpVectors(testa, obiettivo, passo / 20);
+    if (dentroEdificio(edifici, punto.x, punto.z, punto.y)) {
+      obiettivo.lerpVectors(testa, obiettivo, Math.max(0, (passo - 1.5) / 20));
+      bloccata = true;
+      break;
+    }
+  }
+  if (bloccata) {
+    telecamera.position.copy(obiettivo);
+  } else {
+    telecamera.position.lerp(obiettivo, 1 - Math.exp(-dt * 5));
+  }
   telecamera.lookAt(moto.x + dirX * 4, moto.y + 1.2, moto.z + dirZ * 4);
 }
 
@@ -131,7 +149,7 @@ async function avvia() {
       }
       aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
       aggiornaAlberi(alberi, moto.x, moto.z, dt);
-      aggiornaTelecamera(moto, terreno, dt);
+      aggiornaTelecamera(moto, terreno, edifici, dt);
       aggiornaInterfaccia(moto, terreno);
       disegnatore.render(scena, telecamera);
       requestAnimationFrame(ciclo);
