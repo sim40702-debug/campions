@@ -134,6 +134,11 @@ jobs:
           cache: npm
           cache-dependency-path: anteprima/package-lock.json
 
+      - name: Controlla i dati scaricati
+        shell: bash
+        run: |
+          echo "::warning::dati prima della build (${{ matrix.nome }}): $(ls anteprima/dati 2>&1 | tr '\n' ' ')"
+
       - name: Installa
         working-directory: anteprima
         run: npm ci
@@ -147,7 +152,9 @@ jobs:
       - name: Controlla che i dati siano dentro l'app
         shell: bash
         run: |
-          trovati=$(find dist -name terreno.bin -path "*app/dati/*" | tee /dev/stderr | wc -l)
+          echo "::warning::cartelle in dist (${{ matrix.nome }}): $(find dist -maxdepth 5 -type d -name app -o -maxdepth 5 -type d -name '*.app' | tr '\n' ' ')"
+          echo "::warning::contenuto app (${{ matrix.nome }}): $(find dist -maxdepth 6 -path '*app/*' -maxdepth 6 | grep -v node_modules | head -20 | tr '\n' ' ')"
+          trovati=$(find dist -name terreno.bin -path "*app/dati/*" | wc -l)
           if [ "$trovati" -eq 0 ]; then
             echo "ERRORE: nell'app mancano i dati (dati/terreno.bin)"
             exit 1
