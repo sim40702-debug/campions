@@ -134,7 +134,7 @@ def scatola(nome, centro, misure, gruppo, mat, smussa=0.01, rotazione=(0, 0, 0))
     return metti(oggetto, gruppo, mat)
 
 
-def pannello(nome, profilo, y0, y1, gruppo, mat, smussa=0.012, suddividi=1):
+def pannello(nome, profilo, y0, y1, gruppo, mat, smussa=0.012, suddividi=2):
     # Pannello di plastica: forma vista di lato (punti X, Z) spessa da y0 a y1
     mesh = bpy.data.meshes.new(nome)
     bm = bmesh.new()
@@ -259,6 +259,7 @@ def costruisci():
         y = 0.105 * lato
         tubo("Forcellone_" + str(lato), [(0.0, y, RAGGIO_RUOTA), (0.3, y, 0.37), (perno.x, y * 0.8, perno.z)], 0.028, "Forcellone", ALLUMINIO)
         scatola("TendiCatena_" + str(lato), (0.0, y, RAGGIO_RUOTA), (0.06, 0.02, 0.05), "Forcellone", ALLUMINIO)
+    scatola("PinzaDietro", (0.08, -0.075, RAGGIO_RUOTA + 0.05), (0.07, 0.03, 0.06), "Forcellone", NERO_LUCIDO, 0.01)
     cilindro("PernoForcellone", (perno.x, -0.12, perno.z), (perno.x, 0.12, perno.z), 0.018, "Forcellone", ACCIAIO)
     cilindro("CoronaPosteriore", (0, -0.085, RAGGIO_RUOTA), (0, -0.08, RAGGIO_RUOTA), 0.105, "Forcellone", ALLUMINIO, lati=48)
     for alto, basso in [(1, 0)]:
@@ -276,11 +277,26 @@ def costruisci():
         tubo("TelaiettoSotto_" + str(lato), [(0.6, y * 1.3, 0.5), (0.25, y * 1.4, 0.72), (0.0, y * 1.1, 0.88)], 0.011, "Telaio", NERO_LUCIDO)
 
     # --- Motore monocilindrico
-    scatola("Basamento", (0.83, 0.0, 0.36), (0.3, 0.22, 0.24), "Telaio", MOTORE, 0.03)
+    scatola("Basamento", (0.83, 0.0, 0.36), (0.3, 0.2, 0.24), "Telaio", MOTORE, 0.06)
+    # coperchi rotondi sui due lati, con le viti
+    for lato in (1, -1):
+        cilindro("CoperchioRotondo_" + str(lato), (0.78, 0.1 * lato, 0.34), (0.78, 0.125 * lato, 0.34), 0.11, "Telaio", MOTORE, lati=48)
+        for i in range(8):
+            a = i / 8 * math.tau
+            cilindro("Vite_" + str(lato) + "_" + str(i), (0.78 + math.cos(a) * 0.095, 0.124 * lato, 0.34 + math.sin(a) * 0.095),
+                     (0.78 + math.cos(a) * 0.095, 0.132 * lato, 0.34 + math.sin(a) * 0.095), 0.008, "Telaio", ALLUMINIO, lati=6)
+    # tubi del liquido dal radiatore al motore e cavo della candela
+    for lato in (1, -1):
+        tubo("TuboAcqua_" + str(lato), [(1.02, 0.08 * lato, 0.62), (0.98, 0.07 * lato, 0.5), (0.9, 0.06 * lato, 0.46)], 0.012, "Telaio", NERO)
+    tubo("CavoCandela", [(0.95, 0.06, 0.78), (0.9, 0.1, 0.84), (0.8, 0.09, 0.86)], 0.006, "Telaio", NERO)
+    cilindro("Corpofarfallato", (0.86, -0.02, 0.7), (0.74, -0.02, 0.74), 0.03, "Telaio", ALLUMINIO)
+    tubo("CavoGas", [(0.74, -0.02, 0.74), (0.9, -0.05, 0.95), (1.1, -0.15, 1.08)], 0.004, "Telaio", NERO)
     scatola("Cilindro", (0.9, 0.0, 0.6), (0.14, 0.15, 0.24), "Telaio", MOTORE, 0.02, rotazione=(0, math.radians(-12), 0))
     for i in range(6):   # alette del cilindro
         scatola("Aletta" + str(i), (0.905 - i * 0.004, 0.0, 0.52 + i * 0.03), (0.16, 0.17, 0.008), "Telaio", MOTORE, 0.002, rotazione=(0, math.radians(-12), 0))
-    scatola("Testata", (0.93, 0.0, 0.75), (0.17, 0.16, 0.09), "Telaio", NERO, 0.02, rotazione=(0, math.radians(-12), 0))
+    scatola("Testata", (0.93, 0.0, 0.75), (0.17, 0.16, 0.09), "Telaio", NERO, 0.03, rotazione=(0, math.radians(-12), 0))
+    for i, (dx, dy) in enumerate([(-0.06, 0.06), (0.06, 0.06), (-0.06, -0.06), (0.06, -0.06)]):
+        cilindro("ViteTestata" + str(i), (0.93 + dx, dy, 0.79), (0.93 + dx, dy, 0.805), 0.008, "Telaio", ALLUMINIO, lati=6)
     cilindro("CoperchioFrizione", (0.82, 0.11, 0.36), (0.82, 0.135, 0.36), 0.1, "Telaio", MOTORE, lati=48)
     cilindro("CoperchioAlternatore", (0.8, -0.11, 0.37), (0.8, -0.13, 0.37), 0.085, "Telaio", NERO_LUCIDO, lati=48)
     cilindro("PignoneCatena", (0.68, -0.085, 0.415), (0.68, -0.08, 0.415), 0.04, "Telaio", ACCIAIO, lati=24)
@@ -289,6 +305,9 @@ def costruisci():
     # --- Radiatori ai lati del telaio
     for lato in (1, -1):
         scatola("Radiatore_" + str(lato), (1.03, 0.1 * lato, 0.72), (0.06, 0.03, 0.26), "Telaio", NERO, 0.006, rotazione=(0, math.radians(-15), 0))
+        for i in range(10):   # griglia del radiatore
+            scatola("Griglia_" + str(lato) + "_" + str(i), (1.03 + 0.003 * (i - 5), 0.117 * lato, 0.61 + i * 0.024), (0.065, 0.004, 0.006),
+                    "Telaio", ALLUMINIO, 0.001, rotazione=(0, math.radians(-15), 0))
 
     # --- Ammortizzatore posteriore con molla oro
     cilindro("Ammortizzatore", (0.56, 0.0, 0.48), (0.7, 0.0, 0.84), 0.022, "Telaio", NERO_LUCIDO)
@@ -319,6 +338,10 @@ def costruisci():
     pannello("CodoneSopra", [(-0.36, 1.0), (0.3, 0.93), (0.28, 0.9), (-0.32, 0.97)], -0.11, 0.11, "Telaio", ROSSO, smussa=0.01)
     sella = [(0.15, 0.955), (0.85, 0.975), (0.98, 0.99), (0.98, 0.94), (0.2, 0.9)]
     pannello("Sella", sella, -0.125, 0.125, "Telaio", SELLA, smussa=0.035)
+    CUCITURA = materiale("Cucitura", (0.25, 0.25, 0.26), 0.0, 0.7)
+    for lato in (1, -1):
+        tubo("Cucitura_" + str(lato), [(0.2, 0.105 * lato, 0.95), (0.55, 0.108 * lato, 0.962), (0.9, 0.105 * lato, 0.978)], 0.0025, "Telaio", CUCITURA)
+    tubo("CucituraCentro", [(0.25, 0.0, 0.962), (0.6, 0.0, 0.975), (0.88, 0.0, 0.99)], 0.002, "Telaio", CUCITURA)
     # Portatarga e luce dietro
     scatola("Portatarga", (-0.42, 0.0, 0.88), (0.02, 0.16, 0.14), "Telaio", NERO, 0.005, rotazione=(0, math.radians(-20), 0))
     tubo("PortatargaBraccio", [(-0.3, 0.0, 0.95), (-0.4, 0.0, 0.95), (-0.42, 0.0, 0.88)], 0.012, "Telaio", NERO)
@@ -366,11 +389,16 @@ def costruisci():
     pannello("Tabella", tabella, -0.1, 0.1, "Sterzo", ROSSO, smussa=0.02)
     GRUPPI["Sterzo"][-1].location = RUOTA_ANT + asse * 0.58 + Vector((0.07, 0, 0))
     GRUPPI["Sterzo"][-1].rotation_euler = (0, -INCLINAZIONE_FORCELLA * 0.6, 0)
-    scatola("Fanale", RUOTA_ANT + asse * 0.66 + Vector((0.135, 0, 0)), (0.02, 0.1, 0.07), "Sterzo", VETRO, 0.01, rotazione=(0, -INCLINAZIONE_FORCELLA * 0.6, 0))
+    centro_faro = RUOTA_ANT + asse * 0.68 + Vector((0.13, 0, 0))
+    direzione_faro = Vector((math.cos(INCLINAZIONE_FORCELLA * 0.6), 0, math.sin(INCLINAZIONE_FORCELLA * 0.6)))
+    cilindro("Parabola", centro_faro - direzione_faro * 0.02, centro_faro, 0.06, "Sterzo", ACCIAIO, lati=32)
+    cilindro("Fanale", centro_faro, centro_faro + direzione_faro * 0.008, 0.055, "Sterzo", VETRO, lati=32)
+    cilindro("CorniceFanale", centro_faro - direzione_faro * 0.004, centro_faro + direzione_faro * 0.006, 0.064, "Sterzo", NERO_LUCIDO, lati=32)
     # Parafango alto davanti
     parafango = [(-0.06, 0.0), (0.42, 0.04), (0.44, 0.06), (0.1, 0.05), (-0.08, 0.03)]
     pannello("Parafango", parafango, -0.08, 0.08, "Sterzo", ROSSO, smussa=0.015)
     GRUPPI["Sterzo"][-1].location = RUOTA_ANT + asse * 0.6 + Vector((0.0, 0, -0.06))
+    tubo("TuboFrenoDavanti", [(RUOTA_ANT.x - 0.1, 0.09, RUOTA_ANT.z + 0.12), (RUOTA_ANT.x - 0.2, 0.11, RUOTA_ANT.z + 0.45), (sopra.x - 0.02, 0.18, sopra.z + 0.06)], 0.004, "Sterzo", NERO)
     # Pinza del freno davanti
     scatola("Pinza", RUOTA_ANT + Vector((-0.1, 0.08, 0.1)), (0.07, 0.03, 0.09), "Sterzo", ORO, 0.01)
 
