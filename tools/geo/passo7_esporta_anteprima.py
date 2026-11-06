@@ -12,6 +12,10 @@
 #   alberi.json   alberi singoli mappati in OSM
 #   dettagli.json semafori, stop, precedenze, lampioni, strisce, localita' (Sprint D2)
 #   acqua.json    fiumi, torrenti, stagni (Sprint C1)
+#   ferrovie.json binari e funicolari; funivie.json teleferiche e seggiovie (Sprint F1)
+#
+# Sprint F1: strade lisce agganciate agli incroci, terreno spianato sotto le strade,
+# strade piu' strette dove ci sono le case (vedi anteprima_strade.py)
 #
 # Coordinate dell'anteprima (metri), centro = centro del settore pilota:
 #   x verso EST, y verso l'ALTO (quota reale), z verso SUD
@@ -25,8 +29,9 @@ from PIL import Image
 from rasterio.features import rasterize
 from rasterio.transform import Affine
 from shapely.geometry import LineString, Point, Polygon, box
-from shapely.ops import linemerge, polygonize, unary_union
+from shapely.ops import polygonize, unary_union
 
+import anteprima_strade as vie
 import config
 import utilita
 
@@ -105,11 +110,21 @@ def poligono_osm(elemento):
     return poligono
 
 
-def esporta_edifici(percorso, quote, area, zona, centro_est, centro_nord):
-    est_min, est_max, nord_min, nord_max = area
-    edifici = []
+TIPI_CHIESA = {"church", "chapel", "cathedral", "basilica"}
+TIPI_CAMPANILE = {"bell_tower", "tower", "campanile"}
+TIPI_SENZA_MURI = {"roof", "carport", "construction", "ruins"}
+
+
+def poligoni_edifici(percorso, zona):
+    # Elenco (poligono LV95, tag, id) degli edifici del pilota
+    risultato = []
     for elemento in utilita.leggi_json(percorso).get("elements", []):
         if elemento.get("type") != "way":
+            continue
+        tag = elemento.get("tags", {})
+        if tag.get("building") in TIPI_SENZA_MURI or tag.get("location") == "underground":
+            continue
+        if numero(tag.get("layer", "0")) is not None and numero(tag.get("layer", "0")) < 0:
             continue
         poligono = poligono_osm(elemento)
         if poligono is None or poligono.is_empty or poligono.area < 6:
@@ -121,12 +136,27 @@ def esporta_edifici(percorso, quote, area, zona, centro_est, centro_nord):
             poligono = max(poligono.geoms, key=lambda g: g.area)
         if poligono.geom_type != "Polygon":
             continue
-        poligono = poligono.simplify(0.3)
+        risultato.append((poligono.simplify(0.3), tag, elemento.get("id", 0)))
+    return risultato
+
+
+def esporta_edifici(lista, suolo, centro_est, centro_nord):
+    edifici = []
+    for poligono, tag, ident in lista:
         anello = list(poligono.exterior.coords)[:-1]
         if len(anello) < 3:
             continue
-        sotto = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in anello]
-        tag = elemento.get("tags", {})
+        sotto = [suolo.quota(e, n) for e, n in anello]
+        tipo = tag.get("building", "yes")
+        if tipo in TIPI_CHIESA or tag.get("amenity") == "place_of_worship":
+            genere = 1
+        elif tipo in TIPI_CAMPANILE or tag.get("man_made") in ("tower", "campanile") or tag.get("tower:type") == "bell_tower":
+            genere = 2
+        else:
+            genere = 0
+        altezza = altezza_edificio(tag, poligono.area)
+        if genere == 2 and numero(tag.get("height", "")) is None:
+            altezza = 24   # campanile: se OSM non dice l'altezza
         piatta = []
         for e, n in anello:
             piatta.append(round(e - centro_est, 1))
@@ -134,9 +164,10 @@ def esporta_edifici(percorso, quote, area, zona, centro_est, centro_nord):
         edifici.append({
             "p": piatta,
             "b": round(min(sotto) - 0.5, 1),
-            "h": round(max(sotto) + altezza_edificio(tag, poligono.area), 1),
-            "c": elemento.get("id", 0) % 6,
-            "t": 1 if tag.get("building", "yes") in TIPI_TETTO_A_TEGOLE else 0,
+            "h": round(max(sotto) + altezza, 1),
+            "c": ident % 6,
+            "t": 1 if tipo in TIPI_TETTO_A_TEGOLE or genere > 0 else 0,
+            "k": genere,
         })
     return edifici
 
@@ -190,10 +221,9 @@ def esporta_dettagli(percorso, zona, centro_est, centro_nord):
 LARGHEZZA_CORSO_ACQUA = {"river": 14, "canal": 6, "stream": 2.5}
 
 
-def esporta_acqua(percorso, quote, area, zona, centro_est, centro_nord):
+def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord):
     # Poligoni d'acqua (fiumi larghi, stagni) e corsi d'acqua come linee.
     # Il Lago Maggiore e' gia' nel gioco come superficie piatta: qui lo salto.
-    est_min, est_max, nord_min, nord_max = area
     poligoni = []
     linee = []
 
@@ -232,7 +262,7 @@ def esporta_acqua(percorso, quote, area, zona, centro_est, centro_nord):
             if parte.is_empty or parte.geom_type != "Polygon":
                 continue
             # Stagni e laghetti: superficie piatta alla quota piu' bassa della riva
-            riva = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in parte.exterior.coords]
+            riva = [suolo.quota(e, n) for e, n in parte.exterior.coords]
             piatto = round(min(riva) + 0.2, 2) if tag.get("water") in ("pond", "lake", "reservoir") else None
             poligoni.append({
                 "o": locali(list(parte.exterior.coords)[:-1]),
@@ -240,6 +270,30 @@ def esporta_acqua(percorso, quote, area, zona, centro_est, centro_nord):
                 "piatto": piatto,
             })
     return {"poligoni": poligoni, "fiumi": linee}
+
+
+def esporta_funivie(percorso, zona, suolo, centro_est, centro_nord):
+    # Teleferiche e seggiovie: punti della fune (stazioni e piloni) con la quota del terreno
+    elementi = utilita.leggi_json(percorso).get("elements", [])
+    stazioni = set(e["id"] for e in elementi if e.get("type") == "node" and e.get("tags", {}).get("aerialway") == "station")
+    funivie = []
+    for elemento in elementi:
+        tag = elemento.get("tags", {})
+        if elemento.get("type") != "way" or "aerialway" not in tag:
+            continue
+        punti = []
+        for nodo, g in zip(elemento.get("nodes", []), elemento.get("geometry", [])):
+            e, n = utilita.DA_WGS84_A_LV95.transform(g["lon"], g["lat"])
+            if not zona.contains(Point(e, n)):
+                continue
+            punti.append([round(e - centro_est, 1), round(suolo.quota(e, n), 1),
+                          round(-(n - centro_nord), 1), 1 if nodo in stazioni else 0])
+        if len(punti) < 2:
+            continue
+        punti[0][3] = 1
+        punti[-1][3] = 1
+        funivie.append({"n": tag.get("name", ""), "t": tag["aerialway"], "p": [v for punto in punti for v in punto]})
+    return funivie
 
 
 def larghezza_strada(tag):
@@ -255,21 +309,6 @@ def larghezza_strada(tag):
     return LARGHEZZE.get(tag.get("highway"), 5)
 
 
-def quota_nel_punto(quote, est_min, nord_max, est, nord):
-    # Interpolazione tra i 4 punti vicini della heightmap
-    colonna = (est - est_min) / config.PASSO_M
-    riga = (nord_max - nord) / config.PASSO_M
-    colonna = min(max(colonna, 0), quote.shape[1] - 1.001)
-    riga = min(max(riga, 0), quote.shape[0] - 1.001)
-    c0 = int(colonna)
-    r0 = int(riga)
-    fx = colonna - c0
-    fy = riga - r0
-    sopra = quote[r0, c0] * (1 - fx) + quote[r0, c0 + 1] * fx
-    sotto = quote[r0 + 1, c0] * (1 - fx) + quote[r0 + 1, c0 + 1] * fx
-    return float(sopra * (1 - fy) + sotto * fy)
-
-
 def pezzi_di_linea(geometria):
     # Il taglio con il bordo del pilota puo' dare piu' pezzi
     if geometria.is_empty:
@@ -281,14 +320,31 @@ def pezzi_di_linea(geometria):
     return [g for g in getattr(geometria, "geoms", []) if g.geom_type == "LineString"]
 
 
+def locali_3d(pezzo, centro_est, centro_nord, sopra):
+    piatta = []
+    for (e, n), q in zip(pezzo["coordinate"], pezzo["profilo"]):
+        piatta.append(round(e - centro_est, 1))
+        piatta.append(round(q + sopra, 2))
+        piatta.append(round(-(n - centro_nord), 1))
+    return piatta
+
+
+def scrivi(nome, dati):
+    dati["fonte"] = "(c) OpenStreetMap contributors, ODbL"
+    with open(CARTELLA_ANTEPRIMA / nome, "w", encoding="utf-8") as file:
+        json.dump(dati, file, ensure_ascii=False, separators=(",", ":"))
+
+
 def main():
     area = utilita.area_di_lavoro(True)
     est_min, est_max, nord_min, nord_max = area
     centro_est = (est_min + est_max) / 2
     centro_nord = (nord_min + nord_max) / 2
+    zona = box(est_min, nord_min, est_max, nord_max)
+    osm = config.CARTELLA_DOWNLOAD / "osm"
 
     percorso_png = config.CARTELLA_UNREAL / "pilota" / "terreno_pilota.png"
-    percorso_strade = config.CARTELLA_DOWNLOAD / "osm" / "strade_pilota.json"
+    percorso_strade = osm / "strade_pilota.json"
     if not percorso_png.exists() or not percorso_strade.exists():
         print("Mancano i dati: esegui prima i passi 1, 2 e 3 con --pilota.")
         raise SystemExit(1)
@@ -296,7 +352,71 @@ def main():
 
     print("1) Terreno...")
     quote = utilita.valori_16bit_in_quote(np.array(Image.open(percorso_png)))
-    ridotte = quote[::2, ::2]   # un punto su due: da circa 2 m a circa 4 m
+    vero = vie.Griglia(quote, est_min, nord_max, config.PASSO_M)          # 2 m, terreno vero
+    ridotte = quote[::2, ::2].copy()                                       # circa 4 m
+
+    print("2) Edifici (servono per la larghezza delle strade)...")
+    percorso_edifici = osm / "edifici_pilota.json"
+    lista_edifici = []
+    vie_edifici = []
+    if percorso_edifici.exists():
+        lista_edifici = poligoni_edifici(percorso_edifici, zona)
+        vie_edifici = [poligono for poligono, tag, ident in lista_edifici]
+    print("   " + str(len(lista_edifici)) + " edifici")
+
+    print("3) Strade: profilo liscio, larghezza, terreno spianato...")
+    trasforma = utilita.DA_WGS84_A_LV95.transform
+    pezzi = vie.raccogli_pezzi(utilita.leggi_json(percorso_strade).get("elements", []), zona, trasforma,
+                               lambda tag: "highway" in tag)
+    vie.calcola_profili(pezzi, vero, zona)
+    vie.limita_larghezze(pezzi, vie_edifici, larghezza_strada)
+
+    pezzi_ferrovia = []
+    percorso_trasporti = osm / "trasporti_pilota.json"
+    if percorso_trasporti.exists():
+        elementi = utilita.leggi_json(percorso_trasporti).get("elements", [])
+        pezzi_ferrovia = vie.raccogli_pezzi(elementi, zona, trasforma, lambda tag: "railway" in tag)
+        vie.calcola_profili(pezzi_ferrovia, vero, zona)
+        for pezzo in pezzi_ferrovia:
+            pezzo["larghezze"] = [3.4] * len(pezzo["coordinate"])
+
+    toccati = vie.scava_terreno(ridotte, pezzi + pezzi_ferrovia, est_min, nord_max, config.PASSO_M * 2)
+    print("   punti del terreno spianati sotto strade e binari: " + str(toccati))
+
+    strade = []
+    km = 0.0
+    strette = 0
+    for pezzo in pezzi:
+        tag = pezzo["tag"]
+        voce = {
+            "n": tag.get("name") or tag.get("ref") or "",
+            "t": tag.get("highway", ""),
+            "w": round(pezzo["larghezza"], 1),
+            "b": pezzo["ponte"],
+            "g": pezzo["galleria"],
+            "p": locali_3d(pezzo, centro_est, centro_nord, SOPRA_TERRENO_M),
+        }
+        if min(pezzo["larghezze"]) < pezzo["larghezza"] - 0.05:
+            voce["ww"] = pezzo["larghezze"]
+            strette = strette + 1
+        strade.append(voce)
+        km = km + pezzo["linea"].length / 1000
+    scrivi("strade.json", {"strade": strade})
+    print("   " + str(len(strade)) + " strade, " + str(round(km, 1)) + " km, " + str(strette) + " ristrette dalle case")
+
+    ferrovie = []
+    for pezzo in pezzi_ferrovia:
+        ferrovie.append({
+            "n": pezzo["tag"].get("name", ""),
+            "t": pezzo["tag"].get("railway", ""),
+            "b": pezzo["ponte"],
+            "g": pezzo["galleria"],
+            "p": locali_3d(pezzo, centro_est, centro_nord, 0.1),
+        })
+    scrivi("ferrovie.json", {"ferrovie": ferrovie})
+    print("   binari: " + str(len(ferrovie)) + " tratti")
+
+    print("4) Terreno per l'anteprima (spianato)...")
     valori = np.clip(np.round((ridotte - QUOTA_BASE) / SCALA_QUOTA), 0, 65535).astype("<u2")
     valori.tofile(CARTELLA_ANTEPRIMA / "terreno.bin")
     info = {
@@ -312,153 +432,47 @@ def main():
     utilita.scrivi_json(info, CARTELLA_ANTEPRIMA / "terreno.json")
     print("   " + str(ridotte.shape[0]) + " x " + str(ridotte.shape[1]) + " punti, quota "
           + str(round(float(ridotte.min()))) + " - " + str(round(float(ridotte.max()))) + " m")
+    suolo = vie.Griglia(ridotte, est_min, nord_max, config.PASSO_M * 2)
 
-    print("2) Strade...")
-    zona = box(est_min, nord_min, est_max, nord_max)
+    print("5) Edifici...")
+    edifici = esporta_edifici(lista_edifici, suolo, centro_est, centro_nord)
+    scrivi("edifici.json", {"edifici": edifici})
+    chiese = sum(1 for e in edifici if e["k"] == 1)
+    campanili = sum(1 for e in edifici if e["k"] == 2)
+    print("   " + str(len(edifici)) + " edifici, chiese: " + str(chiese) + ", campanili: " + str(campanili))
 
-    # Prima raccolgo tutti i pezzi di strada (tagliati al bordo del pilota)
-    pezzi = []
-    for elemento in utilita.leggi_json(percorso_strade).get("elements", []):
-        if elemento.get("type") != "way" or "geometry" not in elemento:
-            continue
-        tag = elemento.get("tags", {})
-        punti = [utilita.DA_WGS84_A_LV95.transform(p["lon"], p["lat"]) for p in elemento["geometry"]]
-        if len(punti) < 2:
-            continue
-        ponte = tag.get("bridge") not in (None, "no")
-        galleria = tag.get("tunnel") not in (None, "no")
-        for pezzo in pezzi_di_linea(LineString(punti).intersection(zona)):
-            pezzi.append({"linea": pezzo.segmentize(PASSO_STRADE_M), "tag": tag,
-                          "ponte": ponte, "galleria": galleria})
-
-    # Ponti e gallerie in OSM sono spesso divisi in piu' pezzi.
-    # Li unisco: la quota va calcolata tra i due VERI ingressi (non a ogni pezzo).
-    def catene(tipo):
-        linee = [p["linea"] for p in pezzi if p[tipo]]
-        if not linee:
-            return []
-        unite = linemerge(linee)
-        lista = pezzi_di_linea(unite)
-        risultato = []
-        for linea in lista:
-            inizio = linea.coords[0]
-            fine = linea.coords[-1]
-            q_inizio = quota_nel_punto(quote, est_min, nord_max, inizio[0], inizio[1])
-            q_fine = quota_nel_punto(quote, est_min, nord_max, fine[0], fine[1])
-            # Se un capo e' tagliato dal bordo del pilota, la sua quota non vale: uso l'altro capo
-            if zona.exterior.distance(Point(inizio)) < 1:
-                q_inizio = q_fine
-            if zona.exterior.distance(Point(fine)) < 1:
-                q_fine = q_inizio
-            risultato.append((linea, q_inizio, q_fine))
-        return risultato
-
-    catene_ponti = catene("ponte")
-    catene_gallerie = catene("galleria")
-
-    def quota_su_catena(lista, e, n):
-        punto = Point(e, n)
-        for linea, q_inizio, q_fine in lista:
-            if linea.distance(punto) < 0.5:
-                parte = linea.project(punto) / linea.length if linea.length else 0
-                return q_inizio + (q_fine - q_inizio) * parte
-        return None
-
-    strade = []
-    km = 0.0
-    for pezzo in pezzi:
-        coordinate = list(pezzo["linea"].coords)
-        terreno = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in coordinate]
-
-        if pezzo["ponte"] or pezzo["galleria"]:
-            lista = catene_ponti if pezzo["ponte"] else catene_gallerie
-            quote_strada = []
-            for (e, n), q_terreno in zip(coordinate, terreno):
-                q = quota_su_catena(lista, e, n)
-                if q is None:
-                    q = q_terreno
-                if pezzo["galleria"]:
-                    q = min(q, q_terreno)   # una galleria non passa mai SOPRA il terreno
-                else:
-                    q = max(q, q_terreno)   # un ponte non passa mai SOTTO il terreno
-                quote_strada.append(q)
-        else:
-            # Strade normali: media su 5 punti per togliere i piccoli scalini
-            quote_strada = []
-            for i in range(len(terreno)):
-                vicine = terreno[max(0, i - 2): i + 3]
-                quote_strada.append(sum(vicine) / len(vicine))
-
-        piatta = []
-        for (e, n), q in zip(coordinate, quote_strada):
-            piatta.append(round(e - centro_est, 1))
-            piatta.append(round(q + SOPRA_TERRENO_M, 2))
-            piatta.append(round(-(n - centro_nord), 1))
-
-        tag = pezzo["tag"]
-        strade.append({
-            "n": tag.get("name") or tag.get("ref") or "",
-            "t": tag.get("highway", ""),
-            "w": round(larghezza_strada(tag), 1),
-            "b": pezzo["ponte"],
-            "g": pezzo["galleria"],
-            "p": piatta,
-        })
-        km = km + pezzo["linea"].length / 1000
-
-    with open(CARTELLA_ANTEPRIMA / "strade.json", "w", encoding="utf-8") as file:
-        json.dump({"fonte": "(c) OpenStreetMap contributors, ODbL", "strade": strade},
-                  file, ensure_ascii=False, separators=(",", ":"))
-    print("   " + str(len(strade)) + " strade, " + str(round(km, 1)) + " km")
-
-    print("3) Edifici...")
-    percorso_edifici = config.CARTELLA_DOWNLOAD / "osm" / "edifici_pilota.json"
-    if percorso_edifici.exists():
-        edifici = esporta_edifici(percorso_edifici, quote, area, zona, centro_est, centro_nord)
-        with open(CARTELLA_ANTEPRIMA / "edifici.json", "w", encoding="utf-8") as file:
-            json.dump({"fonte": "(c) OpenStreetMap contributors, ODbL", "edifici": edifici},
-                      file, separators=(",", ":"))
-        print("   " + str(len(edifici)) + " edifici")
-    else:
-        print("   Manca edifici_pilota.json (passo 2): niente edifici")
-
-    print("4) Boschi e alberi...")
-    percorso_verde = config.CARTELLA_DOWNLOAD / "osm" / "verde_pilota.json"
+    print("6) Boschi e alberi...")
+    percorso_verde = osm / "verde_pilota.json"
     if percorso_verde.exists():
         maschera, alberi = esporta_verde(percorso_verde, area, zona, int(ridotte.shape[0]),
                                          config.PASSO_M * 2, centro_est, centro_nord)
         maschera.astype(np.uint8).tofile(CARTELLA_ANTEPRIMA / "bosco.bin")
-        with open(CARTELLA_ANTEPRIMA / "alberi.json", "w", encoding="utf-8") as file:
-            json.dump({"fonte": "(c) OpenStreetMap contributors, ODbL", "alberi": alberi},
-                      file, separators=(",", ":"))
+        scrivi("alberi.json", {"alberi": alberi})
         superficie = float(maschera.mean()) * (est_max - est_min) * (nord_max - nord_min) / 1_000_000
         print("   Bosco: " + str(round(superficie, 1)) + " km2, alberi singoli: " + str(len(alberi) // 2))
-    else:
-        print("   Manca verde_pilota.json (passo 2): niente boschi")
 
-    print("5) Segnaletica, lampioni e localita'...")
-    percorso_dettagli = config.CARTELLA_DOWNLOAD / "osm" / "dettagli_pilota.json"
+    print("7) Segnaletica, lampioni e localita'...")
+    percorso_dettagli = osm / "dettagli_pilota.json"
     if percorso_dettagli.exists():
         dettagli = esporta_dettagli(percorso_dettagli, zona, centro_est, centro_nord)
-        dettagli["fonte"] = "(c) OpenStreetMap contributors, ODbL"
-        with open(CARTELLA_ANTEPRIMA / "dettagli.json", "w", encoding="utf-8") as file:
-            json.dump(dettagli, file, ensure_ascii=False, separators=(",", ":"))
+        scrivi("dettagli.json", dettagli)
         for chiave in ["semafori", "stop", "precedenza", "lampioni", "strisce"]:
             print("   " + chiave + ": " + str(len(dettagli[chiave]) // 2))
         print("   localita': " + str(len(dettagli["localita"])))
-    else:
-        print("   Manca dettagli_pilota.json (passo 2)")
 
-    print("6) Fiumi, torrenti e stagni...")
-    percorso_acqua = config.CARTELLA_DOWNLOAD / "osm" / "acqua_pilota.json"
+    print("8) Fiumi, torrenti e stagni...")
+    percorso_acqua = osm / "acqua_pilota.json"
     if percorso_acqua.exists():
-        acqua = esporta_acqua(percorso_acqua, quote, area, zona, centro_est, centro_nord)
-        acqua["fonte"] = "(c) OpenStreetMap contributors, ODbL"
-        with open(CARTELLA_ANTEPRIMA / "acqua.json", "w", encoding="utf-8") as file:
-            json.dump(acqua, file, separators=(",", ":"))
+        acqua = esporta_acqua(percorso_acqua, suolo, zona, centro_est, centro_nord)
+        scrivi("acqua.json", acqua)
         print("   superfici d'acqua: " + str(len(acqua["poligoni"])) + ", corsi d'acqua: " + str(len(acqua["fiumi"])))
-    else:
-        print("   Manca acqua_pilota.json (passo 2)")
+
+    print("9) Teleferiche e seggiovie...")
+    if percorso_trasporti.exists():
+        funivie = esporta_funivie(percorso_trasporti, zona, suolo, centro_est, centro_nord)
+        scrivi("funivie.json", {"funivie": funivie})
+        for funivia in funivie:
+            print("   " + funivia["t"] + ": " + (funivia["n"] or "senza nome") + " (" + str(len(funivia["p"]) // 4) + " punti)")
 
     print("Fatto. File in: " + str(CARTELLA_ANTEPRIMA))
 

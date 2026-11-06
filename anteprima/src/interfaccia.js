@@ -13,7 +13,7 @@ let scala = 1;
 let mezzoLato = 1;
 
 // Disegna una volta sola tutte le strade in un'immagine di sfondo
-export function preparaMinimappa(strade, terreno, localita) {
+export function preparaMinimappa(strade, terreno, localita, trasporti) {
   mezzoLato = terreno.meta;
   scala = minimappa.width / (terreno.meta * 2);
   sfondoMinimappa = document.createElement("canvas");
@@ -36,6 +36,25 @@ export function preparaMinimappa(strade, terreno, localita) {
     }
     p2.stroke();
   }
+  // Ferrovie (grigio scuro tratteggiato) e teleferiche (rosso tratteggiato)
+  function linea(p, passo, colore) {
+    p2.strokeStyle = colore;
+    p2.lineWidth = 1.5;
+    p2.setLineDash([3, 2]);
+    p2.beginPath();
+    for (let i = 0; i + 2 < p.length; i += passo) {
+      const x = (p[i] + mezzoLato) * scala;
+      const y = (p[i + 2] + mezzoLato) * scala;
+      if (i === 0) p2.moveTo(x, y); else p2.lineTo(x, y);
+    }
+    p2.stroke();
+    p2.setLineDash([]);
+  }
+  if (trasporti) {
+    for (const f of trasporti.ferrovie) linea(f.p, 3, "#9aa0a8");
+    for (const f of trasporti.funivie) linea(f.p, 4, "#ff5a5a");
+  }
+
   // Nomi dei paesi (solo citta' e villaggi, non i quartieri)
   p2.font = "bold 10px Arial";
   p2.textAlign = "center";

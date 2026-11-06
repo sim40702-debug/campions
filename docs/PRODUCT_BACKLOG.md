@@ -1,6 +1,6 @@
 # Product Backlog – MOTO RACING WORLD
 
-Ultimo aggiornamento: Sprint E1 (6 novembre 2026)
+Ultimo aggiornamento: Sprint F1 (6 novembre 2026)
 
 Priorità: **1 = più importante**. Stato: Da fare / In corso / Fatto.
 
@@ -57,6 +57,11 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-25 | Collisioni della moto con gli edifici | D | 2 | Fatto (0.2.0) |
 | TI-26 | Pulsante "Aggiorna" nell'app (controlla, scarica e installa da GitHub) | D1 | 1 | Fatto (0.3.0) |
 | TI-27 | Nome della località sullo schermo e paesi sulla minimappa | D2 | 3 | Fatto (0.3.1) |
+| TI-28 | Teleferiche, cabinovie e seggiovie con cabine che si muovono | F1 | 2 | Fatto (0.6.0) |
+| TI-29 | Funicolari con le vetture che si incrociano | F1 | 2 | Fatto (0.6.0) |
+| TI-30 | Ferrovie (massicciata e binari) | F1 | 2 | Fatto (0.6.0) |
+| TI-31 | Chiese (tetto a due falde) e campanili (guglia) | F1 | 3 | Fatto (0.6.0) |
+| TI-32 | Tetti a due falde e a padiglione per le case | F1 | 3 | Fatto (0.6.0) |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 

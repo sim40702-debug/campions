@@ -3,7 +3,8 @@
 # - Confine del Canton Ticino e degli 8 distretti (le nostre regioni)
 # - Strade pubbliche asfaltate (decisione D3)
 # - Solo per il pilota: edifici, boschi e alberi (Sprint D1),
-#   segnaletica, lampioni, localita' (Sprint D2), fiumi e acqua (Sprint C1)
+#   segnaletica, lampioni, localita' (Sprint D2), fiumi e acqua (Sprint C1),
+#   teleferiche, funicolari e ferrovie (Sprint F1)
 #
 # Uso:
 #   python passo2_scarica_osm.py --pilota   (strade solo nel settore pilota)
@@ -79,6 +80,15 @@ def query_acqua():
             + ");\nout geom;\n")
 
 
+def query_trasporti():
+    f = filtro_pilota()
+    return ("[out:json][timeout:900];\n(\n"
+            + '  way["aerialway"~"^(cable_car|gondola|chair_lift|mixed_lift)$"]' + f + ";\n"
+            + '  node["aerialway"~"^(pylon|station)$"]' + f + ";\n"
+            + '  way["railway"~"^(rail|narrow_gauge|funicular|light_rail)$"]' + f + ";\n"
+            + ");\nout geom;\n")
+
+
 def main():
     argomenti = utilita.leggi_argomenti("Scarica confini e strade da OpenStreetMap")
     utilita.crea_cartelle()
@@ -113,6 +123,10 @@ def main():
         print("6) Laghi, fiumi e torrenti del pilota...")
         acqua = utilita.chiedi_overpass(query_acqua(), cartella / "acqua_pilota.json")
         print("   Elementi scaricati: " + str(len(acqua.get("elements", []))))
+
+        print("7) Teleferiche, funicolari e ferrovie del pilota...")
+        trasporti = utilita.chiedi_overpass(query_trasporti(), cartella / "trasporti_pilota.json")
+        print("   Elementi scaricati: " + str(len(trasporti.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))
 

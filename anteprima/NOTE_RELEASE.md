@@ -3,7 +3,23 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.5.0) – Sprint E1
+### Novità di questa versione (0.6.0) – Sprint F1
+
+**Correzioni**
+- Niente più **erba sulle strade**: il terreno sotto strade e binari viene spianato.
+- **Strade lisce**: la moto non saltella più, anche agli incroci.
+- Niente più **case sulle strade**: nelle vie strette la strada si restringe.
+- Niente più **piante sulle strade**: gli alberi stanno ad almeno 3,5 m dall'asfalto.
+
+**Novità**
+- **Teleferiche, cabinovie e seggiovie** di OpenStreetMap, con piloni, stazioni e cabine che si muovono.
+- **Funicolare** con le due vetture che si incrociano.
+- **Ferrovie**: massicciata e binari.
+- **Chiese** con il tetto a due falde e **campanili** con la guglia.
+- **Tetti** a due falde o a padiglione per le case.
+- Ferrovie e teleferiche sulla minimappa.
+
+### Novità della 0.5.0 – Sprint E1
 
 - **Impostazioni** (tasto Esc o pulsante in alto a destra): qualità grafica Bassa, Media o Alta. Regola risoluzione, alberi, visibilità e dettaglio del terreno; viene ricordata.
 - **Contatore FPS** (tasto F), con triangoli e disegni.

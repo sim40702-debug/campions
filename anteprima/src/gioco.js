@@ -10,6 +10,7 @@ import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
 import { aggiungiOpere } from "./opere.js";
+import { caricaTrasporti, aggiungiTrasporti, aggiornaTrasporti } from "./trasporti.js";
 import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
 import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
@@ -145,10 +146,14 @@ async function avvia() {
     const edifici = await caricaEdifici();
     aggiungiEdifici(edifici, scena);
 
+    mostraStato("Treni, funicolari e teleferiche...");
+    const trasporti = await caricaTrasporti();
+    const mobili = aggiungiTrasporti(trasporti, scena);
+
     mostraStato("Segnaletica e lampioni...");
     const dettagli = await caricaDettagli();
     aggiungiDettagli(dettagli, scena, terreno, strade);
-    preparaMinimappa(strade, terreno, dettagli.localita);
+    preparaMinimappa(strade, terreno, dettagli.localita, trasporti);
 
     mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
@@ -170,6 +175,7 @@ async function avvia() {
 
     nascondiCaricamento();
     const orologio = new THREE.Clock();
+    let tempoGioco = 0;
 
     function ciclo() {
       const vero = orologio.getDelta();          // tempo vero del fotogramma (per gli FPS)
@@ -187,6 +193,8 @@ async function avvia() {
         aggiornaAlberi(alberi, moto.x, moto.z, dt);
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
+      tempoGioco = tempoGioco + vero;
+      aggiornaTrasporti(mobili, tempoGioco);
       aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);

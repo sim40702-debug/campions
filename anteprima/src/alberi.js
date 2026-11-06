@@ -4,7 +4,7 @@
 
 import * as THREE from "three";
 import { quotaTerreno, boscoQui } from "./terreno.js";
-import { stradaSotto } from "./strade.js";
+import { stradaVicina } from "./strade.js";
 import { dentroEdificio } from "./edifici.js";
 
 const CELLA = 250;            // metri
@@ -59,7 +59,9 @@ function casuale(seme) {
 function postoLibero(mondo, x, z) {
   const y = quotaTerreno(mondo.terreno, x, z);
   if (y < mondo.terreno.info.livello_lago + 0.5) return null;   // lago
-  if (stradaSotto(mondo.strade, x, z, y) !== null) return null;  // strada
+  // niente alberi sulla strada: almeno 3.5 m dal bordo dell'asfalto
+  const strada = stradaVicina(mondo.strade, x, z, 16);
+  if (strada !== null && strada.distanza < strada.larghezza / 2 + 3.5) return null;
   if (dentroEdificio(mondo.edifici, x, z, y + 1)) return null;  // edificio
   return y;
 }
@@ -86,6 +88,8 @@ function creaCella(mondo, cx, cz) {
   const singoli = mondo.alberiSingoli.get(cx + "," + cz) || [];
   for (const [x, z] of singoli) {
     const y = quotaTerreno(mondo.terreno, x, z);
+    const strada = stradaVicina(mondo.strade, x, z, 10);
+    if (strada !== null && strada.distanza < strada.larghezza / 2 + 0.5) continue;
     latifoglie.push([x, y, z, 1, rnd() * Math.PI * 2]);
   }
 

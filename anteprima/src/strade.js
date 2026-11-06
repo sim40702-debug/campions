@@ -37,7 +37,13 @@ export async function caricaStrade() {
   return { lista: dati.strade, griglia: griglia };
 }
 
-// Aggiunge un nastro (striscia) a una lista di vertici e indici
+// Larghezza della strada nel punto i (piu' stretta dove ci sono le case)
+export function larghezzaIn(strada, i) {
+  return strada.ww ? strada.ww[Math.min(i, strada.ww.length - 1)] : strada.w;
+}
+
+// Aggiunge un nastro (striscia) a una lista di vertici e indici.
+// "larghezza" puo' essere un numero oppure una funzione(i) che da' la larghezza nel punto i
 function aggiungiNastro(p, larghezza, alzata, posizioni, indici, tratteggio) {
   const punti = p.length / 3;
   let distanza = 0;
@@ -50,8 +56,9 @@ function aggiungiNastro(p, larghezza, alzata, posizioni, indici, tratteggio) {
     dx = dx / lunghezza;
     dz = dz / lunghezza;
     // Direzione di lato (perpendicolare alla strada)
-    const latoX = -dz * larghezza / 2;
-    const latoZ = dx * larghezza / 2;
+    const qui = typeof larghezza === "function" ? larghezza(i) : larghezza;
+    const latoX = -dz * qui / 2;
+    const latoZ = dx * qui / 2;
     const x = p[i * 3];
     const y = p[i * 3 + 1] + alzata;
     const z = p[i * 3 + 2];
@@ -154,7 +161,7 @@ export function aggiungiStrade(strade, scena, terreno) {
 
   for (const strada of strade.lista) {
     const gruppo = strada.g ? gallerie : asfalto;
-    aggiungiNastro(strada.p, strada.w, 0, gruppo.posizioni, gruppo.indici, false);
+    aggiungiNastro(strada.p, function (i) { return larghezzaIn(strada, i); }, 0, gruppo.posizioni, gruppo.indici, false);
     if (strada.w >= 5.5) {
       aggiungiNastro(strada.p, 0.15, 0.03, righe.posizioni, righe.indici, true);
     }
@@ -210,7 +217,8 @@ export function stradaSotto(strade, x, z, quotaAttuale) {
         const px = ax + (bx - ax) * t;
         const pz = az + (bz - az) * t;
         const distanza = Math.hypot(x - px, z - pz);
-        if (distanza > strada.w / 2 + 0.5) {
+        const larghezza = Math.max(larghezzaIn(strada, i / 3), larghezzaIn(strada, i / 3 + 1));
+        if (distanza > larghezza / 2 + 0.5) {
           continue;
         }
         const y = p[i + 1] + (p[i + 4] - p[i + 1]) * t;
@@ -276,7 +284,7 @@ export function stradaVicina(strade, x, z, raggio) {
           y: p[i + 1] + (p[i + 4] - p[i + 1]) * t,
           dirX: (bx - ax) / lunghezza,
           dirZ: (bz - az) / lunghezza,
-          larghezza: strada.w,
+          larghezza: Math.max(larghezzaIn(strada, i / 3), larghezzaIn(strada, i / 3 + 1)),
           distanza: distanza,
           galleria: strada.g
         };

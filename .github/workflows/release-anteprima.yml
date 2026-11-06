@@ -59,7 +59,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tools/geo/dati/download
-          key: geodati-pilota-v3
+          key: geodati-pilota-v4
 
       - name: Installa le librerie Python
         run: pip install -r tools/geo/requirements.txt
@@ -75,6 +75,12 @@ jobs:
           done
           echo "===== passo7_esporta_anteprima =====" | tee -a registro.txt
           python -u passo7_esporta_anteprima.py 2>&1 | tee -a registro.txt
+
+      - name: Se un passo fallisce, scrivi l'errore (visibile anche senza accesso)
+        if: failure()
+        shell: bash
+        run: |
+          echo "::error::$(tail -c 1500 tools/geo/registro.txt | tr '\n' ' ')"
 
       - name: Riassunto nella pagina del workflow
         if: always()

@@ -59,7 +59,7 @@ export function aggiungiEdifici(edifici, scena) {
     if (!pezzi.has(chiave)) pezzi.set(chiave, { posizioni: [], colori: [] });
     const pezzo = pezzi.get(chiave);
 
-    muro.setHex(COLORI_MURI[edificio.c % COLORI_MURI.length]);
+    muro.setHex(edificio.k > 0 ? 0xe4ddd0 : COLORI_MURI[edificio.c % COLORI_MURI.length]);
     tetto.setHex(edificio.t === 1 ? COLORE_TETTO_TEGOLE : COLORE_TETTO_PIATTO);
 
     // Muri: un rettangolo (2 triangoli) per ogni lato del contorno
@@ -74,20 +74,7 @@ export function aggiungiEdifici(edifici, scena) {
       aggiungiColore(pezzo.colori, muro, 6);
     }
 
-    // Tetto: il contorno diviso in triangoli
-    const contorno = [];
-    for (let i = 0; i < punti; i++) {
-      contorno.push(new THREE.Vector2(p[i * 2], p[i * 2 + 1]));
-    }
-    const triangoli = THREE.ShapeUtils.triangulateShape(contorno, []);
-    for (const [a, b, c] of triangoli) {
-      pezzo.posizioni.push(
-        contorno[a].x, edificio.h, contorno[a].y,
-        contorno[b].x, edificio.h, contorno[b].y,
-        contorno[c].x, edificio.h, contorno[c].y
-      );
-      aggiungiColore(pezzo.colori, tetto, 3);
-    }
+    aggiungiTetto(pezzo, edificio, muro, tetto);
   }
 
   const materiale = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
@@ -97,6 +84,87 @@ export function aggiungiEdifici(edifici, scena) {
     geometria.setAttribute("color", new THREE.Float32BufferAttribute(pezzo.colori, 3));
     geometria.computeVertexNormals();
     scena.add(new THREE.Mesh(geometria, materiale));
+  }
+}
+
+// --- Tetti ---------------------------------------------------------------------
+// Case e chiese (t = 1): tetto a due falde se l'edificio ha 4 lati, altrimenti a padiglione.
+// Campanili (k = 2): guglia a punta. Palazzi e capannoni: tetto piatto.
+
+function triangolo(pezzo, colore, a, b, c) {
+  pezzo.posizioni.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  aggiungiColore(pezzo.colori, colore, 3);
+}
+
+function superficie(p) {
+  let somma = 0;
+  const punti = p.length / 2;
+  for (let i = 0; i < punti; i++) {
+    const j = (i + 1) % punti;
+    somma += p[i * 2] * p[j * 2 + 1] - p[j * 2] * p[i * 2 + 1];
+  }
+  return Math.abs(somma) / 2;
+}
+
+function tettoPiatto(pezzo, edificio, tetto) {
+  const p = edificio.p;
+  const contorno = [];
+  for (let i = 0; i < p.length / 2; i++) contorno.push(new THREE.Vector2(p[i * 2], p[i * 2 + 1]));
+  for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+    triangolo(pezzo, tetto,
+      [contorno[a].x, edificio.h, contorno[a].y],
+      [contorno[b].x, edificio.h, contorno[b].y],
+      [contorno[c].x, edificio.h, contorno[c].y]);
+  }
+}
+
+function tettoAPunta(pezzo, edificio, tetto, altezzaPunta) {
+  const p = edificio.p;
+  const punti = p.length / 2;
+  let cx = 0, cz = 0;
+  for (let i = 0; i < punti; i++) { cx += p[i * 2]; cz += p[i * 2 + 1]; }
+  const punta = [cx / punti, edificio.h + altezzaPunta, cz / punti];
+  for (let i = 0; i < punti; i++) {
+    const j = (i + 1) % punti;
+    triangolo(pezzo, tetto, [p[i * 2], edificio.h, p[i * 2 + 1]], [p[j * 2], edificio.h, p[j * 2 + 1]], punta);
+  }
+}
+
+function tettoADueFalde(pezzo, edificio, muro, tetto) {
+  const p = edificio.p;
+  let v = [[p[0], p[1]], [p[2], p[3]], [p[4], p[5]], [p[6], p[7]]];
+  // il colmo va nel senso del lato lungo
+  if (Math.hypot(v[1][0] - v[0][0], v[1][1] - v[0][1]) < Math.hypot(v[2][0] - v[1][0], v[2][1] - v[1][1])) {
+    v = [v[1], v[2], v[3], v[0]];
+  }
+  const [a, b, c, d] = v;
+  const corto = Math.hypot(c[0] - b[0], c[1] - b[1]);
+  const colmo = edificio.h + Math.min(4, corto * 0.35);
+  const h = edificio.h;
+  const mBC = [(b[0] + c[0]) / 2, colmo, (b[1] + c[1]) / 2];
+  const mDA = [(d[0] + a[0]) / 2, colmo, (d[1] + a[1]) / 2];
+  const A = [a[0], h, a[1]], B = [b[0], h, b[1]], C = [c[0], h, c[1]], D = [d[0], h, d[1]];
+  triangolo(pezzo, tetto, A, B, mBC);   // falda 1
+  triangolo(pezzo, tetto, A, mBC, mDA);
+  triangolo(pezzo, tetto, C, D, mDA);   // falda 2
+  triangolo(pezzo, tetto, C, mDA, mBC);
+  triangolo(pezzo, muro, B, C, mBC);    // timpani (stesso colore dei muri)
+  triangolo(pezzo, muro, D, A, mDA);
+}
+
+function aggiungiTetto(pezzo, edificio, muro, tetto) {
+  const area = superficie(edificio.p);
+  const punti = edificio.p.length / 2;
+  if (edificio.k === 2) {
+    tettoAPunta(pezzo, edificio, tetto, Math.max(4, Math.sqrt(area) * 1.1));   // guglia del campanile
+  } else if (edificio.t === 1 && (edificio.k === 1 || area < 900)) {
+    if (punti === 4) {
+      tettoADueFalde(pezzo, edificio, muro, tetto);
+    } else {
+      tettoAPunta(pezzo, edificio, tetto, Math.min(3.5, Math.sqrt(area) * 0.3));
+    }
+  } else {
+    tettoPiatto(pezzo, edificio, tetto);
   }
 }
 

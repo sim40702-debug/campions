@@ -1,12 +1,17 @@
 # Bug Tracker – MOTO RACING WORLD
 
-Ultimo aggiornamento: Sprint D1 (6 novembre 2026)
+Ultimo aggiornamento: Sprint F1 (6 novembre 2026)
 
 Gravità: **Alta** (blocca il gioco) / **Media** (si gioca ma è sbagliato) / **Bassa** (estetica).
 
 ## Bug aperti
 
-Nessuno.
+| ID | Titolo | Gravità | Regione / settore | Come riprodurlo | Sprint trovato | Stato |
+|---|---|---|---|---|---|---|
+| BUG-004 | Erba in mezzo alle strade | Media | R3 pilota | 0.5.0, strade in collina | F1 | Corretto in 0.6.0 (terreno spianato): da confermare |
+| BUG-005 | Strade non piane, la moto saltella | Media | R3 pilota | 0.5.0, guidare in collina e agli incroci | F1 | Corretto in 0.6.0 (profilo liscio agganciato agli incroci): da confermare |
+| BUG-006 | Case sopra le strade | Media | R3 pilota (città vecchia) | 0.5.0, vie strette di Locarno | F1 | Corretto in 0.6.0 (larghezza limitata dalle case): da confermare |
+| BUG-007 | Piante sulle strade | Bassa | R3 pilota | 0.5.0, strade nel bosco | F1 | Corretto in 0.6.0 (alberi a 3,5 m dall'asfalto): da confermare |
 
 
 ## Bug chiusi

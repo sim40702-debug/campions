@@ -97,7 +97,17 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto
     for (let c = 0; c < lato; c++) {
       const riga = inizioRiga + r * salto;
       const colonna = inizioColonna + c * salto;
-      const quota = q[riga * n + colonna];
+      let quota = q[riga * n + colonna];
+      if (salto > 1) {
+        // da lontano: il punto piu' basso dei vicini, cosi' il terreno non copre le strade
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const rr = Math.min(Math.max(riga + dr, 0), n - 1);
+            const cc = Math.min(Math.max(colonna + dc, 0), n - 1);
+            quota = Math.min(quota, q[rr * n + cc]);
+          }
+        }
+      }
       const indice = (r * lato + c) * 3;
       posizioni[indice] = colonna * terreno.passo - terreno.meta - centroX;
       posizioni[indice + 1] = quota;

@@ -143,7 +143,8 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     moto.velocita = 0;
   }
   // Contro un edificio: la moto si ferma e rimbalza un po' indietro
-  if (edifici && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
+  // (sulla strada no: a volte la strada passa sotto un edificio, come un portico)
+  if (edifici && !moto.suStrada && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
     nuovaX = moto.x;
     nuovaZ = moto.z;
     moto.velocita = -moto.velocita * 0.2;
@@ -156,7 +157,9 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   moto.y = suolo.y;
   const davanti = quotaSuolo(moto, terreno, strade, moto.x + dirX * 0.8, moto.z + dirZ * 0.8).y;
   const dietro = quotaSuolo(moto, terreno, strade, moto.x - dirX * 0.8, moto.z - dirZ * 0.8).y;
-  moto.beccheggio = Math.atan2(davanti - dietro, 1.6);
+  // inclinazione avanti/indietro "ammorbidita": niente saltelli
+  const voluta = Math.atan2(davanti - dietro, 1.6);
+  moto.beccheggio += (voluta - moto.beccheggio) * Math.min(1, dt * 8);
 
   // Piega in curva (solo grafica)
   const piegaVoluta = sterzo * Math.min(1, Math.abs(moto.velocita) / 20) * 0.6;
