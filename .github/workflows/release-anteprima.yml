@@ -167,6 +167,28 @@ jobs:
           path: uscita
           merge-multiple: true
 
+      - name: Prendi i dati
+        uses: actions/download-artifact@v4
+        with:
+          name: anteprima-dati
+          path: extra/anteprima-dati
+
+      - name: Prendi il registro
+        uses: actions/download-artifact@v4
+        with:
+          name: registro-pilota
+          path: extra/registro-pilota
+
+      - name: Prepara dati e registro per la release
+        shell: bash
+        run: |
+          cd extra/anteprima-dati && zip -r ../../uscita/dati-anteprima-pilota.zip . && cd ../..
+          cp extra/registro-pilota/registro.txt uscita/registro-pilota.txt
+          if [ -f extra/registro-pilota/dati/per_unreal/pilota/misure_strade.md ]; then
+            cp extra/registro-pilota/dati/per_unreal/pilota/misure_strade.md uscita/misure-strade-pilota.md
+          fi
+          ls -la uscita
+
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
