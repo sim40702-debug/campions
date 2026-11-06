@@ -3,11 +3,13 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.1.4)
+### Novità di questa versione (0.2.0) – Sprint D1
 
-- Se mancano i dati, l'app dice **quale file** manca e dove lo cerca (prima diceva solo "Failed to fetch").
-- Controllo automatico: la release esce solo se i dati di Locarno sono davvero dentro l'app.
-- Dalla 0.1.3: terreno senza fessure, asfalto più chiaro. Dalla 0.1.2: gallerie e ponti corretti.
+- **Edifici veri** di OpenStreetMap: case, palazzi, chiese, capannoni, con l'altezza presa da OSM (piani o altezza) o stimata dal tipo di edificio.
+- **Boschi**: gli alberi compaiono vicino alla moto (latifoglie in basso, abeti sopra i 1'100 m); da lontano il bosco si vede dal colore verde scuro del terreno.
+- **Alberi singoli** mappati in OpenStreetMap (viali, piazze).
+- **Parapetti** sui ponti.
+- **Collisioni**: la moto non passa più dentro gli edifici.
 
 ### Quale file scaricare
 
@@ -43,11 +45,12 @@ Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comu
 - Terreno swissALTI3D (un punto ogni 4 m circa)
 - Strade OpenStreetMap, con i ponti; le gallerie sono in marrone (per ora passano dentro la montagna)
 - Lago Maggiore
+- Edifici, boschi e alberi di OpenStreetMap
 - Velocità, quota reale, coordinate LV95 (si possono confrontare con map.geo.admin.ch) e minimappa
 
 ### Cosa non c'è ancora
 
-Edifici, alberi, gallerie vere, avversari, multiplayer.
+Gallerie vere, segnaletica, avversari, multiplayer.
 
 ### Fonti
 

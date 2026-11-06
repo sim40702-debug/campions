@@ -23,13 +23,30 @@ export async function caricaTerreno() {
     quote[i] = info.quota_base + valori[i] * info.scala_quota;
   }
 
+  // Boschi (facoltativo): 1 = bosco, 0 = niente
+  let bosco = null;
+  const rispostaBosco = await fetch("dati/bosco.bin");
+  if (rispostaBosco.ok) {
+    bosco = new Uint8Array(await rispostaBosco.arrayBuffer());
+  }
+
   return {
     info: info,
     punti: info.punti,
     passo: info.passo_m,
     meta: info.lato_m / 2,
-    quote: quote
+    quote: quote,
+    bosco: bosco
   };
+}
+
+// C'e' bosco nel punto (x, z)?
+export function boscoQui(terreno, x, z) {
+  if (terreno.bosco === null) return false;
+  const colonna = Math.round((x + terreno.meta) / terreno.passo);
+  const riga = Math.round((z + terreno.meta) / terreno.passo);
+  if (colonna < 0 || riga < 0 || colonna >= terreno.punti || riga >= terreno.punti) return false;
+  return terreno.bosco[riga * terreno.punti + colonna] === 1;
 }
 
 // Quota del terreno in un punto qualsiasi (media tra i 4 punti vicini)
@@ -50,9 +67,13 @@ export function quotaTerreno(terreno, x, z) {
 }
 
 // Colore di un punto: sabbia vicino al lago, erba, roccia se ripido, chiaro in alto
-function coloreTerreno(quota, pendenza, livelloLago, colore) {
+function coloreTerreno(quota, pendenza, livelloLago, bosco, colore) {
   if (quota < livelloLago + 0.6) {
     colore.setRGB(0.62, 0.57, 0.45);
+  } else if (bosco && pendenza < 1.4) {
+    // Bosco: verde scuro (da lontano sembra un bosco anche senza alberi)
+    const variazione = (Math.sin(quota * 0.11) + 1) * 0.02;
+    colore.setRGB(0.15 + variazione, 0.27 + variazione, 0.12);
   } else if (pendenza > 0.9) {
     colore.setRGB(0.45, 0.43, 0.40);
   } else if (quota > 1700) {
@@ -86,7 +107,8 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto
       const destra = q[riga * n + Math.min(colonna + 1, n - 1)];
       const sotto = q[Math.min(riga + 1, n - 1) * n + colonna];
       const pendenza = Math.hypot(destra - quota, sotto - quota) / terreno.passo;
-      coloreTerreno(quota, pendenza, terreno.info.livello_lago, colore);
+      const bosco = terreno.bosco !== null && terreno.bosco[riga * n + colonna] === 1;
+      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore);
       colori[indice] = colore.r;
       colori[indice + 1] = colore.g;
       colori[indice + 2] = colore.b;

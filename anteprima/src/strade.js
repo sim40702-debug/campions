@@ -83,10 +83,33 @@ function creaMesh(posizioni, indici, colore, spostamento) {
   return new THREE.Mesh(geometria, materiale);
 }
 
+// Parapetto: due "muretti" alti 1 m ai lati di un ponte
+function aggiungiParapetti(p, larghezza, posizioni, indici) {
+  const punti = p.length / 3;
+  for (const lato of [-1, 1]) {
+    for (let i = 0; i < punti; i++) {
+      const prima = Math.max(i - 1, 0) * 3;
+      const dopo = Math.min(i + 1, punti - 1) * 3;
+      let dx = p[dopo] - p[prima];
+      let dz = p[dopo + 2] - p[prima + 2];
+      const lunghezza = Math.hypot(dx, dz) || 1;
+      const x = p[i * 3] - (dz / lunghezza) * lato * larghezza / 2;
+      const z = p[i * 3 + 2] + (dx / lunghezza) * lato * larghezza / 2;
+      const y = p[i * 3 + 1];
+      const primo = posizioni.length / 3;
+      posizioni.push(x, y, z, x, y + 1.0, z);
+      if (i > 0) {
+        indici.push(primo - 2, primo, primo - 1, primo - 1, primo, primo + 1);
+      }
+    }
+  }
+}
+
 export function aggiungiStrade(strade, scena) {
   const asfalto = { posizioni: [], indici: [] };
   const righe = { posizioni: [], indici: [] };
   const gallerie = { posizioni: [], indici: [] };
+  const parapetti = { posizioni: [], indici: [] };
 
   for (const strada of strade.lista) {
     const gruppo = strada.g ? gallerie : asfalto;
@@ -94,7 +117,11 @@ export function aggiungiStrade(strade, scena) {
     if (strada.w >= 5.5) {
       aggiungiNastro(strada.p, 0.15, 0.03, righe.posizioni, righe.indici, true);
     }
+    if (strada.b) {
+      aggiungiParapetti(strada.p, strada.w, parapetti.posizioni, parapetti.indici);
+    }
   }
+  scena.add(creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0));
 
   scena.add(creaMesh(asfalto.posizioni, asfalto.indici, 0x4f5157, -2));
   scena.add(creaMesh(gallerie.posizioni, gallerie.indici, 0x6b5a3a, -2));

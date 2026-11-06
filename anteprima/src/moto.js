@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { stradaSotto } from "./strade.js";
+import { dentroEdificio } from "./edifici.js";
 
 const VELOCITA_MAX_STRADA = 55;   // m/s = 198 km/h
 const VELOCITA_MAX_PRATO = 12;    // m/s fuori strada
@@ -85,7 +86,7 @@ function quotaSuolo(moto, terreno, strade, x, z) {
   return { y: quotaTerreno(terreno, x, z), strada: null };
 }
 
-export function aggiornaMoto(moto, tasti, dt, terreno, strade) {
+export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const avanti = tasti.su;
   const indietro = tasti.giu;
   let sterzo = 0;
@@ -138,6 +139,12 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade) {
     nuovaX = Math.min(Math.max(nuovaX, -limite), limite);
     nuovaZ = Math.min(Math.max(nuovaZ, -limite), limite);
     moto.velocita = 0;
+  }
+  // Contro un edificio: la moto si ferma e rimbalza un po' indietro
+  if (edifici && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
+    nuovaX = moto.x;
+    nuovaZ = moto.z;
+    moto.velocita = -moto.velocita * 0.2;
   }
   moto.x = nuovaX;
   moto.z = nuovaZ;

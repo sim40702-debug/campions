@@ -2,6 +2,7 @@
 #
 # - Confine del Canton Ticino e degli 8 distretti (le nostre regioni)
 # - Strade pubbliche asfaltate (decisione D3)
+# - Solo per il pilota: edifici, boschi e alberi (Sprint D1)
 #
 # Uso:
 #   python passo2_scarica_osm.py --pilota   (strade solo nel settore pilota)
@@ -39,6 +40,27 @@ def query_strade(pilota):
     return inizio + 'way["highway"~"^(' + tipi + ')$"]' + filtro + ";\nout geom;\n"
 
 
+def filtro_pilota():
+    area = utilita.area_di_lavoro(True)
+    lon_min, lat_min, lon_max, lat_max = utilita.area_in_wgs84(area)
+    return "(" + str(lat_min) + "," + str(lon_min) + "," + str(lat_max) + "," + str(lon_max) + ")"
+
+
+def query_edifici():
+    return "[out:json][timeout:900];\nway[\"building\"]" + filtro_pilota() + ";\nout geom;\n"
+
+
+def query_verde():
+    f = filtro_pilota()
+    return ("[out:json][timeout:900];\n(\n"
+            + '  way["landuse"="forest"]' + f + ";\n"
+            + '  way["natural"="wood"]' + f + ";\n"
+            + '  relation["landuse"="forest"]' + f + ";\n"
+            + '  relation["natural"="wood"]' + f + ";\n"
+            + '  node["natural"="tree"]' + f + ";\n"
+            + ");\nout geom;\n")
+
+
 def main():
     argomenti = utilita.leggi_argomenti("Scarica confini e strade da OpenStreetMap")
     utilita.crea_cartelle()
@@ -56,6 +78,15 @@ def main():
     nome_file = "strade_" + utilita.nome_area(argomenti.pilota) + ".json"
     strade = utilita.chiedi_overpass(query_strade(argomenti.pilota), cartella / nome_file)
     print("   Tratti di strada scaricati: " + str(len(strade.get("elements", []))))
+
+    if argomenti.pilota:
+        print("3) Edifici del pilota...")
+        edifici = utilita.chiedi_overpass(query_edifici(), cartella / "edifici_pilota.json")
+        print("   Edifici scaricati: " + str(len(edifici.get("elements", []))))
+
+        print("4) Boschi e alberi del pilota...")
+        verde = utilita.chiedi_overpass(query_verde(), cartella / "verde_pilota.json")
+        print("   Elementi scaricati: " + str(len(verde.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))
 

@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
+import { caricaEdifici, aggiungiEdifici } from "./edifici.js";
+import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
@@ -105,6 +107,13 @@ async function avvia() {
     aggiungiStrade(strade, scena);
     preparaMinimappa(strade, terreno);
 
+    mostraStato("Caricamento degli edifici (OpenStreetMap)...");
+    const edifici = await caricaEdifici();
+    aggiungiEdifici(edifici, scena);
+
+    mostraStato("Preparazione dei boschi...");
+    const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
+
     const moto = creaMoto(scena);
     const partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
@@ -120,7 +129,8 @@ async function avvia() {
         mettiSullaStrada(moto, strade, moto.x, moto.z);
         richiestaReset = false;
       }
-      aggiornaMoto(moto, tasti, dt, terreno, strade);
+      aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
+      aggiornaAlberi(alberi, moto.x, moto.z, dt);
       aggiornaTelecamera(moto, terreno, dt);
       aggiornaInterfaccia(moto, terreno);
       disegnatore.render(scena, telecamera);
