@@ -73,6 +73,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Moto")
 	float AderenzaAsfalto = 1.1f;
 
+	// Modello 3D della moto (cartella in Content con i pezzi SM450_Telaio, SM450_Sterzo...).
+	// Se non c'e', la moto resta fatta di forme semplici.
+	UPROPERTY(EditAnywhere, Category = "Moto")
+	FString CartellaModello = TEXT("/Game/MRW/Moto/SM450");
+
+	// Correzione della rotazione del modello importato (se in Unreal risulta girato)
+	UPROPERTY(EditAnywhere, Category = "Moto")
+	FRotator CorrezioneModello = FRotator::ZeroRotator;
+
 	// Dove parte la moto (cm, X = est, Y = sud dal centro dell'area). Default: Locarno, Piazza Grande
 	UPROPERTY(EditAnywhere, Category = "Moto")
 	FVector PuntoPartenza = FVector(78400.0f, 194400.0f, 0.0f);
@@ -107,6 +116,7 @@ private:
 	UStaticMeshComponent* AggiungiPezzo(const TCHAR* Nome, USceneComponent* Padre, UStaticMesh* Forma,
 		FVector Posizione, FVector Misura, FRotator Rotazione = FRotator::ZeroRotator);
 	void ColoraPezzi();
+	bool UsaModello3D();
 
 	// Comandi (creati dal codice, non servono file nell'editor)
 	void CreaComandi();

@@ -148,6 +148,10 @@ void AMRWMoto::BeginPlay()
 {
 	Super::BeginPlay();
 	ColoraPezzi();
+	if (UsaModello3D())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[MRW] Moto: modello 3D da %s"), *CartellaModello);
+	}
 	for (TActorIterator<AMRWTerreno> It(GetWorld()); It; ++It)
 	{
 		Terreno = *It;
@@ -163,6 +167,46 @@ void AMRWMoto::BeginPlay()
 		bAppoggiata = false;
 		Imbardata = GetActorRotation().Yaw;
 	}
+}
+
+bool AMRWMoto::UsaModello3D()
+{
+	// Carico i 5 pezzi: se ne manca anche uno solo resto con le forme semplici
+	const TCHAR* Pezzi[5] = { TEXT("Telaio"), TEXT("Forcellone"), TEXT("Sterzo"), TEXT("RuotaPosteriore"), TEXT("RuotaAnteriore") };
+	USceneComponent* Attacchi[5] = { PernoImpennata, PernoImpennata, Sterzo, MozzoPosteriore, MozzoAnteriore };
+	UStaticMesh* Mesh[5] = {};
+	for (int32 i = 0; i < 5; i++)
+	{
+		const FString Percorso = FString::Printf(TEXT("%s/SM450_%s.SM450_%s"), *CartellaModello, Pezzi[i], Pezzi[i]);
+		Mesh[i] = LoadObject<UStaticMesh>(nullptr, *Percorso, nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (Mesh[i] == nullptr)
+		{
+			return false;
+		}
+	}
+
+	// Nascondo le forme semplici della moto (il pilota provvisorio resta)
+	TArray<UStaticMeshComponent*> Vecchi;
+	GetComponents<UStaticMeshComponent>(Vecchi);
+	for (UStaticMeshComponent* Vecchio : Vecchi)
+	{
+		if (!Vecchio->GetName().StartsWith(TEXT("Pilota")))
+		{
+			Vecchio->SetVisibility(false);
+		}
+	}
+
+	// Ogni pezzo va attaccato alla parte che si muove con lui (ruote che girano, sterzo che gira)
+	for (int32 i = 0; i < 5; i++)
+	{
+		UStaticMeshComponent* Pezzo = NewObject<UStaticMeshComponent>(this, FName(*FString::Printf(TEXT("Modello_%s"), Pezzi[i])));
+		Pezzo->SetStaticMesh(Mesh[i]);
+		Pezzo->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Pezzo->SetupAttachment(Attacchi[i]);
+		Pezzo->SetRelativeRotation(CorrezioneModello);
+		Pezzo->RegisterComponent();
+	}
+	return true;
 }
 
 // ---------------------------------------------------------------- Comandi
