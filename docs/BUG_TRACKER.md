@@ -8,7 +8,7 @@ Gravità: **Alta** (blocca il gioco) / **Media** (si gioca ma è sbagliato) / **
 
 | ID | Titolo | Gravità | Regione / settore | Come riprodurlo | Sprint trovato | Stato |
 |---|---|---|---|---|---|---|
-| BUG-002 | Su Mac l'anteprima si ferma con "Errore: Failed to fetch" | Alta | Anteprima | Aprire l'app su Mac (Simone, 6.11.2026) | A | Aperto: in Electron i dati non vengono trovati. 0.1.4 mostra quale file manca e controlla i dati nella release |
+| BUG-002 | Su Mac l'anteprima si ferma con "Errore: Failed to fetch" | Alta | Anteprima | Aprire l'app su Mac (Simone, 6.11.2026) | A | Aperto. Verificato: le app della release 0.1.4 (Mac e Windows) contengono i dati; l'app Electron con i dati funziona (prova su Linux). 0.1.4 mostra quale file manca: serve il nuovo messaggio da Simone |
 
 ## Bug chiusi
 
