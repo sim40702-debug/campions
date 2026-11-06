@@ -34,6 +34,7 @@ from rasterio.transform import Affine
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import polygonize, unary_union
 
+import anteprima_edifici
 import anteprima_strade as vie
 import config
 import utilita
@@ -446,6 +447,8 @@ def main():
 
     print("5) Edifici...")
     edifici = esporta_edifici(lista_edifici, suolo, centro_est, centro_nord)
+    edifici, ritagliati, tolti = anteprima_edifici.stacca_dalle_strade(edifici, strade)
+    print("   case staccate dall'asfalto: " + str(ritagliati) + " ritagliate, " + str(tolti) + " tolte (quasi tutte sulla strada)")
     scrivi("edifici.json", {"edifici": edifici})
     chiese = sum(1 for e in edifici if e["k"] == 1)
     campanili = sum(1 for e in edifici if e["k"] == 2)

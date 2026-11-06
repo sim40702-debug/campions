@@ -26,7 +26,20 @@ export function creaMoto(scena, idMoto) {
     gas: 0,
     nomeStrada: "",
     inGalleria: false,
-    suStrada: false
+    suStrada: false,
+    sterzoDolce: 0,
+    vy: 0,              // velocita' verso l'alto (m/s)
+    inAria: false,
+    molla: 0,           // quanto sono schiacciate le sospensioni (m)
+    slittamento: 0,     // oltre 1 la gomma perde aderenza
+    caduta: 0,          // secondi a terra dopo una caduta
+    motivoCaduta: "",
+    velocitaUrto: 0,
+    nuovaCaduta: false,
+    latoCaduta: 1,
+    riparti: false,
+    impennata: 0,       // angolo della ruota davanti in alto (+) o della ruota dietro in alto (-), radianti
+    velImpennata: 0
   };
   cambiaMoto(moto, idMoto);
   return moto;
@@ -51,6 +64,14 @@ export function posizionaMoto(moto, x, y, z, dx, dz) {
   moto.z = z;
   moto.velocita = 0;
   moto.angolo = Math.atan2(-dx, -dz);
+  moto.vy = 0;
+  moto.inAria = false;
+  moto.piega = 0;
+  moto.slittamento = 0;
+  moto.caduta = 0;
+  moto.riparti = false;
+  moto.impennata = 0;
+  moto.velImpennata = 0;
 }
 
 function quotaSuolo(moto, terreno, strade, x, z) {
@@ -81,55 +102,166 @@ function calcolaMarcia(moto) {
   moto.giri += (voluti - moto.giri) * 0.25;
 }
 
+// --- Fisica -------------------------------------------------------------------
+const G = 9.81;                 // gravita' (m/s2)
+const ADERENZA_ASFALTO = 1.05;  // gomme stradali su asfalto asciutto
+const ADERENZA_PRATO = 0.6;     // erba e terra
+const BARICENTRO_ALTO = 0.68;   // altezza del baricentro moto + pilota (m)
+const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m)
+
+// La moto cade: da aggiornaMoto (scivolata, urto, atterraggio). Il resto lo decide danni.js
+function cadi(moto, motivo, velocitaUrto) {
+  if (moto.caduta > 0) return;
+  moto.caduta = 3;   // secondi a terra prima di ripartire
+  moto.motivoCaduta = motivo;
+  moto.velocitaUrto = Math.abs(velocitaUrto) * 3.6;   // km/h
+  moto.nuovaCaduta = true;                            // danni.js la legge una volta sola
+  moto.latoCaduta = moto.piega >= 0 ? 1 : -1;
+}
+
 export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const s = moto.scheda;
+  const dati = moto.modello.userData;
+
+  // A terra dopo una caduta: la moto scivola, si ferma e poi si riparte (gioco.js)
+  if (moto.caduta > 0) {
+    moto.caduta -= dt;
+    moto.velocita -= Math.sign(moto.velocita) * Math.min(Math.abs(moto.velocita), 7 * dt);
+    moto.x += -Math.sin(moto.angolo) * moto.velocita * dt;
+    moto.z += -Math.cos(moto.angolo) * moto.velocita * dt;
+    moto.y = quotaSuolo(moto, terreno, strade, moto.x, moto.z).y;
+    moto.vy = 0;
+    moto.inAria = false;
+    moto.gas = 0;
+    moto.piega += (moto.latoCaduta * 1.45 - moto.piega) * Math.min(1, dt * 6);
+    moto.modello.position.set(moto.x, moto.y, moto.z);
+    moto.modello.rotation.set(0, moto.angolo, moto.piega);
+    if (moto.caduta <= 0) moto.riparti = true;
+    return;
+  }
+
   const avanti = tasti.su;
   const indietro = tasti.giu;
   let sterzo = 0;
   if (tasti.sinistra) sterzo = sterzo + 1;
   if (tasti.destra) sterzo = sterzo - 1;
+  // Con la tastiera lo sterzo non e' tutto o niente: arriva al massimo in mezzo secondo
+  moto.sterzoDolce += Math.max(-dt * 2.5, Math.min(dt * 2.5, sterzo - moto.sterzoDolce));
   moto.gas += ((avanti ? 1 : 0) - moto.gas) * Math.min(1, dt * 6);
 
   // Dove sono? Strada, prato o lago
   const sotto = quotaSuolo(moto, terreno, strade, moto.x, moto.z);
-  moto.suStrada = sotto.strada !== null;
-  moto.nomeStrada = moto.suStrada ? sotto.strada.nome : "";
-  moto.inGalleria = moto.suStrada && sotto.strada.galleria;
+  if (!moto.inAria) {
+    moto.suStrada = sotto.strada !== null;
+    moto.nomeStrada = moto.suStrada ? sotto.strada.nome : "";
+    moto.inGalleria = moto.suStrada && sotto.strada.galleria;
+  }
   const nelLago = !moto.suStrada && sotto.y < terreno.info.livello_lago + 0.3;
 
   const vmax = s.vmax / 3.6;   // m/s
   let massima = moto.suStrada ? vmax : s.fuoristrada / 3.6;
   if (nelLago) massima = 3;
 
-  // Gas: piu' potenza = piu' accelerazione; vicino alla velocita' massima si accelera poco
-  if (avanti) {
-    const quanto = Math.max(0, 1 - Math.pow(Math.max(moto.velocita, 0) / vmax, 2));
-    moto.velocita += accelerazioneMax(s) * quanto * dt;
-  }
-  if (indietro) {
-    if (moto.velocita > 0.5) {
-      moto.velocita -= s.frenata * dt;
-    } else {
-      moto.velocita = Math.max(moto.velocita - 3 * dt, -4);
+  // Aderenza: quanta forza le gomme possono dare (in curva e in frenata insieme)
+  const aderenza = moto.suStrada ? ADERENZA_ASFALTO : ADERENZA_PRATO;
+  const limite = Math.min(aderenza, Math.tan(s.pieghaMax)) * G;   // m/s2
+
+  let accMotore = 0;   // m/s2 dati dal motore in questo istante
+  let accFreni = 0;    // m/s2 tolti dai freni
+  if (!moto.inAria) {
+    // Gas: piu' potenza = piu' accelerazione; vicino alla velocita' massima si accelera poco
+    if (avanti) {
+      const quanto = Math.max(0, 1 - Math.pow(Math.max(moto.velocita, 0) / vmax, 2));
+      accMotore = Math.min(accelerazioneMax(s), aderenza * G) * quanto;
+      // Senza Shift la moto non impenna da sola (e se e' gia' su, torna giu' piano):
+      // si toglie la potenza che alzerebbe il davanti
+      if (!tasti.pesoDietro) {
+        accMotore = Math.min(accMotore, G * BARICENTRO_DIETRO / BARICENTRO_ALTO - 0.3);
+      }
+      moto.velocita += accMotore * dt;
     }
+    // Freno davanti (S / giu') e freno dietro (Spazio). Con la ruota in aria quel freno non frena.
+    if (indietro && moto.velocita > 0.5 && moto.impennata < 0.05) accFreni += Math.min(s.frenata, aderenza * G);
+    if (tasti.frenoDietro && moto.velocita > 0.5 && moto.impennata > -0.05) accFreni += Math.min(s.frenata, aderenza * G) * 0.4;
+    if (accFreni > 0) moto.velocita = Math.max(0, moto.velocita - accFreni * dt);
+    if (indietro && moto.velocita <= 0.5) {
+      moto.velocita = Math.max(moto.velocita - 3 * dt, -4);   // retromarcia a spinta, piano
+    }
+    // Freno motore quando si chiude il gas
+    if (!avanti && !indietro) {
+      moto.velocita -= Math.sign(moto.velocita) * Math.min(Math.abs(moto.velocita), 1.4 * dt);
+    }
+    if (moto.velocita > massima) {
+      moto.velocita = Math.max(massima, moto.velocita - 10 * dt);
+    }
+    // Salite e discese: la gravita' vera
+    moto.velocita -= G * Math.sin(moto.beccheggio) * dt;
   }
-  // Attrito dell'aria e del motore (freno motore)
-  moto.velocita -= moto.velocita * 0.03 * dt;
-  if (!avanti && !indietro) {
-    moto.velocita -= Math.sign(moto.velocita) * Math.min(Math.abs(moto.velocita), 1.2 * dt);
-  }
-  if (moto.velocita > massima) {
-    moto.velocita = Math.max(massima, moto.velocita - 10 * dt);
+  // Aria (vale anche in volo)
+  moto.velocita -= moto.velocita * Math.abs(moto.velocita) * 0.0012 * dt;
+
+  const v = Math.abs(moto.velocita);
+
+  // --- Impennata e stoppie ------------------------------------------------------
+  // Momento attorno alla ruota che resta a terra: l'accelerazione alza il davanti,
+  // la frenata alza il dietro, la gravita' (peso sul baricentro) riporta giu'.
+  // Shift = peso indietro (impenna prima), E = peso avanti (stoppie prima).
+  if (!moto.inAria) {
+    const passo = dati.passo;
+    const h = BARICENTRO_ALTO;
+    const b = BARICENTRO_DIETRO - (tasti.pesoDietro ? 0.18 : 0);                 // dalla ruota dietro
+    const d = passo - BARICENTRO_DIETRO - (tasti.pesoAvanti ? 0.25 : 0);        // dalla ruota davanti
+    const angolo = Math.abs(moto.impennata);
+    const c = Math.cos(angolo);
+    const sn = Math.sin(angolo);
+    const alfaSu = ((accMotore - (tasti.frenoDietro ? accFreni : 0)) * h * c - G * (b * c - h * sn)) / (b * b + h * h);
+    const alfaGiu = (accFreni * h * c - G * (d * c - h * sn)) / (d * d + h * h);
+    if (moto.impennata > 0 || (alfaSu > 0 && v > 1)) {
+      moto.velImpennata += alfaSu * dt;
+      moto.impennata += moto.velImpennata * dt;
+      if (moto.impennata <= 0) {
+        moto.impennata = 0;
+        moto.velImpennata = 0;
+      }
+    } else if (moto.impennata < 0 || (alfaGiu > 0 && v > 1)) {
+      moto.velImpennata -= alfaGiu * dt;
+      moto.impennata += moto.velImpennata * dt;
+      if (moto.impennata >= 0 || v < 0.5) {
+        moto.impennata = 0;
+        moto.velImpennata = 0;
+      }
+    }
+    if (moto.impennata > 1.3) cadi(moto, "Impennata troppo alta: sei andato all'indietro", Math.max(moto.velocita, 9));
+    if (moto.impennata < -0.95) cadi(moto, "Stoppie troppo forte: sei volato in avanti", Math.max(moto.velocita, 9));
   }
 
-  // Salite e discese (le moto leggere soffrono meno)
-  moto.velocita -= 9.81 * Math.sin(moto.beccheggio) * 0.6 * dt;
+  // --- Curva: le gomme hanno un limite -----------------------------------------
+  // Da piano si gira con il manubrio; in velocita' si piega, e la piega dipende da quanta curva chiedi.
+  // Sterzo al massimo = chiedere un po' PIU' di quello che le gomme danno: se lo tieni, la moto scivola.
+  const giroManubrio = moto.sterzoDolce * s.agilita * Math.min(1, v / 3) / (1 + v * 0.05);
+  const giroGomme = (moto.sterzoDolce * 1.15 * limite) / Math.max(v, 1);
+  let giro = Math.abs(giroManubrio) < Math.abs(giroGomme) ? giroManubrio : giroGomme;
+  if (moto.inAria) giro = 0;
+  if (moto.impennata > 0.1) giro = giro * 0.35;   // ruota davanti in aria: si gira poco
 
-  // Sterzo: le moto agili girano di piu'; piu' vai veloce, meno giri stretto
-  const giro = sterzo * s.agilita / (1 + Math.abs(moto.velocita) * 0.05) * Math.min(1, Math.abs(moto.velocita) / 3);
+  // In frenata resta meno aderenza per curvare (cerchio di aderenza)
+  const frenata = accFreni;
+  const disponibile = Math.sqrt(Math.max(0.5, limite * limite - frenata * frenata));
+  const laterale = v * Math.abs(giro);
+  if (laterale > disponibile && v > 1) {
+    // si chiede troppo: la moto allarga la curva e le gomme cominciano a scivolare
+    giro = giro * disponibile / laterale;
+    moto.slittamento += dt * (laterale / disponibile - 1) * 5;
+  } else {
+    moto.slittamento = Math.max(0, moto.slittamento - dt);
+  }
   moto.angolo += giro * dt * Math.sign(moto.velocita || 1);
+  // Si cade se si insiste: forte (oltre 72 km/h) oppure frenando in piega
+  if (moto.slittamento > 1 && (v > 20 || (frenata > 0 && v > 12))) {
+    cadi(moto, "Hai perso aderenza in curva", moto.velocita);
+  }
 
-  // Movimento
+  // --- Movimento -----------------------------------------------------------------
   const dirX = -Math.sin(moto.angolo);
   const dirZ = -Math.cos(moto.angolo);
   let nuovaX = moto.x + dirX * moto.velocita * dt;
@@ -141,40 +273,77 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
     moto.velocita = 0;
   }
-  // Contro un edificio: la moto si ferma e rimbalza un po' indietro
+  // Contro un edificio: piano si rimbalza, forte si cade
   // (sulla strada no: a volte la strada passa sotto un edificio, come un portico)
   if (edifici && !moto.suStrada && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
+    if (v > 5) {
+      cadi(moto, "Sei finito contro un edificio", moto.velocita);
+      moto.velocita = 0;
+    } else {
+      moto.velocita = -moto.velocita * 0.2;
+    }
     nuovaX = moto.x;
     nuovaZ = moto.z;
-    moto.velocita = -moto.velocita * 0.2;
   }
   moto.x = nuovaX;
   moto.z = nuovaZ;
 
-  // Quota e inclinazione avanti/indietro
+  // --- Gravita': la moto non e' incollata alla strada -------------------------------
   const suolo = quotaSuolo(moto, terreno, strade, moto.x, moto.z);
-  moto.y = suolo.y;
-  const davanti = quotaSuolo(moto, terreno, strade, moto.x + dirX * 0.8, moto.z + dirZ * 0.8).y;
-  const dietro = quotaSuolo(moto, terreno, strade, moto.x - dirX * 0.8, moto.z - dirZ * 0.8).y;
-  // inclinazione avanti/indietro "ammorbidita": niente saltelli
-  const voluta = Math.atan2(davanti - dietro, 1.6);
-  moto.beccheggio += (voluta - moto.beccheggio) * Math.min(1, dt * 8);
+  if (!moto.inAria) {
+    // dove arriverebbe la moto cadendo in questo istante
+    const caduta = moto.y + moto.vy * dt - 0.5 * G * dt * dt;
+    if (suolo.y < caduta - 0.05 && v > 6) {
+      moto.inAria = true;   // il suolo scende piu' in fretta della moto: salto (dossi, creste)
+    } else {
+      moto.vy = (suolo.y - moto.y) / dt;
+      moto.y = suolo.y;
+    }
+  }
+  if (moto.inAria) {
+    moto.vy -= G * dt;
+    moto.y += moto.vy * dt;
+    if (moto.y <= suolo.y) {
+      // atterraggio: oltre 8 m/s verso il basso (come cadere da piu' di 3 metri) non regge
+      if (moto.vy < -8) cadi(moto, "Atterraggio troppo duro", Math.hypot(moto.vy, moto.velocita * 0.3));
+      moto.molla = Math.min(0.12, -moto.vy * 0.015);   // le sospensioni si schiacciano
+      moto.y = suolo.y;
+      moto.vy = 0;
+      moto.inAria = false;
+    }
+  }
+  // Sospensioni: tornano su piano
+  moto.molla += (0 - moto.molla) * Math.min(1, dt * 6);
 
-  // Piega in curva: come nella realta' dipende da velocita' e quanto stretta e' la curva
-  const curva = Math.abs(moto.velocita) * Math.abs(giro);       // accelerazione laterale
-  const piegaVoluta = Math.sign(sterzo) * Math.min(s.pieghaMax, Math.atan(curva / 9.81));
+  // Inclinazione avanti/indietro (a terra segue la strada, in volo resta com'era)
+  if (!moto.inAria) {
+    const davanti = quotaSuolo(moto, terreno, strade, moto.x + dirX * 0.8, moto.z + dirZ * 0.8).y;
+    const dietro = quotaSuolo(moto, terreno, strade, moto.x - dirX * 0.8, moto.z - dirZ * 0.8).y;
+    const voluta = Math.atan2(davanti - dietro, 1.6);
+    moto.beccheggio += (voluta - moto.beccheggio) * Math.min(1, dt * 8);
+  } else {
+    moto.beccheggio += (Math.atan2(moto.vy, Math.max(v, 1)) - moto.beccheggio) * Math.min(1, dt * 2);
+  }
+
+  // Piega in curva: tan(piega) = accelerazione laterale / g, come nella realta'
+  const piegaVoluta = Math.sign(giro) * Math.min(s.pieghaMax, Math.atan(v * Math.abs(giro) / G));
   moto.piega += (piegaVoluta - moto.piega) * Math.min(1, dt * 5);
 
   // Sterzo visto (ruota davanti): molto da fermi, poco in velocita'
-  const sterzoVoluto = sterzo * 0.45 / (1 + Math.abs(moto.velocita) * 0.25);
+  const sterzoVoluto = moto.sterzoDolce * 0.45 / (1 + v * 0.25);
   moto.sterzoVisto += (sterzoVoluto - moto.sterzoVisto) * Math.min(1, dt * 8);
 
   calcolaMarcia(moto);
 
   // Modello 3D: posizione, inclinazioni, ruote che girano, manubrio
-  const dati = moto.modello.userData;
-  moto.modello.position.set(moto.x, moto.y, moto.z);
-  moto.modello.rotation.set(moto.beccheggio, moto.angolo, moto.piega);
+  // Impennata: la moto ruota attorno alla ruota dietro (stoppie: attorno a quella davanti),
+  // quindi il centro del modello si alza e si sposta verso la ruota che tocca terra
+  const mezzoPasso = dati.passo / 2;
+  const su = mezzoPasso * Math.sin(Math.abs(moto.impennata));
+  const verso = moto.impennata >= 0 ? 1 : -1;   // 1 = verso la ruota dietro
+  const indietroM = mezzoPasso * (1 - Math.cos(moto.impennata)) * verso;
+  moto.modello.position.set(moto.x - dirX * indietroM, moto.y - moto.molla + su, moto.z - dirZ * indietroM);
+  moto.modello.rotation.set(moto.beccheggio + moto.impennata, moto.angolo, moto.piega);
   dati.ruotaDavanti.rotation.x -= (moto.velocita * dt) / dati.rDav;
   dati.ruotaDietro.rotation.x -= (moto.velocita * dt) / dati.rDie;
   dati.sterzo.rotation.y = moto.sterzoVisto;

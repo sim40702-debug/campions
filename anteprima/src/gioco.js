@@ -7,6 +7,7 @@ import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
 import { aggiornaSuono } from "./audio.js";
+import { creaDanni, aggiornaDanni } from "./danni.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -45,7 +46,7 @@ window.addEventListener("resize", function () {
 });
 
 // --- Tastiera ------------------------------------------------------------------
-const tasti = { su: false, giu: false, sinistra: false, destra: false };
+const tasti = { su: false, giu: false, sinistra: false, destra: false, frenoDietro: false, pesoDietro: false, pesoAvanti: false };
 let modoTelecamera = 0;   // 0 = dietro, 1 = alta, 2 = casco
 let richiestaReset = false;
 
@@ -55,6 +56,10 @@ function cambiaTasto(evento, premuto) {
   if (codice === "ArrowDown" || codice === "KeyS") tasti.giu = premuto;
   if (codice === "ArrowLeft" || codice === "KeyA") tasti.sinistra = premuto;
   if (codice === "ArrowRight" || codice === "KeyD") tasti.destra = premuto;
+  if (codice === "Space") tasti.frenoDietro = premuto;
+  if (codice === "ShiftLeft" || codice === "ShiftRight") tasti.pesoDietro = premuto;   // impennata
+  if (codice === "KeyE") tasti.pesoAvanti = premuto;                                   // stoppie
+  if (codice === "Space") evento.preventDefault();
   if (codice.startsWith("Arrow")) evento.preventDefault();
 }
 
@@ -177,6 +182,8 @@ async function avvia() {
     preparaRisultato();
     preparaGarage(moto);
 
+    const danni = creaDanni();
+
     nascondiCaricamento();
     const orologio = new THREE.Clock();
     let tempoGioco = 0;
@@ -184,7 +191,8 @@ async function avvia() {
     function ciclo() {
       const vero = orologio.getDelta();          // tempo vero del fotogramma (per gli FPS)
       const dt = Math.min(vero, 0.05);           // tempo per la fisica (mai troppo grande)
-      if (richiestaReset) {
+      // R oppure fine di una caduta: si riparte dalla strada piu' vicina
+      if (richiestaReset || moto.riparti) {
         mettiSullaStrada(moto, strade, moto.x, moto.z);
         richiestaReset = false;
       }
@@ -202,6 +210,7 @@ async function avvia() {
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);
       aggiornaSuono(moto, test.attivo);
+      aggiornaDanni(danni, moto, dt, disegnatore.domElement);
       aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);

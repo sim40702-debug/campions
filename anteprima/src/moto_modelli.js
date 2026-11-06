@@ -12,7 +12,27 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.4, pieghaMax: 0.85, fuoristrada: 60,
     marce: [0.30, 0.44, 0.57, 0.70, 0.84, 1.0], minimo: 1600, limitatore: 9200, cilindri: 1,
     colori: { telaio: 0xd9d9d9, carena: 0xf2f2f2, grafica: 0xd8232a, sella: 0x1d1d1d },
-    forma: "supermotard"
+    forma: "supermotard", scoppiettii: true
+  },
+  sm450: {
+    nome: "MRW SM 450",
+    categoria: "Supermotard (disegno di Simone)",
+    motore: "Monocilindrico 450 cc",
+    cv: 60, kg: 128, vmax: 165,
+    frenata: 10.5, agilita: 2.5, pieghaMax: 0.85, fuoristrada: 70,
+    marce: [0.30, 0.45, 0.58, 0.72, 0.86, 1.0], minimo: 1800, limitatore: 11000, cilindri: 1,
+    colori: { telaio: 0x1c1c1e, carena: 0xc8141c, grafica: 0x141414, sella: 0x101010 },
+    forma: "supermotard", scarichi: 2, scoppiettii: true
+  },
+  strada700: {
+    nome: "MRW Strada 700",
+    categoria: "Stradale",
+    motore: "Bicilindrico 700 cc",
+    cv: 75, kg: 195, vmax: 205,
+    frenata: 9.5, agilita: 1.9, pieghaMax: 0.85, fuoristrada: 35,
+    marce: [0.27, 0.41, 0.54, 0.68, 0.84, 1.0], minimo: 1300, limitatore: 9500, cilindri: 2,
+    colori: { telaio: 0x2b2d31, carena: 0x3d5a46, grafica: 0xd9c9a3, sella: 0x3a2a20 },
+    forma: "stradale", scoppiettii: true
   },
   naked890: {
     nome: "MRW Naked 890",
@@ -56,7 +76,7 @@ export const MOTO = {
   }
 };
 
-export const ORDINE = ["sm690", "naked890", "sport1000", "enduro450", "scooter125"];
+export const ORDINE = ["sm450", "sm690", "strada700", "naked890", "sport1000", "enduro450", "scooter125"];
 
 // Accelerazione massima (m/s2): potenza / peso, ma al massimo 11 (la ruota davanti si alzerebbe)
 export function accelerazioneMax(scheda) {
@@ -138,6 +158,7 @@ export function costruisciMoto(scheda) {
   const misure = {
     supermotard: { rDav: 0.31, rDie: 0.31, passo: 1.48, sella: 0.92, largG: 0.12 },
     naked: { rDav: 0.31, rDie: 0.32, passo: 1.42, sella: 0.82, largG: 0.13 },
+    stradale: { rDav: 0.31, rDie: 0.32, passo: 1.45, sella: 0.80, largG: 0.13 },
     sportiva: { rDav: 0.31, rDie: 0.32, passo: 1.40, sella: 0.84, largG: 0.13 },
     enduro: { rDav: 0.37, rDie: 0.35, passo: 1.48, sella: 0.96, largG: 0.10 },
     scooter: { rDav: 0.22, rDie: 0.22, passo: 1.33, sella: 0.78, largG: 0.11 }
@@ -196,7 +217,12 @@ export function costruisciMoto(scheda) {
   }
 
   // Faro e strumentazione
-  if (f === "naked") {
+  if (f === "naked" || f === "stradale") {
+    if (f === "stradale") {
+      const cupolino = scatola(0.34, 0.22, 0.04, new THREE.MeshPhongMaterial({ color: 0x88aacc, transparent: true, opacity: 0.45 }), 0, 0.16, -0.1);
+      cupolino.rotation.x = -0.35;
+      sterzo.add(cupolino);
+    }
     const faro = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.1, 18), cromo);
     faro.rotation.x = Math.PI / 2;
     faro.position.set(0, 0.0, -0.08);
@@ -244,7 +270,7 @@ export function costruisciMoto(scheda) {
     }
     // serbatoio, fianchetti, sella, codino
     const lungoSerb = f === "enduro" || f === "supermotard" ? 0.4 : 0.48;
-    const serbatoio = scatola(f === "naked" ? 0.36 : 0.3, 0.2, lungoSerb, carena, 0, misure.sella - 0.04, -0.12);
+    const serbatoio = scatola(f === "naked" || f === "stradale" ? 0.36 : 0.3, 0.2, lungoSerb, carena, 0, misure.sella - 0.04, -0.12);
     serbatoio.rotation.x = f === "sportiva" ? 0.12 : 0.05;
     moto.add(serbatoio);
     moto.add(scatola(0.32, 0.03, 0.2, grafica, 0, misure.sella + 0.07, -0.1));   // grafica sul serbatoio
@@ -279,6 +305,10 @@ export function costruisciMoto(scheda) {
     } else if (f === "supermotard" || f === "enduro") {
       moto.add(tuboTra(0.035, [0.1, 0.55, -0.1], [0.16, 0.7, 0.35], cromo));
       moto.add(tuboTra(0.06, [0.16, 0.72, 0.35], [0.17, 0.82, 0.7], materiale(0x404448, true)));  // silenziatore alto
+      if (scheda.scarichi === 2) {
+        moto.add(tuboTra(0.035, [0.1, 0.55, -0.1], [-0.16, 0.7, 0.35], cromo));
+        moto.add(tuboTra(0.06, [-0.16, 0.72, 0.35], [-0.17, 0.82, 0.7], materiale(0x404448, true)));  // secondo silenziatore
+      }
     } else {
       moto.add(tuboTra(0.035, [0.1, 0.35, -0.1], [0.15, 0.32, 0.3], cromo));
       moto.add(tuboTra(0.07, [0.15, 0.32, 0.3], [0.17, 0.42, 0.62], materiale(0x404448, true)));
@@ -293,6 +323,7 @@ export function costruisciMoto(scheda) {
     supermotard: { busto: -0.25, spalleZ: -0.05, testaZ: -0.2, avanti: 0.0 },
     enduro: { busto: -0.22, spalleZ: -0.02, testaZ: -0.17, avanti: 0.0 },
     naked: { busto: -0.4, spalleZ: -0.1, testaZ: -0.28, avanti: 0.05 },
+    stradale: { busto: -0.3, spalleZ: -0.05, testaZ: -0.22, avanti: 0.0 },
     sportiva: { busto: -1.0, spalleZ: -0.35, testaZ: -0.55, avanti: 0.15 },
     scooter: { busto: 0.0, spalleZ: 0.15, testaZ: 0.07, avanti: 0.0 }
   }[f];
@@ -327,6 +358,6 @@ export function costruisciMoto(scheda) {
   moto.traverse(function (oggetto) {
     oggetto.castShadow = false;
   });
-  moto.userData = { ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo, rDav: misure.rDav, rDie: misure.rDie };
+  moto.userData = { ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo, rDav: misure.rDav, rDie: misure.rDie, passo: misure.passo };
   return moto;
 }

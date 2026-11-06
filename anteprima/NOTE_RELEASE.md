@@ -3,7 +3,17 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.8.0) – Sprint H1
+### Novità di questa versione (0.9.0) – Sprint H2
+
+- **Le case non toccano più l'asfalto**: dove il contorno di una casa entrava nella strada, il muro ora parte dal bordo (circa 2300 case sistemate; prima 957 toccavano la strada, ora 1).
+- **Fisica più vera**: la moto non è più incollata alla strada. Gravità vera, salti su dossi e creste, sospensioni che si schiacciano all'atterraggio.
+- **Aderenza delle gomme**: in velocità non si fanno i tornanti. Se si sterza troppo forte la moto allarga la curva e, se si insiste (sopra i 72 km/h) o si frena in piega, si scivola e si cade. Sul prato le gomme tengono meno.
+- **Cadute e danni**: sotto i 30 km/h ti rialzi; tra 30 e 75 km/h sei ferito e la vista si annebbia per un po'; sopra i 75 km/h sei morto (schermo nero) e si riparte dalla strada.
+- **Impennate e stoppie**: Shift = peso dietro (impennata), E = peso avanti (stoppie), Spazio = freno dietro (riporta giù la ruota). Oltre il punto di equilibrio si va all'indietro!
+- **Scoppiettii** dallo scarico quando chiudi il gas di colpo a giri alti (monocilindrici e bicilindrici).
+- **Nuove moto nel garage**: **MRW SM 450** (il disegno di Simone: rossa e nera, forcella oro, due scarichi) e **MRW Strada 700** (stradale bicilindrica con piccolo parabrezza).
+
+### Novità della 0.8.0 – Sprint H1
 
 - **Mappa più grande: Locarnese 16 × 12 km**, fino a **Tenero e Gordola**, Losone, Tegna, Verscio, Cardada e Cimetta.
 - **Foto aeree SWISSIMAGE** di swisstopo sul terreno: dall'alto il gioco assomiglia alla realtà.

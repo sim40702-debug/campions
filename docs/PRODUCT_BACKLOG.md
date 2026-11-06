@@ -67,6 +67,13 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-35 | Cambio automatico, marce e contagiri | G1 | 2 | Fatto (0.7.0) |
 | TI-36 | Suono del motore | G1 | 2 | Fatto (0.7.0) |
 | TI-37 | Modelli 3D delle moto più curati | G1 | 2 | Fatto (0.7.0) |
+| TI-46 | Case staccate dall'asfalto (contorni ritagliati) | H2 | 1 | Fatto (0.9.0) |
+| TI-47 | Gravità vera: salti, atterraggi, sospensioni | H2 | 1 | Fatto (0.9.0) |
+| TI-48 | Aderenza: niente tornanti a 200 km/h, scivolate | H2 | 1 | Fatto (0.9.0) |
+| TI-49 | Cadute con ferite (vista annebbiata) e morte | H2 | 1 | Fatto (0.9.0) |
+| TI-50 | Impennate e stoppie (Shift, E, Spazio) | H2 | 1 | Fatto (0.9.0) |
+| TI-51 | Scoppiettii in rilascio | H2 | 2 | Fatto (0.9.0) |
+| TI-52 | MRW SM 450 e MRW Strada 700 nel garage | H2 | 2 | Fatto (0.9.0) |
 | TI-38 | Piano tecnico Unreal Engine 5 | U1 | 1 | Fatto |
 | TI-39 | Progetto UE 5.8 Windows + Mac (Lumen, Nanite, VSM, TSR) | U1 | 1 | Scritto, da compilare |
 | TI-40 | Giorno/notte e meteo con strade bagnate | U1 | 1 | Scritto, da compilare |
