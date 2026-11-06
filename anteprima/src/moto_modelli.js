@@ -12,7 +12,7 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.4, pieghaMax: 0.85, fuoristrada: 60,
     marce: [0.30, 0.44, 0.57, 0.70, 0.84, 1.0], minimo: 1600, limitatore: 9200, cilindri: 1,
     colori: { telaio: 0xd9d9d9, carena: 0xf2f2f2, grafica: 0xd8232a, sella: 0x1d1d1d },
-    forma: "supermotard", scoppiettii: true
+    forma: "supermotard"
   },
   sm450: {
     nome: "MRW SM 450",
@@ -22,7 +22,7 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.5, pieghaMax: 0.85, fuoristrada: 70,
     marce: [0.30, 0.45, 0.58, 0.72, 0.86, 1.0], minimo: 1800, limitatore: 11000, cilindri: 1,
     colori: { telaio: 0x1c1c1e, carena: 0xc8141c, grafica: 0x141414, sella: 0x101010 },
-    forma: "supermotard", scarichi: 2, scoppiettii: true
+    forma: "supermotard", scarichi: 2
   },
   strada700: {
     nome: "MRW Strada 700",
@@ -32,7 +32,7 @@ export const MOTO = {
     frenata: 9.5, agilita: 1.9, pieghaMax: 0.85, fuoristrada: 35,
     marce: [0.27, 0.41, 0.54, 0.68, 0.84, 1.0], minimo: 1300, limitatore: 9500, cilindri: 2,
     colori: { telaio: 0x2b2d31, carena: 0x3d5a46, grafica: 0xd9c9a3, sella: 0x3a2a20 },
-    forma: "stradale", scoppiettii: true
+    forma: "stradale"
   },
   naked890: {
     nome: "MRW Naked 890",
@@ -316,6 +316,8 @@ export function costruisciMoto(scheda) {
   }
 
   // --- Pilota ---------------------------------------------------------------------
+  // Il pilota e' un gruppo a parte: quando si cade si stacca dalla moto e vola via (moto.js)
+  const pilota = new THREE.Group();
   const tuta = materiale(0x24324a);
   const casco = materiale(c.grafica === 0xffffff ? 0xffffff : c.grafica, true);
   const visiera = new THREE.MeshPhongMaterial({ color: 0x111820, shininess: 120 });
@@ -340,24 +342,31 @@ export function costruisciMoto(scheda) {
   const visieraM = new THREE.Mesh(new THREE.SphereGeometry(0.151, 16, 8, Math.PI * 0.75, Math.PI * 0.5, Math.PI * 0.35, Math.PI * 0.25), visiera);
   visieraM.position.copy(testaPilota.position);
   gruppoBusto.add(visieraM);
-  moto.add(gruppoBusto);
+  pilota.add(gruppoBusto);
   // braccia verso il manubrio
   const spalla = new THREE.Vector3(0, 0.52, 0).applyAxisAngle(new THREE.Vector3(1, 0, 0), posture.busto).add(sedile);
   const mano = new THREE.Vector3(0, manubrioY, 0.08).applyAxisAngle(new THREE.Vector3(1, 0, 0), INCLINAZIONE).add(testa);
   for (const lato of [-1, 1]) {
-    moto.add(tuboTra(0.05, [lato * 0.2, spalla.y, spalla.z], [lato * (larghezzaManubrio - 0.06), mano.y, mano.z], tuta));
+    pilota.add(tuboTra(0.05, [lato * 0.2, spalla.y, spalla.z], [lato * (larghezzaManubrio - 0.06), mano.y, mano.z], tuta));
     // gambe: dall'anca alla pedana
     const pedanaY = f === "scooter" ? 0.38 : 0.36;
     const pedanaZ = f === "scooter" ? -0.15 : (f === "sportiva" ? 0.3 : 0.12);
     const ginocchio = [lato * 0.2, misure.sella - 0.05, f === "scooter" ? -0.05 : -0.1];
-    moto.add(tuboTra(0.07, [lato * 0.13, sedile.y, sedile.z], ginocchio, tuta));
-    moto.add(tuboTra(0.055, ginocchio, [lato * 0.17, pedanaY, pedanaZ], tuta));
-    moto.add(scatola(0.09, 0.08, 0.24, nero, lato * 0.17, pedanaY - 0.02, pedanaZ - 0.05));   // stivale
+    pilota.add(tuboTra(0.07, [lato * 0.13, sedile.y, sedile.z], ginocchio, tuta));
+    pilota.add(tuboTra(0.055, ginocchio, [lato * 0.17, pedanaY, pedanaZ], tuta));
+    pilota.add(scatola(0.09, 0.08, 0.24, nero, lato * 0.17, pedanaY - 0.02, pedanaZ - 0.05));   // stivale
   }
+
+  // L'origine del gruppo pilota va al suo bacino: cosi' quando cade gira attorno al corpo
+  const bacino = new THREE.Vector3(0, misure.sella + 0.3, f === "scooter" ? 0.25 : 0.12);
+  for (const pezzo of pilota.children) pezzo.position.sub(bacino);
+  pilota.position.copy(bacino);
+  moto.add(pilota);
 
   moto.traverse(function (oggetto) {
     oggetto.castShadow = false;
   });
-  moto.userData = { ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo, rDav: misure.rDav, rDie: misure.rDie, passo: misure.passo };
+  moto.userData = { ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo, rDav: misure.rDav, rDie: misure.rDie, passo: misure.passo,
+    pilota: pilota, postoPilota: bacino.clone() };
   return moto;
 }

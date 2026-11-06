@@ -2,7 +2,7 @@
 // La nota segue i giri: un monocilindrico "scoppietta", un quattro cilindri "urla".
 // Tasto M: suono si' / no.
 // Scoppiettii: quando chiudi il gas di colpo a giri alti, lo scarico "spara" qualche colpo
-// (benzina che brucia nello scarico, tipico dei monocilindrici e delle supermotard).
+// (benzina che brucia nello scarico). Lo fanno tutte le moto del garage.
 
 let contesto = null;
 let principale = null;
@@ -97,7 +97,7 @@ export function aggiornaSuono(moto, inPausa) {
   const giriAlti = moto.giri > s.minimo + (s.limitatore - s.minimo) * 0.45;
   if (gasAperto && moto.gas < 0.5) {
     gasAperto = false;
-    if (s.scoppiettii && acceso && !inPausa && giriAlti) {
+    if (acceso && !inPausa && giriAlti) {
       const quanti = 3 + Math.floor(Math.random() * 5);
       for (let i = 0; i < quanti; i++) {
         colpo(ora + 0.05 + Math.random() * 0.55, 0.4 + Math.random() * 0.6);

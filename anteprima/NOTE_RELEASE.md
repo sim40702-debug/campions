@@ -3,7 +3,14 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.9.0) – Sprint H2
+### Novità di questa versione (0.9.1)
+
+- **Cadute vere**: il pilota si stacca dalla moto, vola avanti facendo la capriola, rimbalza e striscia sull'asfalto, poi resta a terra; la moto scivola per conto suo.
+- **Niente più saltelli sulla strada**: la moto si stacca da terra solo su creste e dossi veri (almeno 25 cm), non sui piccoli cambi di pendenza.
+- **Prima persona migliorata** (tasto C, terza vista): si vedono manubrio, forcella, tabella e serbatoio; la vista piega con la moto in curva e si alza nelle impennate.
+- **Scoppiettii su tutte le moto** quando chiudi il gas di colpo a giri alti.
+
+### Novità della 0.9.0 – Sprint H2
 
 - **Le case non toccano più l'asfalto**: dove il contorno di una casa entrava nella strada, il muro ora parte dal bordo (circa 2300 case sistemate; prima 957 toccavano la strada, ora 1).
 - **Fisica più vera**: la moto non è più incollata alla strada. Gravità vera, salti su dossi e creste, sospensioni che si schiacciano all'atterraggio.

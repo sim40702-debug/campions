@@ -92,10 +92,33 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
     alto = 2.2;
   }
 
-  if (modoTelecamera === 2) {
-    // Dal casco del pilota
-    telecamera.position.set(moto.x + dirX * 0.1, moto.y + 1.55, moto.z + dirZ * 0.1);
-    telecamera.lookAt(moto.x + dirX * 20, moto.y + 1.2, moto.z + dirZ * 20);
+  const modello = moto.modello;
+  modello.updateMatrixWorld();
+  const pilota = modello.userData.pilota;
+  const inPrimaPersona = modoTelecamera === 2 && moto.caduta <= 0;
+  // in prima persona il pilota sei tu: non lo disegno (cosi' si vedono manubrio e tabella)
+  pilota.visible = !inPrimaPersona || pilota.parent !== modello;
+  // in prima persona: vista piu' larga e oggetti vicini (manubrio) non tagliati
+  const nearVoluto = inPrimaPersona ? 0.05 : 0.3;
+  const fovVoluto = inPrimaPersona ? 80 : 65;
+  if (telecamera.near !== nearVoluto || telecamera.fov !== fovVoluto) {
+    telecamera.near = nearVoluto;
+    telecamera.fov = fovVoluto;
+    telecamera.updateProjectionMatrix();
+  }
+  // "Su" della telecamera: piega un po' con la moto (in prima persona molto, da dietro poco)
+  const suMoto = new THREE.Vector3(0, 1, 0).applyQuaternion(modello.quaternion);
+  telecamera.up.set(0, 1, 0).lerp(suMoto, inPrimaPersona ? 0.7 : 0.15).normalize();
+
+  if (inPrimaPersona) {
+    // Dal casco: gli occhi sopra il bacino del pilota, un po' in avanti; si guarda in basso verso la strada
+    const posto = modello.userData.postoPilota;
+    // occhi nel casco, circa mezzo metro dietro il manubrio; si guarda 20 gradi in basso:
+    // in fondo allo schermo ci sono manubrio, tabella e serbatoio
+    const occhi = modello.localToWorld(new THREE.Vector3(0, posto.y + 0.42, posto.z + 0.1));
+    const davanti = modello.localToWorld(new THREE.Vector3(0, posto.y + 0.42 - 2.3, posto.z - 6.2));
+    telecamera.position.copy(occhi);
+    telecamera.lookAt(davanti);
     return;
   }
 

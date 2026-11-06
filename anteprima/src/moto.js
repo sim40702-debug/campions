@@ -48,13 +48,18 @@ export function creaMoto(scena, idMoto) {
 // Cambia moto (garage): nuovo modello 3D e nuove prestazioni
 export function cambiaMoto(moto, idMoto) {
   if (!MOTO[idMoto]) idMoto = "sm690";
-  if (moto.modello) moto.scena.remove(moto.modello);
+  if (moto.modello) {
+    moto.scena.remove(moto.modello);
+    moto.scena.remove(moto.modello.userData.pilota);   // se era caduto fuori dalla moto
+  }
   moto.id = idMoto;
   moto.scheda = MOTO[idMoto];
   moto.modello = costruisciMoto(moto.scheda);
   moto.modello.rotation.order = "YXZ";
   moto.scena.add(moto.modello);
   moto.velocita = 0;
+  moto.caduta = 0;
+  moto.volo = null;
 }
 
 // Mette la moto in un punto, orientata nella direzione (dx, dz)
@@ -72,6 +77,7 @@ export function posizionaMoto(moto, x, y, z, dx, dz) {
   moto.riparti = false;
   moto.impennata = 0;
   moto.velImpennata = 0;
+  rimettiPilota(moto);
 }
 
 function quotaSuolo(moto, terreno, strade, x, z) {
@@ -117,15 +123,76 @@ function cadi(moto, motivo, velocitaUrto) {
   moto.velocitaUrto = Math.abs(velocitaUrto) * 3.6;   // km/h
   moto.nuovaCaduta = true;                            // danni.js la legge una volta sola
   moto.latoCaduta = moto.piega >= 0 ? 1 : -1;
+
+  // Il pilota si stacca dalla moto e vola avanti (resta dov'e' nel mondo, poi va per conto suo)
+  const pilota = moto.modello.userData.pilota;
+  moto.scena.attach(pilota);
+  const dirX = -Math.sin(moto.angolo);
+  const dirZ = -Math.cos(moto.angolo);
+  const spinta = Math.abs(velocitaUrto) * 0.85;
+  moto.volo = {
+    vx: dirX * spinta + (Math.random() - 0.5) * 2,
+    vy: 1.5 + Math.min(6, spinta * 0.12),
+    vz: dirZ * spinta + (Math.random() - 0.5) * 2,
+    giroX: -(3 + spinta * 0.25),            // capriola in avanti
+    giroZ: (Math.random() - 0.5) * 4,
+    fermo: false
+  };
+}
+
+// Il pilota in volo: gravita', rimbalzi sull'asfalto, poi scivola e si ferma sdraiato
+function aggiornaPilota(moto, dt, terreno, strade) {
+  const pilota = moto.modello.userData.pilota;
+  const volo = moto.volo;
+  if (!volo || volo.fermo) return;
+  volo.vy -= G * dt;
+  pilota.position.x += volo.vx * dt;
+  pilota.position.y += volo.vy * dt;
+  pilota.position.z += volo.vz * dt;
+  pilota.rotation.x += volo.giroX * dt;
+  pilota.rotation.z += volo.giroZ * dt;
+  const terra = quotaSuolo(moto, terreno, strade, pilota.position.x, pilota.position.z).y + 0.2;
+  if (pilota.position.y < terra) {
+    // tocca terra: rimbalza poco e striscia
+    pilota.position.y = terra;
+    volo.vy = Math.abs(volo.vy) > 2 ? -volo.vy * 0.25 : 0;
+    const orizzontale = Math.hypot(volo.vx, volo.vz);
+    const dopo = Math.max(0, orizzontale - 7 * dt);
+    if (orizzontale > 0) {
+      volo.vx = volo.vx * dopo / orizzontale;
+      volo.vz = volo.vz * dopo / orizzontale;
+    }
+    volo.giroX *= 0.9;
+    volo.giroZ *= 0.9;
+    if (dopo < 0.3 && volo.vy === 0) {
+      // fermo: sdraiato a pancia in giu'
+      volo.fermo = true;
+      pilota.rotation.set(-Math.PI / 2, pilota.rotation.y, 0);
+      pilota.position.y = terra - 0.05;
+    }
+  }
+}
+
+// Rimette il pilota sulla moto (dopo una caduta o cambiando moto)
+function rimettiPilota(moto) {
+  const dati = moto.modello.userData;
+  if (dati.pilota.parent !== moto.modello) {
+    moto.modello.add(dati.pilota);
+  }
+  dati.pilota.position.copy(dati.postoPilota);
+  dati.pilota.rotation.set(0, 0, 0);
+  moto.volo = null;
 }
 
 export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
+  if (dt <= 0) return;   // fotogramma senza tempo (succede al primo): niente da calcolare
   const s = moto.scheda;
   const dati = moto.modello.userData;
 
   // A terra dopo una caduta: la moto scivola, si ferma e poi si riparte (gioco.js)
   if (moto.caduta > 0) {
     moto.caduta -= dt;
+    aggiornaPilota(moto, dt, terreno, strade);
     moto.velocita -= Math.sign(moto.velocita) * Math.min(Math.abs(moto.velocita), 7 * dt);
     moto.x += -Math.sin(moto.angolo) * moto.velocita * dt;
     moto.z += -Math.cos(moto.angolo) * moto.velocita * dt;
@@ -292,11 +359,16 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const suolo = quotaSuolo(moto, terreno, strade, moto.x, moto.z);
   if (!moto.inAria) {
     // dove arriverebbe la moto cadendo in questo istante
+    // Si stacca solo se il suolo "sparisce" di almeno 25 cm sotto le ruote (una cresta vera,
+    // un dosso preso forte): i piccoli cambi di pendenza della strada non fanno saltellare
     const caduta = moto.y + moto.vy * dt - 0.5 * G * dt * dt;
-    if (suolo.y < caduta - 0.05 && v > 6) {
-      moto.inAria = true;   // il suolo scende piu' in fretta della moto: salto (dossi, creste)
+    if (suolo.y < caduta - 0.25 && v > 10) {
+      moto.inAria = true;
     } else {
-      moto.vy = (suolo.y - moto.y) / dt;
+      // velocita' verticale "ammorbidita": un gradino nei dati non diventa un trampolino
+      const voluta = (suolo.y - moto.y) / dt;
+      moto.vy += (Math.max(-v * 0.5, Math.min(v * 0.5, voluta)) - moto.vy) * 0.3;
+      if (!Number.isFinite(moto.vy)) moto.vy = 0;
       moto.y = suolo.y;
     }
   }
