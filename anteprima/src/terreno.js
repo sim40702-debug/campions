@@ -281,6 +281,7 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
     const p = daCreare;
     p.vicino = new THREE.Mesh(
       creaGeometriaPezzo(terrenoMesh.terreno, p.px * QUAD_PEZZO, p.py * QUAD_PEZZO, 1, p.centroX, p.centroZ), p.materiale);
+    p.vicino.receiveShadow = true;   // ombra della moto sul terreno
     p.vicino.position.set(p.centroX, 0, p.centroZ);
     terrenoMesh.scena.add(p.vicino);
     p.lontano.visible = false;

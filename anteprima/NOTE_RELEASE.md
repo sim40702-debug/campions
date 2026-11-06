@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.9.1)
+### Novità di questa versione (0.10.0)
+
+- **MRW SM 450 con il modello 3D vero** (fatto con Blender dal disegno di Simone): motore con coperchi e viti, radiatori, forcella oro, ruote a raggi con gomme tassellate e dischi, due scarichi, sella con cuciture.
+- **Pilota 3D vero** sulla SM 450: tuta nera e rossa, casco da cross con frontino e mascherina, stivali, guanti. Quando cadi è lui che vola giù dalla moto.
+- **Grafica migliorata**: cielo vero con il sole, ombra della moto e del pilota sulla strada, riflessi sui metalli, colori "da film" (tone mapping).
+
+### Novità della 0.9.1
 
 - **Cadute vere**: il pilota si stacca dalla moto, vola avanti facendo la capriola, rimbalza e striscia sull'asfalto, poi resta a terra; la moto scivola per conto suo.
 - **Niente più saltelli sulla strada**: la moto si stacca da terra solo su creste e dossi veri (almeno 25 cm), non sui piccoli cambi di pendenza.

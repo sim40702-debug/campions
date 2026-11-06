@@ -2,6 +2,7 @@
 // con prestazioni realistiche per la loro categoria.
 
 import * as THREE from "three";
+import { modelloSM450Pronto, costruisciSM450 } from "./modelli3d.js";
 
 export const MOTO = {
   sm690: {
@@ -22,7 +23,7 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.5, pieghaMax: 0.85, fuoristrada: 70,
     marce: [0.30, 0.45, 0.58, 0.72, 0.86, 1.0], minimo: 1800, limitatore: 11000, cilindri: 1,
     colori: { telaio: 0x1c1c1e, carena: 0xc8141c, grafica: 0x141414, sella: 0x101010 },
-    forma: "supermotard", scarichi: 2
+    forma: "supermotard", scarichi: 2, modello3d: "SM450"
   },
   strada700: {
     nome: "MRW Strada 700",
@@ -143,6 +144,10 @@ function ruota(raggio, larghezza, tassellata, coloreCerchio) {
 // --- Costruzione di una moto ---------------------------------------------------
 // La moto guarda verso -z. y = 0 e' il suolo.
 export function costruisciMoto(scheda) {
+  // Moto con il modello 3D vero (se il file c'e')
+  if (scheda.modello3d === "SM450" && modelloSM450Pronto()) {
+    return costruisciSM450();
+  }
   const c = scheda.colori;
   const telaio = materiale(c.telaio, true);
   const carena = materiale(c.carena, true);

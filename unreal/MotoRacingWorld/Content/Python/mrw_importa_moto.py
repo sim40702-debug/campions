@@ -10,7 +10,7 @@ import os
 
 import unreal
 
-PEZZI = ["Telaio", "Forcellone", "Sterzo", "RuotaPosteriore", "RuotaAnteriore"]
+PEZZI = ["Telaio", "Forcellone", "Sterzo", "RuotaPosteriore", "RuotaAnteriore", "Pilota"]
 DESTINAZIONE = "/Game/MRW/Moto/SM450"
 
 

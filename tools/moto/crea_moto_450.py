@@ -10,10 +10,13 @@
 #   SM450_Sterzo.glb            forcella, manubrio, fanale, parafango (origine = perno ruota anteriore)
 #   SM450_RuotaPosteriore.glb   ruota (origine = suo perno)
 #   SM450_RuotaAnteriore.glb    ruota (origine = suo perno)
+#   SM450_Pilota.glb            pilota seduto, tuta e casco (origine = bacino, cosi' quando cade gira sul corpo)
+# Gli stessi file vanno anche in anteprima/modelli per l'anteprima Three.js.
 #
 # Misure in metri. X = avanti, Y = sinistra, Z = su. Perno posteriore a X = 0.
 
 import math
+import shutil
 import sys
 from pathlib import Path
 
@@ -28,7 +31,9 @@ RUOTA_POST = Vector((0.0, 0.0, RAGGIO_RUOTA))
 RUOTA_ANT = Vector((INTERASSE, 0.0, RAGGIO_RUOTA))
 INCLINAZIONE_FORCELLA = math.radians(27)
 
-GRUPPI = {"Telaio": [], "Forcellone": [], "Sterzo": [], "RuotaPosteriore": [], "RuotaAnteriore": []}
+GRUPPI = {"Telaio": [], "Forcellone": [], "Sterzo": [], "RuotaPosteriore": [], "RuotaAnteriore": [], "Pilota": []}
+BACINO = Vector((0.55, 0.0, 1.07))   # bacino del pilota seduto: origine del pezzo "Pilota" (per le cadute)
+CARTELLA_ANTEPRIMA = Path(__file__).resolve().parents[2] / "anteprima" / "modelli"
 
 
 # ------------------------------------------------------------------ materiali
@@ -408,11 +413,78 @@ def costruisci():
     bpy.ops.object.select_all(action="DESELECT")
 
 
+def costruisci_pilota():
+    # Pilota seduto sulla SM 450: corpo fatto di "capsule" morbide, tuta nera e rossa, casco da cross con frontino
+    TUTA = materiale("Tuta_Nera", (0.025, 0.025, 0.03), 0.0, 0.7)
+    TUTA_ROSSA = materiale("Tuta_Rossa", (0.55, 0.01, 0.01), 0.0, 0.5)
+    GUANTI = materiale("Guanti", (0.03, 0.03, 0.03), 0.0, 0.6)
+    CASCO = materiale("Casco", (0.62, 0.012, 0.01), 0.0, 0.25, 1.0)
+    CASCO_BIANCO = materiale("Casco_Bianco", (0.85, 0.85, 0.85), 0.0, 0.25, 1.0)
+    MASCHERINA = materiale("Mascherina", (0.03, 0.03, 0.035), 0.6, 0.08, 1.0)
+    STIVALE = materiale("Stivale", (0.05, 0.05, 0.055), 0.0, 0.45)
+
+    def capsula(nome, a, b, raggio, mat):
+        # tubo con le estremita' arrotondate (come braccia e gambe)
+        cilindro(nome, a, b, raggio, "Pilota", mat, lati=20)
+        for estremo in (a, b):
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=raggio, location=estremo, segments=20, ring_count=10)
+            palla = bpy.context.object
+            palla.name = nome + "_Giunto"
+            for poligono in palla.data.polygons:
+                poligono.use_smooth = True
+            metti(palla, "Pilota", mat)
+
+    def palla(nome, centro, misure, mat, rotazione=(0, 0, 0)):
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=centro, rotation=rotazione, segments=32, ring_count=16)
+        oggetto = bpy.context.object
+        oggetto.name = nome
+        oggetto.scale = misure
+        bpy.ops.object.transform_apply(scale=True)
+        for poligono in oggetto.data.polygons:
+            poligono.use_smooth = True
+        return metti(oggetto, "Pilota", mat)
+
+    spalle = Vector((0.84, 0.0, 1.5))
+    # busto (inclinato in avanti) e fianchi
+    palla("Busto", (BACINO + spalle) / 2 + Vector((0, 0, 0.02)), (0.27, 0.2, 0.16), TUTA, rotazione=(0, math.radians(-55), 0))
+    palla("Petto_Rosso_S", (BACINO + spalle) / 2 + Vector((0.02, 0.12, 0.05)), (0.18, 0.06, 0.1), TUTA_ROSSA, rotazione=(0, math.radians(-55), 0))
+    palla("Petto_Rosso_D", (BACINO + spalle) / 2 + Vector((0.02, -0.12, 0.05)), (0.18, 0.06, 0.1), TUTA_ROSSA, rotazione=(0, math.radians(-55), 0))
+    palla("Fianchi", BACINO, (0.16, 0.17, 0.12), TUTA)
+    palla("Collo", spalle + Vector((0.05, 0, 0.08)), (0.06, 0.06, 0.07), TUTA)
+    # casco da cross: calotta, mentoniera in avanti, frontino, mascherina
+    testa = spalle + Vector((0.11, 0, 0.19))
+    palla("Casco", testa, (0.15, 0.135, 0.15), CASCO)
+    palla("CascoStriscia", testa + Vector((0, 0, 0.02)), (0.152, 0.03, 0.15), CASCO_BIANCO)
+    palla("Mentoniera", testa + Vector((0.12, 0, -0.07)), (0.07, 0.07, 0.05), CASCO, rotazione=(0, math.radians(20), 0))
+    palla("Mascherina", testa + Vector((0.115, 0, 0.0)), (0.045, 0.11, 0.045), MASCHERINA)
+    pannello("Frontino", [(0.0, 0.0), (0.16, -0.03), (0.15, -0.0), (0.0, 0.03)], -0.1, 0.1, "Pilota", CASCO, smussa=0.006, suddividi=1)
+    GRUPPI["Pilota"][-1].location = testa + Vector((0.06, 0, 0.1))
+    for lato in (1, -1):
+        y = lato
+        spalla = Vector((0.84, 0.2 * y, 1.47))
+        gomito = Vector((0.98, 0.31 * y, 1.3))
+        mano = Vector((1.05, 0.36 * y, 1.17))
+        capsula("BraccioSopra_" + str(lato), spalla, gomito, 0.055, TUTA)
+        capsula("Avambraccio_" + str(lato), gomito, mano, 0.047, TUTA)
+        palla("Spallina_" + str(lato), spalla, (0.07, 0.07, 0.07), TUTA_ROSSA)
+        palla("Guanto_" + str(lato), mano + Vector((0.01, 0, 0)), (0.05, 0.04, 0.035), GUANTI)
+        anca = Vector((0.58, 0.12 * y, 1.02))
+        ginocchio = Vector((0.83, 0.2 * y, 0.86))
+        caviglia = Vector((0.63, 0.2 * y, 0.45))
+        capsula("Coscia_" + str(lato), anca, ginocchio, 0.075, TUTA)
+        capsula("Gamba_" + str(lato), ginocchio, caviglia, 0.06, TUTA)
+        palla("Ginocchiera_" + str(lato), ginocchio + Vector((0.03, 0.01 * y, 0)), (0.06, 0.06, 0.07), TUTA_ROSSA)
+        # stivale da cross: gambale e piede sulla pedana
+        cilindro("Gambale_" + str(lato), caviglia + Vector((0.03, 0, 0.25)), caviglia - Vector((0.0, 0, 0.04)), 0.065, "Pilota", STIVALE)
+        scatola("Piede_" + str(lato), caviglia + Vector((0.07, 0, -0.06)), (0.24, 0.1, 0.08), "Pilota", STIVALE, 0.03)
+
+
 def esporta():
     # Ogni gruppo diventa un solo oggetto (una mesh con piu' materiali), con l'origine al suo perno
     CARTELLA.mkdir(parents=True, exist_ok=True)
+    CARTELLA_ANTEPRIMA.mkdir(parents=True, exist_ok=True)
     origini = {"Telaio": RUOTA_POST, "Forcellone": RUOTA_POST, "Sterzo": RUOTA_ANT,
-               "RuotaPosteriore": RUOTA_POST, "RuotaAnteriore": RUOTA_ANT}
+               "RuotaPosteriore": RUOTA_POST, "RuotaAnteriore": RUOTA_ANT, "Pilota": BACINO}
     for gruppo, oggetti in GRUPPI.items():
         bpy.ops.object.select_all(action="DESELECT")
         for oggetto in oggetti:
@@ -426,6 +498,7 @@ def esporta():
         unico.data.transform(Matrix.Translation(-origini[gruppo]))
         bpy.ops.export_scene.gltf(filepath=str(CARTELLA / ("SM450_" + gruppo + ".glb")), use_selection=True,
                                   export_format="GLB", export_apply=True, export_yup=True)
+        shutil.copy(CARTELLA / ("SM450_" + gruppo + ".glb"), CARTELLA_ANTEPRIMA / ("SM450_" + gruppo + ".glb"))
         print("Esportato " + gruppo + ": " + str(len(unico.data.polygons)) + " poligoni")
 
 
@@ -469,9 +542,10 @@ def foto(percorso, posizione, guarda, lente=55):
 
 
 costruisci()
+costruisci_pilota()
 if "--foto" in sys.argv:
     indice = sys.argv.index("--foto")
     uscita = Path(sys.argv[indice + 1]) if len(sys.argv) > indice + 1 else Path(".")
-    foto(uscita / "sm450_tre_quarti.png", (3.6, -2.7, 1.3), (0.72, 0, 0.55))
-    foto(uscita / "sm450_lato.png", (0.72, -4.6, 0.65), (0.72, 0, 0.6))
+    foto(uscita / "sm450_tre_quarti.png", (4.4, -3.4, 1.7), (0.72, 0, 0.85))
+    foto(uscita / "sm450_lato.png", (0.72, -5.2, 0.9), (0.72, 0, 0.85))
 esporta()

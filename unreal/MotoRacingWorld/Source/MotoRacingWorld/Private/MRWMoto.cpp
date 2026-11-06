@@ -185,15 +185,29 @@ bool AMRWMoto::UsaModello3D()
 		}
 	}
 
-	// Nascondo le forme semplici della moto (il pilota provvisorio resta)
+	// Pilota 3D (facoltativo): se c'e', sostituisce anche il pilota fatto di cubi
+	const FString PercorsoPilota = FString::Printf(TEXT("%s/SM450_Pilota.SM450_Pilota"), *CartellaModello);
+	UStaticMesh* MeshPilota = LoadObject<UStaticMesh>(nullptr, *PercorsoPilota, nullptr, LOAD_NoWarn | LOAD_Quiet);
+
+	// Nascondo le forme semplici della moto (e del pilota, se c'e' quello vero)
 	TArray<UStaticMeshComponent*> Vecchi;
 	GetComponents<UStaticMeshComponent>(Vecchi);
 	for (UStaticMeshComponent* Vecchio : Vecchi)
 	{
-		if (!Vecchio->GetName().StartsWith(TEXT("Pilota")))
+		if (!Vecchio->GetName().StartsWith(TEXT("Pilota")) || MeshPilota != nullptr)
 		{
 			Vecchio->SetVisibility(false);
 		}
+	}
+	if (MeshPilota != nullptr)
+	{
+		// L'origine del pilota e' il bacino: 55 cm davanti e 76 cm sopra il perno della ruota dietro
+		UStaticMeshComponent* Pilota = NewObject<UStaticMeshComponent>(this, TEXT("Modello_Pilota"));
+		Pilota->SetStaticMesh(MeshPilota);
+		Pilota->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Pilota->SetupAttachment(PernoImpennata);
+		Pilota->SetRelativeLocationAndRotation(FVector(55.0f, 0.0f, 76.0f), CorrezioneModello);
+		Pilota->RegisterComponent();
 	}
 
 	// Ogni pezzo va attaccato alla parte che si muove con lui (ruote che girano, sterzo che gira)

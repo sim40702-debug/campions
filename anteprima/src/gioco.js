@@ -2,6 +2,9 @@
 // File principale: crea la scena, carica i dati e fa girare il gioco.
 
 import * as THREE from "three";
+import { Sky } from "three/addons/objects/Sky.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { caricaModelli3D } from "./modelli3d.js";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
@@ -34,10 +37,43 @@ disegnatore.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 disegnatore.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(disegnatore.domElement);
 
+// Colori come al cinema (tone mapping) e riflessi sui metalli della moto (ambiente)
+disegnatore.toneMapping = THREE.ACESFilmicToneMapping;
+disegnatore.toneMappingExposure = 1.15;
+const generatore = new THREE.PMREMGenerator(disegnatore);
+scena.environment = generatore.fromScene(new RoomEnvironment(), 0.04).texture;
+scena.environmentIntensity = 0.35;
+
 scena.add(new THREE.HemisphereLight(0xdfefff, 0x4a5a3a, 1.2));
-const sole = new THREE.DirectionalLight(0xffffff, 1.6);
-sole.position.set(-0.5, 1, 0.3);
+const DIREZIONE_SOLE = new THREE.Vector3(-0.5, 1, 0.3).normalize();
+const sole = new THREE.DirectionalLight(0xfff4e0, 2.2);
+sole.position.copy(DIREZIONE_SOLE);
 scena.add(sole);
+scena.add(sole.target);
+
+// Ombre: solo vicino alla moto (40 x 40 m), cosi' costano poco
+disegnatore.shadowMap.enabled = true;
+disegnatore.shadowMap.type = THREE.PCFSoftShadowMap;
+sole.castShadow = true;
+sole.shadow.mapSize.set(2048, 2048);
+sole.shadow.camera.left = -20;
+sole.shadow.camera.right = 20;
+sole.shadow.camera.top = 20;
+sole.shadow.camera.bottom = -20;
+sole.shadow.camera.near = 1;
+sole.shadow.camera.far = 150;
+sole.shadow.bias = -0.0005;
+sole.shadow.normalBias = 0.03;
+
+// Cielo vero (scattering dell'atmosfera) con il sole nella stessa direzione della luce
+const cielo = new Sky();
+cielo.scale.setScalar(6000);
+cielo.material.uniforms.turbidity.value = 4;
+cielo.material.uniforms.rayleigh.value = 1.2;
+cielo.material.uniforms.mieCoefficient.value = 0.004;
+cielo.material.uniforms.mieDirectionalG.value = 0.8;
+cielo.material.uniforms.sunPosition.value.copy(DIREZIONE_SOLE);
+scena.add(cielo);
 
 window.addEventListener("resize", function () {
   telecamera.aspect = window.innerWidth / window.innerHeight;
@@ -188,6 +224,8 @@ async function avvia() {
     mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
 
+    mostraStato("Moto 3D...");
+    await caricaModelli3D();
     const moto = creaMoto(scena, motoSalvata());
     const partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
@@ -230,6 +268,10 @@ async function avvia() {
         aggiornaTerreno(terrenoMesh, moto.x, moto.z, vero);
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
+      // il sole (e le sue ombre) segue la moto; il cielo segue la telecamera
+      sole.target.position.set(moto.x, moto.y, moto.z);
+      sole.position.set(moto.x + DIREZIONE_SOLE.x * 80, moto.y + DIREZIONE_SOLE.y * 80, moto.z + DIREZIONE_SOLE.z * 80);
+      cielo.position.copy(telecamera.position);
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);
       aggiornaSuono(moto, test.attivo);

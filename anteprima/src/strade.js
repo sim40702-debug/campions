@@ -88,7 +88,9 @@ function creaMesh(posizioni, indici, colore, spostamento) {
     polygonOffsetFactor: spostamento,
     polygonOffsetUnits: spostamento
   });
-  return new THREE.Mesh(geometria, materiale);
+  const nastro = new THREE.Mesh(geometria, materiale);
+  nastro.receiveShadow = true;   // ombra della moto sull'asfalto
+  return nastro;
 }
 
 // Parapetto: due "muretti" alti 1 m ai lati di un ponte
