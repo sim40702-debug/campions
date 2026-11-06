@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.3.1) – Sprint D2
+### Novità di questa versione (0.4.0) – Sprint C1
+
+- **Gallerie vere**: dentro la montagna c'è il tubo in cemento con le luci sul soffitto e i portali agli ingressi (per esempio la galleria Mappo-Morettina). In galleria la telecamera resta bassa.
+- **Piloni** sotto i ponti (per esempio i ponti sulla Maggia).
+- **Fiumi, torrenti e stagni** di OpenStreetMap.
+
+### Novità della 0.3.1 – Sprint D2
 
 - **Segnaletica** di OpenStreetMap: semafori, stop, precedenze, sul bordo della strada e girati verso chi arriva.
 - **Lampioni** con il braccio sopra la strada.
@@ -63,14 +69,14 @@ Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comu
 ### Cosa c'è
 
 - Terreno swissALTI3D (un punto ogni 4 m circa)
-- Strade OpenStreetMap, con i ponti; le gallerie sono in marrone (per ora passano dentro la montagna)
+- Strade OpenStreetMap, con ponti e gallerie
 - Lago Maggiore
 - Edifici, boschi e alberi di OpenStreetMap
 - Velocità, quota reale, coordinate LV95 (si possono confrontare con map.geo.admin.ch) e minimappa
 
 ### Cosa non c'è ancora
 
-Gallerie vere, segnaletica, avversari, multiplayer.
+Avversari, multiplayer, il resto del Ticino.
 
 ### Fonti
 

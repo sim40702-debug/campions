@@ -41,8 +41,8 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos√
 | TI-09 | Generazione strade 3D: larghezza, curve, pendenze, asfalto | B | 1 | Da fare |
 | TI-10 | Incroci, rotatorie, svincoli funzionanti | B | 1 | Da fare |
 | TI-11 | Collegamento di tutte le localit√†; strade che escono dal Ticino finiscono al confine | B | 2 | Da fare |
-| TI-12 | Laghi (Maggiore, Lugano) e fiumi principali | C | 2 | Da fare |
-| TI-13 | Ponti e gallerie (inclusa Mappo-Morettina, diga di Melide) | C | 1 | Da fare |
+| TI-12 | Laghi (Maggiore, Lugano) e fiumi principali | C | 2 | Pilota fatto (0.4.0); resto del Ticino da fare |
+| TI-13 | Ponti e gallerie (inclusa Mappo-Morettina, diga di Melide) | C | 1 | Pilota fatto (0.4.0); resto del Ticino da fare |
 | TI-14 | Montagne lontane visibili (terreno lontano / HLOD) | C | 2 | Da fare |
 | TI-15 | Edifici generati dai contorni OSM (moduli riutilizzabili) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |
 | TI-16 | Boschi e vegetazione generati (PCG) | D | 3 | Pilota fatto (0.2.0); resto del Ticino da fare |

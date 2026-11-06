@@ -165,7 +165,9 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto
       const sopra2 = bordo[k];
       const sotto1 = lato * lato + k - 1;
       const sotto2 = lato * lato + k;
+      // la "gonna" si deve vedere da tutti e due i lati: triangoli in tutte e due le direzioni
       indici.push(sopra1, sotto1, sopra2, sopra2, sotto1, sotto2);
+      indici.push(sopra1, sopra2, sotto1, sopra2, sotto2, sotto1);
     }
   }
 
@@ -179,7 +181,8 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, quadPezzo, salto
 
 // Mette il terreno nella scena: ogni pezzo ha 2 livelli di dettaglio (vicino / lontano)
 export function aggiungiTerreno(terreno, scena) {
-  const materiale = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  // Il terreno si vede solo da sopra: cosi' dentro le gallerie non copre il tubo
+  const materiale = new THREE.MeshLambertMaterial({ vertexColors: true });
   const quadPezzo = (terreno.punti - 1) / PEZZI_PER_LATO;
   const latoPezzo = quadPezzo * terreno.passo;
 

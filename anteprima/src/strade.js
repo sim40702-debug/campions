@@ -181,7 +181,7 @@ export function aggiungiStrade(strade, scena, terreno) {
   }
 
   scena.add(creaMesh(asfalto.posizioni, asfalto.indici, 0x4f5157, -2));
-  scena.add(creaMesh(gallerie.posizioni, gallerie.indici, 0x6b5a3a, -2));
+  scena.add(creaMesh(gallerie.posizioni, gallerie.indici, 0x45474c, -2));
   scena.add(creaMesh(righe.posizioni, righe.indici, 0xf2f2f2, -4));
 }
 
@@ -219,6 +219,7 @@ export function stradaSotto(strade, x, z, quotaAttuale) {
           migliore = {
             y: y,
             nome: strada.n,
+            galleria: strada.g,
             differenza: differenza,
             direzioneX: bx - ax,
             direzioneZ: bz - az

@@ -62,6 +62,7 @@ export function creaMoto(scena) {
     piega: 0,
     beccheggio: 0,
     nomeStrada: "",
+    inGalleria: false,
     suStrada: false
   };
   moto.modello.rotation.order = "YXZ";
@@ -97,6 +98,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const sotto = quotaSuolo(moto, terreno, strade, moto.x, moto.z);
   moto.suStrada = sotto.strada !== null;
   moto.nomeStrada = moto.suStrada ? sotto.strada.nome : "";
+  moto.inGalleria = moto.suStrada && sotto.strada.galleria;
   const nelLago = !moto.suStrada && sotto.y < terreno.info.livello_lago + 0.3;
 
   let massima = moto.suStrada ? VELOCITA_MAX_STRADA : VELOCITA_MAX_PRATO;

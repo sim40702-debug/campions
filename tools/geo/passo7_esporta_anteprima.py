@@ -11,6 +11,7 @@
 #   bosco.bin     dove c'e' bosco (1) o no (0), stessa griglia del terreno
 #   alberi.json   alberi singoli mappati in OSM
 #   dettagli.json semafori, stop, precedenze, lampioni, strisce, localita' (Sprint D2)
+#   acqua.json    fiumi, torrenti, stagni (Sprint C1)
 #
 # Coordinate dell'anteprima (metri), centro = centro del settore pilota:
 #   x verso EST, y verso l'ALTO (quota reale), z verso SUD
@@ -184,6 +185,61 @@ def esporta_dettagli(percorso, zona, centro_est, centro_nord):
             lista.append(x)
             lista.append(z)
     return risultato
+
+
+LARGHEZZA_CORSO_ACQUA = {"river": 14, "canal": 6, "stream": 2.5}
+
+
+def esporta_acqua(percorso, quote, area, zona, centro_est, centro_nord):
+    # Poligoni d'acqua (fiumi larghi, stagni) e corsi d'acqua come linee.
+    # Il Lago Maggiore e' gia' nel gioco come superficie piatta: qui lo salto.
+    est_min, est_max, nord_min, nord_max = area
+    poligoni = []
+    linee = []
+
+    def locali(coordinate):
+        piatta = []
+        for e, n in coordinate:
+            piatta.append(round(e - centro_est, 1))
+            piatta.append(round(-(n - centro_nord), 1))
+        return piatta
+
+    for elemento in utilita.leggi_json(percorso).get("elements", []):
+        tag = elemento.get("tags", {})
+        if tag.get("waterway") in LARGHEZZA_CORSO_ACQUA and elemento.get("type") == "way":
+            punti = [utilita.DA_WGS84_A_LV95.transform(p["lon"], p["lat"]) for p in elemento.get("geometry", [])]
+            if len(punti) < 2:
+                continue
+            for pezzo in pezzi_di_linea(LineString(punti).intersection(zona)):
+                if tag.get("tunnel") not in (None, "no"):
+                    continue   # tratti intubati: non si vedono
+                linee.append({"w": LARGHEZZA_CORSO_ACQUA[tag["waterway"]],
+                              "p": locali(pezzo.segmentize(6).coords)})
+            continue
+        if tag.get("natural") != "water":
+            continue
+        poligono = poligono_osm(elemento)
+        if poligono is None or poligono.is_empty:
+            continue
+        if poligono.area > 5_000_000 or tag.get("water") == "lake" and poligono.area > 1_000_000:
+            continue   # Lago Maggiore
+        poligono = poligono.intersection(zona)
+        parti = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
+        for parte in parti:
+            if parte.geom_type != "Polygon" or parte.area < 20:
+                continue
+            parte = parte.simplify(0.5)
+            if parte.is_empty or parte.geom_type != "Polygon":
+                continue
+            # Stagni e laghetti: superficie piatta alla quota piu' bassa della riva
+            riva = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in parte.exterior.coords]
+            piatto = round(min(riva) + 0.2, 2) if tag.get("water") in ("pond", "lake", "reservoir") else None
+            poligoni.append({
+                "o": locali(list(parte.exterior.coords)[:-1]),
+                "f": [locali(list(buco.coords)[:-1]) for buco in parte.interiors],
+                "piatto": piatto,
+            })
+    return {"poligoni": poligoni, "fiumi": linee}
 
 
 def larghezza_strada(tag):
@@ -392,6 +448,17 @@ def main():
         print("   localita': " + str(len(dettagli["localita"])))
     else:
         print("   Manca dettagli_pilota.json (passo 2)")
+
+    print("6) Fiumi, torrenti e stagni...")
+    percorso_acqua = config.CARTELLA_DOWNLOAD / "osm" / "acqua_pilota.json"
+    if percorso_acqua.exists():
+        acqua = esporta_acqua(percorso_acqua, quote, area, zona, centro_est, centro_nord)
+        acqua["fonte"] = "(c) OpenStreetMap contributors, ODbL"
+        with open(CARTELLA_ANTEPRIMA / "acqua.json", "w", encoding="utf-8") as file:
+            json.dump(acqua, file, separators=(",", ":"))
+        print("   superfici d'acqua: " + str(len(acqua["poligoni"])) + ", corsi d'acqua: " + str(len(acqua["fiumi"])))
+    else:
+        print("   Manca acqua_pilota.json (passo 2)")
 
     print("Fatto. File in: " + str(CARTELLA_ANTEPRIMA))
 

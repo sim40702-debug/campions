@@ -8,6 +8,8 @@ import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
+import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
+import { aggiungiOpere } from "./opere.js";
 import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
@@ -74,6 +76,11 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
     dietro = 22;
     alto = 10;
   }
+  if (moto.inGalleria) {
+    // in galleria la telecamera resta bassa, sotto il soffitto
+    dietro = 6;
+    alto = 2.2;
+  }
 
   if (modoTelecamera === 2) {
     // Dal casco del pilota
@@ -84,7 +91,9 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
 
   const obiettivo = new THREE.Vector3(moto.x - dirX * dietro, moto.y + alto, moto.z - dirZ * dietro);
   // La telecamera non deve finire sotto il terreno
-  obiettivo.y = Math.max(obiettivo.y, quotaTerreno(terreno, obiettivo.x, obiettivo.z) + 1.5);
+  if (!moto.inGalleria) {
+    obiettivo.y = Math.max(obiettivo.y, quotaTerreno(terreno, obiettivo.x, obiettivo.z) + 1.5);
+  }
 
   // ...e nemmeno dentro un edificio: se tra la moto e la telecamera c'e' un muro,
   // la telecamera si ferma prima del muro
@@ -99,7 +108,8 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
       break;
     }
   }
-  if (bloccata) {
+  if (bloccata || moto.inGalleria) {
+    // contro un muro o in galleria: niente movimento morbido, la telecamera resta dentro
     telecamera.position.copy(obiettivo);
   } else {
     telecamera.position.lerp(obiettivo, 1 - Math.exp(-dt * 5));
@@ -124,6 +134,10 @@ async function avvia() {
     mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
     aggiungiStrade(strade, scena, terreno);
+    aggiungiOpere(strade, scena, terreno);
+
+    mostraStato("Fiumi e torrenti...");
+    aggiungiAcqua(await caricaAcqua(), scena, terreno);
 
     mostraStato("Caricamento degli edifici (OpenStreetMap)...");
     const edifici = await caricaEdifici();
