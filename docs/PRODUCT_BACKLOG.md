@@ -1,6 +1,6 @@
 # Product Backlog – MOTO RACING WORLD
 
-Ultimo aggiornamento: Sprint 0 (6 novembre 2026)
+Ultimo aggiornamento: inizio Sprint A (6 novembre 2026)
 
 Priorità: **1 = più importante**. Stato: Da fare / In corso / Fatto.
 
@@ -29,14 +29,14 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 
 | ID | Elemento | Sprint | Priorità | Stato |
 |---|---|---|---|---|
-| TI-00 | Stima dimensione mondo, settori, memoria e prestazioni | 0 | 1 | In corso |
-| TI-01 | Scaricare dati OSM, swissALTI3D, confini; registrare versioni e date | A | 1 | Da fare |
-| TI-02 | Verifica licenze e testo attribuzioni nei crediti | A | 1 | Da fare |
-| TI-03 | Script (Python) che trasforma i dati in tasselli per Unreal | A | 1 | Da fare |
-| TI-04 | Settore pilota 8×8 km (proposta: Locarno–Ascona–Ponte Brolla) | A | 1 | Da fare |
-| TI-05 | Progetto UE5 con World Partition, griglie di streaming, coordinate LV95 | A | 1 | Da fare |
-| TI-06 | Confini cantonali importati e visibili | A | 2 | Da fare |
-| TI-07 | Terreno di tutto il Ticino a 2 m dai dati altimetrici | A | 2 | Da fare |
+| TI-00 | Stima dimensione mondo, settori, memoria e prestazioni | 0 | 1 | Fatto |
+| TI-01 | Scaricare dati OSM, swissALTI3D, confini; registrare versioni e date | A | 1 | In corso |
+| TI-02 | Verifica licenze e testo attribuzioni nei crediti | A | 1 | In corso |
+| TI-03 | Script (Python) che trasforma i dati in tasselli per Unreal | A | 1 | In corso |
+| TI-04 | Settore pilota 8×8 km (proposta: Locarno–Ascona–Ponte Brolla) | A | 1 | In corso |
+| TI-05 | Progetto UE5 con World Partition, griglie di streaming, coordinate LV95 | A | 1 | In corso |
+| TI-06 | Confini cantonali importati e visibili | A | 2 | In corso |
+| TI-07 | Terreno di tutto il Ticino a 2 m dai dati altimetrici | A | 2 | In corso |
 | TI-08 | Importazione rete stradale OSM (strade pubbliche percorribili) | B | 1 | Da fare |
 | TI-09 | Generazione strade 3D: larghezza, curve, pendenze, asfalto | B | 1 | Da fare |
 | TI-10 | Incroci, rotatorie, svincoli funzionanti | B | 1 | Da fare |
@@ -52,6 +52,7 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-20 | Verifica automatica strade e terreno rispetto alle fonti | E | 1 | Da fare |
 | TI-21 | Test multiplayer (server dedicato) | E | 1 | Da fare |
 | TI-22 | Misura prestazioni (FPS, RAM, VRAM, tempi di caricamento) | E | 1 | Da fare |
+| TI-23 | Funziona su Mac e su Windows (script, progetto Unreal, gioco finito) | A–E | 1 | In corso |
 
 Nota: gli Sprint B, C e D saranno probabilmente divisi in più Sprint (una o due regioni alla volta). Lo decidiamo alla fine dello Sprint A, quando sapremo quanto tempo serve per il settore pilota.
 

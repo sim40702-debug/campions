@@ -22,7 +22,7 @@ Presentare la stima della dimensione del mondo, della suddivisione in settori e 
 
 ## Definition of Done
 
-- [ ] La stima è nella repository, in Markdown e in PDF.
-- [ ] Product Backlog, Bug Tracker e Fonti e licenze sono creati.
-- [ ] Simone ha letto la stima e ha preso le decisioni D1–D8.
-- [ ] Lo Sprint Report è aggiornato con le decisioni.
+- [x] La stima è nella repository, in Markdown e in PDF.
+- [x] Product Backlog, Bug Tracker e Fonti e licenze sono creati.
+- [x] Simone ha letto la stima e ha preso le decisioni D1–D8.
+- [x] Lo Sprint Report è aggiornato con le decisioni.

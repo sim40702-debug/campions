@@ -1,0 +1,7 @@
+# File binari di Unreal: vanno su Git LFS (serve installare Git LFS, vedi docs/GUIDA_UNREAL.md)
+*.uasset filter=lfs diff=lfs merge=lfs -text
+*.umap filter=lfs diff=lfs merge=lfs -text
+
+# Fine riga uguale su Mac e Windows per gli script
+*.py text eol=lf
+*.md text eol=lf

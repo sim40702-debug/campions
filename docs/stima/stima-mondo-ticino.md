@@ -1,6 +1,6 @@
 ---
 title: "MOTO RACING WORLD – Stima della mappa del Canton Ticino"
-subtitle: "Sprint 0 · Dimensione del mondo, settori, memoria e prestazioni · 6 novembre 2026"
+subtitle: "Sprint 0 · Dimensione del mondo, settori, memoria e prestazioni · 6 novembre 2026 · rettangolo corretto a 68 × 96 km"
 ---
 
 # 1. In breve
@@ -10,7 +10,7 @@ Questa è la stima chiesta **prima di sviluppare**. Non c'è ancora codice: prim
 **Le cifre principali**
 
 - Ticino reale: **2'812 km²**, circa **90 km** da nord a sud e **60 km** da est a ovest.
-- Mondo di gioco proposto: rettangolo di **64 × 96 km** (6'144 km²), in **scala 1:1**. Il Ticino occupa circa il 46 %; il resto è bordo (Italia, Grigioni, Uri) solo come sfondo.
+- Mondo di gioco proposto: rettangolo di **68 × 96 km** (6'528 km²), in **scala 1:1**. Il Ticino occupa circa il 43 %; il resto è bordo (Italia, Grigioni, Uri) solo come sfondo.
 - Dislivello: da **193 m** (Lago Maggiore) a **3'402 m** (Adula).
 - Strade da ricostruire: circa **1'050 km** di strade cantonali + **160 km** di strade nazionali + strade comunali. Totale stimato **4'000–6'000 km** (il numero vero lo misuriamo nello Sprint A).
 - Bosco: oltre **140'000 ettari**, più del 50 % del cantone. Vuol dire decine di milioni di alberi: vanno generati, non piazzati a mano.
@@ -18,7 +18,7 @@ Questa è la stima chiesta **prima di sviluppare**. Non c'è ancora codice: prim
 **Cosa consiglio**
 
 1. Scala **1:1**, terreno a **2 m** di risoluzione.
-2. Dividere il mondo in **settori di dati da 4 × 4 km** (384 in totale, circa 230 toccano il Ticino) e in **8 regioni** (gli 8 distretti), ognuna come modulo separato.
+2. Dividere il mondo in **settori di dati da 4 × 4 km** (408 in totale, circa 230 toccano il Ticino) e in **8 regioni** (gli 8 distretti), ognuna come modulo separato.
 3. Iniziare lo Sprint A con un **settore pilota di 8 × 8 km** (Locarno – Ascona – Ponte Brolla) per provare tutta la catena prima di fare il cantone intero.
 4. Obiettivo prestazioni: **60 FPS a 1080p** su un PC da gioco medio (16 GB RAM, scheda video 8 GB).
 
@@ -32,7 +32,7 @@ Un mondo di queste dimensioni è un lavoro **molto grande**: giochi commerciali 
 |---|---|---|
 | Superficie Ticino | 2'812 km² | Dato ufficiale |
 | Estensione | ~90 km N–S, ~60 km E–O | Dato ufficiale USTAT |
-| Rettangolo di gioco | 64 × 96 km = 6'144 km² | Multiplo di 4 km, con margine |
+| Rettangolo di gioco | 68 × 96 km = 6'528 km² | Est 2'668–2'736 km, nord 1'074–1'170 km (LV95) |
 | Quota minima / massima | 193 m / 3'402 m | Dislivello 3'209 m |
 | Confine con l'Italia | 218 km | Strade che escono: finiscono al confine |
 | Coordinate | LV95 (EPSG:2056) | Le stesse di swisstopo: 1 unità = 1 cm in Unreal |
@@ -53,9 +53,9 @@ I dati swissALTI3D esistono a 0,5 m e a 2 m. Ho confrontato tre risoluzioni per 
 
 | Risoluzione | Punti (rettangolo intero) | Dati terreno nel progetto | Giudizio |
 |---|---|---|---|
-| 1 m | 6,1 miliardi | 45–65 GB | Troppo pesante da modificare e da importare |
-| **2 m** | **1,5 miliardi** | **11–16 GB** | **Consigliata** |
-| 4 m | 0,4 miliardi | 3–4 GB | Leggera, ma pendii e scarpate meno credibili |
+| 1 m | 6,5 miliardi | 50–70 GB | Troppo pesante da modificare e da importare |
+| **2 m** | **1,7 miliardi** | **12–18 GB** | **Consigliata** |
+| 4 m | 0,4 miliardi | 3–4,5 GB | Leggera, ma pendii e scarpate meno credibili |
 
 "Dati terreno nel progetto" = altezze + normali + 4 strati di materiale (erba, roccia, terra, asfalto), con i livelli di dettaglio. Solo la parte del Ticino a 2 m pesa circa la metà (6–8 GB).
 
@@ -109,9 +109,9 @@ Le 8 regioni (distretti) sono **moduli separati**: ognuna ha i suoi dati, i suoi
 
 ## 5.2 Settori di dati: 4 × 4 km
 
-- Il rettangolo 64 × 96 km diventa una griglia di **16 × 24 = 384 settori**.
+- Il rettangolo 68 × 96 km diventa una griglia di **17 × 24 = 408 settori**.
 - Circa **230** toccano il Ticino (dettaglio pieno). Gli altri sono solo sfondo.
-- Nome dei settori: dalla coordinata LV95 dell'angolo, per esempio `S_2700_1112`.
+- Nome dei settori: dalla coordinata LV95 dell'angolo sud-ovest, per esempio `S_2700_1110`.
 - Ogni settore ha i suoi file: altezze, strade, edifici, vegetazione. Si possono rigenerare **uno alla volta**.
 
 ## 5.3 Griglie di caricamento in gioco (World Partition)
@@ -164,7 +164,7 @@ Con 16 GB di RAM e 8 GB di memoria video ci stiamo, ma la memoria video è **al 
 | Progetto Unreal in sviluppo (con cache) | 60–150 GB |
 | **Gioco finito da installare** | **15–30 GB** |
 
-**PC per sviluppare**: per lavorare a questo progetto in Unreal servono almeno **32 GB di RAM** (meglio 64), un SSD da **1 TB** libero e una scheda video da 8 GB o più. Il tuo MacBook Air M2 da 8 GB e 256 GB **non basta** per l'editor di Unreal con un mondo così: va bene per gli script Python e per i documenti, non per il progetto Unreal. Questo è un punto da decidere (D7).
+**PC per sviluppare**: per lavorare a questo progetto in Unreal servono almeno **32 GB di RAM** (meglio 64), un SSD da **1 TB** libero e una scheda video da 8 GB o più. Il tuo MacBook Air M2 da 8 GB e 256 GB **non basta** per l'editor di Unreal con un mondo così: va bene per gli script Python e per i documenti, non per il progetto Unreal. Decisione D7: serve un PC adatto (Mac o Windows).
 
 # 8. Multiplayer
 

@@ -1,12 +1,12 @@
 # Bug Tracker – MOTO RACING WORLD
 
-Ultimo aggiornamento: Sprint 0 (6 novembre 2026)
+Ultimo aggiornamento: Sprint A (6 novembre 2026)
 
 Gravità: **Alta** (blocca il gioco) / **Media** (si gioca ma è sbagliato) / **Bassa** (estetica).
 
 ## Bug aperti
 
-Nessun bug: nello Sprint 0 non c'è ancora codice né contenuto Unreal.
+Nessun bug aperto. I passi 1 e 2 (download) non sono ancora stati provati con i server veri: se danno errore, va segnalato qui.
 
 ## Bug chiusi
 

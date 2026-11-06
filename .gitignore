@@ -1,0 +1,18 @@
+# Dati geografici scaricati e file creati dagli script (troppo grandi per Git)
+tools/geo/dati/
+tools/geo/.venv/
+__pycache__/
+*.pyc
+
+# Unreal Engine: cartelle che Unreal ricrea da solo
+unreal/**/Binaries/
+unreal/**/Intermediate/
+unreal/**/Saved/
+unreal/**/DerivedDataCache/
+unreal/**/.vs/
+unreal/**/*.xcworkspace
+unreal/**/*.sln
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
