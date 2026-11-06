@@ -3,6 +3,11 @@
 Versione giocabile **leggera** del settore pilota di **Locarno** (8 × 8 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
+### Novità di questa versione (0.1.2)
+
+- Corrette gallerie e ponti: prima alcune gallerie (per esempio la Mappo-Morettina) passavano **sopra** la montagna come linee scure.
+- La release contiene anche i dati del pilota (`dati-anteprima-pilota.zip`) e il registro delle misure (`registro-pilota.txt`).
+
 ### Quale file scaricare
 
 | Computer | File |

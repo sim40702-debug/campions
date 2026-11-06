@@ -12,6 +12,37 @@ Stato: **IN CORSO** – gli script sono pronti; aspettiamo che Simone li esegua 
 - **Release automatiche**: il workflow GitHub scarica i dati veri, esegue i passi 1–7 e crea l'app per Mac (arm64 e Intel) e Windows (installazione e portatile).
 - Prova dell'anteprima nel browser con dati di prova: carica, si guida, telecamere e tasto R funzionano, nessun errore.
 
+## Dati VERI (dal workflow GitHub, 6 novembre 2026)
+
+I passi 1–7 sono stati eseguiti da GitHub con i dati veri: **i download funzionano**.
+
+| Controllo | Risultato |
+|---|---|
+| Tasselli swissALTI3D 2 m del pilota | 143 |
+| Quote del pilota | da 192,8 m a 1'771,3 m |
+| Superficie Ticino dal confine OSM | **2'812 km²** (ufficiale 2'812, differenza 0,0 %) |
+| Regioni trovate | **8 di 8** |
+| Estensione Ticino LV95 | est 2'672'484–2'732'913, nord 1'075'268–1'165'700: sta nel rettangolo del mondo |
+| Verifica terreno (passo 6) | 2'042 punti, errore medio 0,012 m, massimo 0,027 m, 100 % sotto 1 m |
+
+**Strade del settore pilota (64 km²), misurate:**
+
+| Tipo OSM | km |
+|---|---|
+| residential | 139,8 |
+| secondary | 21,5 |
+| unclassified | 20,0 |
+| tertiary | 15,5 |
+| primary | 13,0 |
+| trunk | 6,0 |
+| living_street | 3,8 |
+| link (svincoli) | 2,4 |
+| **Totale** | **221,8** |
+
+Altre misure: 1'301 tratti, 1'289 incroci, 23 tratti di rotatoria, ponti 92 tratti (1,9 km), gallerie 8 tratti (6,9 km).
+Solo il **3,2 %** delle strade ha la larghezza in OSM e il 32,7 % il numero di corsie: come previsto (rischio della stima), servono le larghezze standard per tipo.
+Il 90,3 % dei nodi è in un'unica rete collegata; gli altri gruppi sono soprattutto strade tagliate dal bordo del pilota (da controllare nello Sprint B).
+
 ## Prove fatte
 
 L'ambiente dove lavora Claude **non può scaricare** da swisstopo, OpenStreetMap e Copernicus (rete bloccata). Quindi:
@@ -40,6 +71,14 @@ L'ambiente dove lavora Claude **non può scaricare** da swisstopo, OpenStreetMap
 | Copernicus DEM | | | |
 | Versione Unreal Engine | | | |
 
+## Release dell'anteprima
+
+| Versione | Contenuto |
+|---|---|
+| 0.1.0 | Prima versione giocabile (Mac arm64 e Intel, Windows installazione e portatile) |
+| 0.1.1 | La release contiene anche dati del pilota e registro delle misure |
+| 0.1.2 | Corrette gallerie e ponti (BUG-001) |
+
 ## Bug trovati
 
-Nessuno per ora.
+- BUG-001 Gallerie sopra la montagna: trovato guardando l'anteprima con i dati veri, chiuso in 0.1.2.

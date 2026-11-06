@@ -17,7 +17,8 @@ import json
 
 import numpy as np
 from PIL import Image
-from shapely.geometry import LineString, box
+from shapely.geometry import LineString, Point, box
+from shapely.ops import linemerge
 
 import config
 import utilita
@@ -111,8 +112,9 @@ def main():
 
     print("2) Strade...")
     zona = box(est_min, nord_min, est_max, nord_max)
-    strade = []
-    km = 0.0
+
+    # Prima raccolgo tutti i pezzi di strada (tagliati al bordo del pilota)
+    pezzi = []
     for elemento in utilita.leggi_json(percorso_strade).get("elements", []):
         if elemento.get("type") != "way" or "geometry" not in elemento:
             continue
@@ -122,45 +124,84 @@ def main():
             continue
         ponte = tag.get("bridge") not in (None, "no")
         galleria = tag.get("tunnel") not in (None, "no")
-
         for pezzo in pezzi_di_linea(LineString(punti).intersection(zona)):
-            fitta = pezzo.segmentize(PASSO_STRADE_M)
-            coordinate = list(fitta.coords)
-            quote_strada = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in coordinate]
+            pezzi.append({"linea": pezzo.segmentize(PASSO_STRADE_M), "tag": tag,
+                          "ponte": ponte, "galleria": galleria})
 
-            if ponte or galleria:
-                # Ponti e gallerie: linea dritta tra la quota di inizio e quella di fine
-                lunghezza = fitta.length
-                inizio = quote_strada[0]
-                fine = quote_strada[-1]
-                fatta = 0.0
-                for i in range(len(coordinate)):
-                    if i > 0:
-                        fatta = fatta + LineString([coordinate[i - 1], coordinate[i]]).length
-                    quote_strada[i] = inizio + (fine - inizio) * (fatta / lunghezza if lunghezza else 0)
-            else:
-                # Strade normali: media su 5 punti per togliere i piccoli scalini
-                lisce = []
-                for i in range(len(quote_strada)):
-                    vicine = quote_strada[max(0, i - 2): i + 3]
-                    lisce.append(sum(vicine) / len(vicine))
-                quote_strada = lisce
+    # Ponti e gallerie in OSM sono spesso divisi in piu' pezzi.
+    # Li unisco: la quota va calcolata tra i due VERI ingressi (non a ogni pezzo).
+    def catene(tipo):
+        linee = [p["linea"] for p in pezzi if p[tipo]]
+        if not linee:
+            return []
+        unite = linemerge(linee)
+        lista = pezzi_di_linea(unite)
+        risultato = []
+        for linea in lista:
+            inizio = linea.coords[0]
+            fine = linea.coords[-1]
+            q_inizio = quota_nel_punto(quote, est_min, nord_max, inizio[0], inizio[1])
+            q_fine = quota_nel_punto(quote, est_min, nord_max, fine[0], fine[1])
+            # Se un capo e' tagliato dal bordo del pilota, la sua quota non vale: uso l'altro capo
+            if zona.exterior.distance(Point(inizio)) < 1:
+                q_inizio = q_fine
+            if zona.exterior.distance(Point(fine)) < 1:
+                q_fine = q_inizio
+            risultato.append((linea, q_inizio, q_fine))
+        return risultato
 
-            piatta = []
-            for (e, n), q in zip(coordinate, quote_strada):
-                piatta.append(round(e - centro_est, 1))
-                piatta.append(round(q + SOPRA_TERRENO_M, 2))
-                piatta.append(round(-(n - centro_nord), 1))
+    catene_ponti = catene("ponte")
+    catene_gallerie = catene("galleria")
 
-            strade.append({
-                "n": tag.get("name") or tag.get("ref") or "",
-                "t": tag.get("highway", ""),
-                "w": round(larghezza_strada(tag), 1),
-                "b": ponte,
-                "g": galleria,
-                "p": piatta,
-            })
-            km = km + pezzo.length / 1000
+    def quota_su_catena(lista, e, n):
+        punto = Point(e, n)
+        for linea, q_inizio, q_fine in lista:
+            if linea.distance(punto) < 0.5:
+                parte = linea.project(punto) / linea.length if linea.length else 0
+                return q_inizio + (q_fine - q_inizio) * parte
+        return None
+
+    strade = []
+    km = 0.0
+    for pezzo in pezzi:
+        coordinate = list(pezzo["linea"].coords)
+        terreno = [quota_nel_punto(quote, est_min, nord_max, e, n) for e, n in coordinate]
+
+        if pezzo["ponte"] or pezzo["galleria"]:
+            lista = catene_ponti if pezzo["ponte"] else catene_gallerie
+            quote_strada = []
+            for (e, n), q_terreno in zip(coordinate, terreno):
+                q = quota_su_catena(lista, e, n)
+                if q is None:
+                    q = q_terreno
+                if pezzo["galleria"]:
+                    q = min(q, q_terreno)   # una galleria non passa mai SOPRA il terreno
+                else:
+                    q = max(q, q_terreno)   # un ponte non passa mai SOTTO il terreno
+                quote_strada.append(q)
+        else:
+            # Strade normali: media su 5 punti per togliere i piccoli scalini
+            quote_strada = []
+            for i in range(len(terreno)):
+                vicine = terreno[max(0, i - 2): i + 3]
+                quote_strada.append(sum(vicine) / len(vicine))
+
+        piatta = []
+        for (e, n), q in zip(coordinate, quote_strada):
+            piatta.append(round(e - centro_est, 1))
+            piatta.append(round(q + SOPRA_TERRENO_M, 2))
+            piatta.append(round(-(n - centro_nord), 1))
+
+        tag = pezzo["tag"]
+        strade.append({
+            "n": tag.get("name") or tag.get("ref") or "",
+            "t": tag.get("highway", ""),
+            "w": round(larghezza_strada(tag), 1),
+            "b": pezzo["ponte"],
+            "g": pezzo["galleria"],
+            "p": piatta,
+        })
+        km = km + pezzo["linea"].length / 1000
 
     with open(CARTELLA_ANTEPRIMA / "strade.json", "w", encoding="utf-8") as file:
         json.dump({"fonte": "(c) OpenStreetMap contributors, ODbL", "strade": strade},

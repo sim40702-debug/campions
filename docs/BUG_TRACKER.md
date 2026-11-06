@@ -10,7 +10,9 @@ Nessun bug aperto. I passi 1 e 2 (download) non sono ancora stati provati con i 
 
 ## Bug chiusi
 
-Nessuno.
+| ID | Titolo | Gravità | Regione / settore | Come riprodurlo | Sprint trovato | Stato |
+|---|---|---|---|---|---|---|
+| BUG-001 | Gallerie disegnate sopra la montagna (linee scure nel cielo) | Media | R3 pilota (Mappo-Morettina, A13) | Anteprima 0.1.0/0.1.1, guardare verso le colline | A | Chiuso in 0.1.2: pezzi di galleria/ponte uniti prima di calcolare la quota |
 
 ## Modello per un nuovo bug
 
