@@ -224,8 +224,9 @@ async function avvia() {
     mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
 
-    mostraStato("Moto 3D...");
-    await caricaModelli3D();
+    await caricaModelli3D(function (nome) {
+      mostraStato("Moto 3D: " + nome + "...");
+    });
     const moto = creaMoto(scena, motoSalvata());
     const partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);

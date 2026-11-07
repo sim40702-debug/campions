@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.10.0)
+### Novità di questa versione (0.11.0)
+
+- **Tutte le moto del garage in 3D vero** (fatte con Blender, disegni originali MRW): SM 690, Strada 700, Naked 890, Sport 1000 RR (carena intera e semimanubri), Enduro 450 (gomme tassellate) e Scooter 125, ognuna con il suo pilota (casco da cross o integrale, posizione di guida diversa per ogni moto).
+- **Case con finestre vere**: cornici, vetri, davanzali e persiane verdi come in Ticino (altre case con finestre senza persiane), capannoni con lamiera e finestre a nastro, tetti di coppi.
+- **Alberi più realistici**: latifoglie con tronco, rami e chioma a "nuvole" in due verdi diversi; abeti a piani di rami.
+
+### Novità della 0.10.0
 
 - **MRW SM 450 con il modello 3D vero** (fatto con Blender dal disegno di Simone): motore con coperchi e viti, radiatori, forcella oro, ruote a raggi con gomme tassellate e dischi, due scarichi, sella con cuciture.
 - **Pilota 3D vero** sulla SM 450: tuta nera e rossa, casco da cross con frontino e mascherina, stivali, guanti. Quando cadi è lui che vola giù dalla moto.

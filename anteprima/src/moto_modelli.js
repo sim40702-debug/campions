@@ -2,7 +2,7 @@
 // con prestazioni realistiche per la loro categoria.
 
 import * as THREE from "three";
-import { modelloSM450Pronto, costruisciSM450 } from "./modelli3d.js";
+import { modelloPronto, costruisciModello3D } from "./modelli3d.js";
 
 export const MOTO = {
   sm690: {
@@ -13,7 +13,7 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.4, pieghaMax: 0.85, fuoristrada: 60,
     marce: [0.30, 0.44, 0.57, 0.70, 0.84, 1.0], minimo: 1600, limitatore: 9200, cilindri: 1,
     colori: { telaio: 0xd9d9d9, carena: 0xf2f2f2, grafica: 0xd8232a, sella: 0x1d1d1d },
-    forma: "supermotard"
+    forma: "supermotard", modello3d: "SM690"
   },
   sm450: {
     nome: "MRW SM 450",
@@ -33,7 +33,7 @@ export const MOTO = {
     frenata: 9.5, agilita: 1.9, pieghaMax: 0.85, fuoristrada: 35,
     marce: [0.27, 0.41, 0.54, 0.68, 0.84, 1.0], minimo: 1300, limitatore: 9500, cilindri: 2,
     colori: { telaio: 0x2b2d31, carena: 0x3d5a46, grafica: 0xd9c9a3, sella: 0x3a2a20 },
-    forma: "stradale"
+    forma: "stradale", modello3d: "STRADA700"
   },
   naked890: {
     nome: "MRW Naked 890",
@@ -43,7 +43,7 @@ export const MOTO = {
     frenata: 10.5, agilita: 2.0, pieghaMax: 0.9, fuoristrada: 40,
     marce: [0.28, 0.42, 0.55, 0.68, 0.83, 1.0], minimo: 1400, limitatore: 10500, cilindri: 2,
     colori: { telaio: 0x2b2d31, carena: 0x5b6470, grafica: 0xf2c200, sella: 0x1d1d1d },
-    forma: "naked"
+    forma: "naked", modello3d: "NAKED890"
   },
   sport1000: {
     nome: "MRW Sport 1000 RR",
@@ -53,7 +53,7 @@ export const MOTO = {
     frenata: 11.5, agilita: 1.6, pieghaMax: 1.0, fuoristrada: 30,
     marce: [0.33, 0.47, 0.60, 0.72, 0.86, 1.0], minimo: 1500, limitatore: 14000, cilindri: 4,
     colori: { telaio: 0x2b2d31, carena: 0x1f4fa8, grafica: 0xffffff, sella: 0x1d1d1d },
-    forma: "sportiva"
+    forma: "sportiva", modello3d: "SPORT1000"
   },
   enduro450: {
     nome: "MRW Enduro 450",
@@ -63,7 +63,7 @@ export const MOTO = {
     frenata: 8.5, agilita: 2.3, pieghaMax: 0.75, fuoristrada: 95,
     marce: [0.25, 0.38, 0.52, 0.67, 0.83, 1.0], minimo: 1700, limitatore: 11500, cilindri: 1,
     colori: { telaio: 0x3a3d42, carena: 0x1b2f5c, grafica: 0xe8e8e8, sella: 0x111111 },
-    forma: "enduro"
+    forma: "enduro", modello3d: "ENDURO450"
   },
   scooter125: {
     nome: "MRW Scooter 125",
@@ -73,7 +73,7 @@ export const MOTO = {
     frenata: 7.5, agilita: 2.5, pieghaMax: 0.65, fuoristrada: 30,
     marce: [1.0], minimo: 1700, limitatore: 9000, cilindri: 1,
     colori: { telaio: 0x2b2d31, carena: 0x8fd3c1, grafica: 0xffffff, sella: 0x3a2a20 },
-    forma: "scooter"
+    forma: "scooter", modello3d: "SCOOTER125"
   }
 };
 
@@ -144,9 +144,9 @@ function ruota(raggio, larghezza, tassellata, coloreCerchio) {
 // --- Costruzione di una moto ---------------------------------------------------
 // La moto guarda verso -z. y = 0 e' il suolo.
 export function costruisciMoto(scheda) {
-  // Moto con il modello 3D vero (se il file c'e')
-  if (scheda.modello3d === "SM450" && modelloSM450Pronto()) {
-    return costruisciSM450();
+  // Moto con il modello 3D vero (se i file ci sono)
+  if (scheda.modello3d && modelloPronto(scheda.modello3d)) {
+    return costruisciModello3D(scheda.modello3d);
   }
   const c = scheda.colori;
   const telaio = materiale(c.telaio, true);

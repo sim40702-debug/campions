@@ -1,35 +1,48 @@
-// Modelli 3D veri (file .glb creati con Blender da tools/moto/crea_moto_450.py).
-// Per ora: la MRW SM 450 (disegno di Simone) con il pilota.
-// Se i file mancano, il gioco usa le moto fatte con le forme semplici (moto_modelli.js).
+// Modelli 3D veri delle moto e dei piloti (file .glb creati con Blender:
+// tools/moto/crea_moto_450.py per la SM 450, tools/moto/crea_moto.py per le altre).
+// Se i file di una moto mancano, quella moto usa le forme semplici (moto_modelli.js).
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const PEZZI = ["Telaio", "Forcellone", "Sterzo", "RuotaPosteriore", "RuotaAnteriore", "Pilota"];
-const pronti = {};
+const MODELLI = ["SM450", "SM690", "STRADA700", "NAKED890", "SPORT1000", "ENDURO450", "SCOOTER125"];
+const pronti = {};   // nome moto -> { pezzi: {...}, misure: {...} }
 
-export async function caricaModelli3D() {
+// La SM 450 non ha il file delle misure: sono queste
+const MISURE_SM450 = { passo: 1.48, rDav: 0.30, rDie: 0.31, bacino: [0.55, 0.76] };
+
+export async function caricaModelli3D(avanzamento) {
   const caricatore = new GLTFLoader();
-  for (const pezzo of PEZZI) {
+  for (const nome of MODELLI) {
+    if (avanzamento) avanzamento(nome);
     try {
-      const file = await caricatore.loadAsync("modelli/SM450_" + pezzo + ".glb");
-      pronti[pezzo] = file.scene;
+      let misure = MISURE_SM450;
+      if (nome !== "SM450") {
+        const risposta = await fetch("modelli/" + nome + ".json");
+        if (!risposta.ok) continue;
+        misure = await risposta.json();
+      }
+      const pezzi = {};
+      for (const pezzo of PEZZI) {
+        const file = await caricatore.loadAsync("modelli/" + nome + "_" + pezzo + ".glb");
+        pezzi[pezzo] = file.scene;
+      }
+      pronti[nome] = { pezzi: pezzi, misure: misure };
     } catch (errore) {
-      console.warn("Modello mancante: " + pezzo);
+      console.warn("Modello 3D mancante: " + nome);
     }
   }
 }
 
-export function modelloSM450Pronto() {
-  return PEZZI.every(function (pezzo) {
-    return pronti[pezzo] !== undefined;
-  });
+export function modelloPronto(nome) {
+  return pronti[nome] !== undefined;
 }
 
 // Copia di un pezzo, girata come le moto del gioco.
 // Nel file la moto guarda verso +X; nel gioco guarda verso -Z: giro di 90 gradi.
-function pezzo(nome) {
-  const copia = pronti[nome].clone(true);
+function pezzo(modello, nome) {
+  const copia = modello.pezzi[nome].clone(true);
   copia.rotation.y = Math.PI / 2;
   copia.traverse(function (oggetto) {
     if (oggetto.isMesh) oggetto.castShadow = true;
@@ -37,44 +50,44 @@ function pezzo(nome) {
   return copia;
 }
 
-// Costruisce la SM 450 con le stesse parti mobili delle altre moto (ruote, sterzo, pilota)
-export function costruisciSM450() {
-  const PASSO = 1.48;
-  const RAGGIO = 0.31;
+// Costruisce la moto con le stesse parti mobili delle moto semplici (ruote, sterzo, pilota)
+export function costruisciModello3D(nome) {
+  const modello = pronti[nome];
+  const m = modello.misure;
   const moto = new THREE.Group();
-  const pernoDietro = new THREE.Vector3(0, RAGGIO, PASSO / 2);
-  const pernoDavanti = new THREE.Vector3(0, RAGGIO, -PASSO / 2);
+  const pernoDietro = new THREE.Vector3(0, m.rDie, m.passo / 2);
+  const pernoDavanti = new THREE.Vector3(0, m.rDav, -m.passo / 2);
 
-  const telaio = pezzo("Telaio");
+  const telaio = pezzo(modello, "Telaio");
   telaio.position.copy(pernoDietro);
   moto.add(telaio);
-  const forcellone = pezzo("Forcellone");
+  const forcellone = pezzo(modello, "Forcellone");
   forcellone.position.copy(pernoDietro);
   moto.add(forcellone);
 
   const ruotaDietro = new THREE.Group();
   ruotaDietro.position.copy(pernoDietro);
-  ruotaDietro.add(pezzo("RuotaPosteriore"));
+  ruotaDietro.add(pezzo(modello, "RuotaPosteriore"));
   moto.add(ruotaDietro);
 
   const sterzo = new THREE.Group();
   sterzo.position.copy(pernoDavanti);
-  sterzo.add(pezzo("Sterzo"));
+  sterzo.add(pezzo(modello, "Sterzo"));
   moto.add(sterzo);
   const ruotaDavanti = new THREE.Group();
-  ruotaDavanti.add(pezzo("RuotaAnteriore"));
+  ruotaDavanti.add(pezzo(modello, "RuotaAnteriore"));
   sterzo.add(ruotaDavanti);
 
-  // Bacino del pilota: 55 cm davanti e 76 cm sopra il perno della ruota dietro (come nel file)
-  const bacino = new THREE.Vector3(0, RAGGIO + 0.76, PASSO / 2 - 0.55);
+  // Bacino del pilota: bacino[0] metri davanti e bacino[1] metri sopra il perno della ruota dietro
+  const bacino = new THREE.Vector3(0, m.rDie + m.bacino[1], m.passo / 2 - m.bacino[0]);
   const pilota = new THREE.Group();
   pilota.position.copy(bacino);
-  pilota.add(pezzo("Pilota"));
+  pilota.add(pezzo(modello, "Pilota"));
   moto.add(pilota);
 
   moto.userData = {
     ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo,
-    rDav: 0.30, rDie: 0.31, passo: PASSO, pilota: pilota, postoPilota: bacino.clone()
+    rDav: m.rDav, rDie: m.rDie, passo: m.passo, pilota: pilota, postoPilota: bacino.clone()
   };
   return moto;
 }

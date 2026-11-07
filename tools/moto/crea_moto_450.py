@@ -541,11 +541,12 @@ def foto(percorso, posizione, guarda, lente=55):
     bpy.ops.render.render(write_still=True)
 
 
-costruisci()
-costruisci_pilota()
-if "--foto" in sys.argv:
-    indice = sys.argv.index("--foto")
-    uscita = Path(sys.argv[indice + 1]) if len(sys.argv) > indice + 1 else Path(".")
-    foto(uscita / "sm450_tre_quarti.png", (4.4, -3.4, 1.7), (0.72, 0, 0.85))
-    foto(uscita / "sm450_lato.png", (0.72, -5.2, 0.9), (0.72, 0, 0.85))
-esporta()
+if __name__ == "__main__":
+    costruisci()
+    costruisci_pilota()
+    if "--foto" in sys.argv:
+        indice = sys.argv.index("--foto")
+        uscita = Path(sys.argv[indice + 1]) if len(sys.argv) > indice + 1 else Path(".")
+        foto(uscita / "sm450_tre_quarti.png", (4.4, -3.4, 1.7), (0.72, 0, 0.85))
+        foto(uscita / "sm450_lato.png", (0.72, -5.2, 0.9), (0.72, 0, 0.85))
+    esporta()

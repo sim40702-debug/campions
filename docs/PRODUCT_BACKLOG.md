@@ -74,6 +74,10 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos√
 | TI-50 | Impennate e stoppie (Shift, E, Spazio) | H2 | 1 | Fatto (0.9.0) |
 | TI-51 | Scoppiettii in rilascio | H2 | 2 | Fatto (0.9.0) |
 | TI-52 | MRW SM 450 e MRW Strada 700 nel garage | H2 | 2 | Fatto (0.9.0) |
+| TI-53 | SM 450 e pilota 3D (Blender) nell'anteprima, cielo, ombre, riflessi | H3 | 1 | Fatto (0.10.0) |
+| TI-54 | Tutte le moto del garage e i loro piloti in 3D | H3 | 1 | Fatto (0.11.0) |
+| TI-55 | Case con finestre, persiane, capannoni, tetti di coppi | H3 | 1 | Fatto (0.11.0) |
+| TI-56 | Alberi pi√π realistici | H3 | 2 | Fatto (0.11.0) |
 | TI-38 | Piano tecnico Unreal Engine 5 | U1 | 1 | Fatto |
 | TI-39 | Progetto UE 5.8 Windows + Mac (Lumen, Nanite, VSM, TSR) | U1 | 1 | Scritto, da compilare |
 | TI-40 | Giorno/notte e meteo con strade bagnate | U1 | 1 | Scritto, da compilare |

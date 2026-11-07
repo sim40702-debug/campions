@@ -12,21 +12,19 @@ let RAGGIO = 900;             // fino a che distanza ci sono gli alberi (imposta
 let ALBERI_PER_CELLA = 650;   // tentativi per cella (circa 1 albero ogni 100 m2)
 const QUOTA_CONIFERE = 1100;  // sopra questa quota: abeti e larici
 
-function creaForma(chioma, coloreChioma) {
-  // Un albero = tronco + chioma, in una sola geometria con i colori
-  const tronco = new THREE.CylinderGeometry(0.18, 0.28, 2.4, 6);
-  tronco.translate(0, 1.2, 0);
-  chioma.translate(0, 2.2, 0);
-  const parti = [tronco, chioma];
-  const colori = [new THREE.Color(0x5a4430), new THREE.Color(coloreChioma)];
+// Un albero = tanti pezzi (tronco, rami, chioma a "nuvole"), uniti in una sola geometria con i colori
+function creaForma(parti) {
   const posizioni = [];
   const coloriVertici = [];
-  for (let k = 0; k < parti.length; k++) {
-    const g = parti[k].toNonIndexed();
+  for (const [geometria, colore] of parti) {
+    const g = geometria.toNonIndexed();
     const pos = g.attributes.position.array;
+    const c = new THREE.Color(colore);
     for (let i = 0; i < pos.length; i += 3) {
       posizioni.push(pos[i], pos[i + 1], pos[i + 2]);
-      coloriVertici.push(colori[k].r, colori[k].g, colori[k].b);
+      // un po' piu' scuro in basso e all'interno: sembra ombra tra le foglie
+      const luce = 0.8 + Math.min(0.35, pos[i + 1] * 0.04);
+      coloriVertici.push(c.r * luce, c.g * luce, c.b * luce);
     }
   }
   const forma = new THREE.BufferGeometry();
@@ -36,14 +34,48 @@ function creaForma(chioma, coloreChioma) {
   return forma;
 }
 
-const chiomaLatifoglia = new THREE.IcosahedronGeometry(2.6, 0);
-chiomaLatifoglia.scale(1, 1.25, 1);
-chiomaLatifoglia.translate(0, 2.4, 0);
-const FORMA_LATIFOGLIA = creaForma(chiomaLatifoglia, 0x3f6b2c);
+function pezzo(geometria, x, y, z, sx, sy, sz) {
+  geometria.scale(sx, sy, sz);
+  geometria.translate(x, y, z);
+  return geometria;
+}
 
-const chiomaConifera = new THREE.ConeGeometry(2.0, 7, 7);
-chiomaConifera.translate(0, 3.2, 0);
-const FORMA_CONIFERA = creaForma(chiomaConifera, 0x2c4a2a);
+// Latifoglia (castagno, faggio, quercia): tronco, due rami, chioma fatta di 5 "nuvole" di foglie
+function latifoglia(verde) {
+  const tronco = pezzo(new THREE.CylinderGeometry(0.16, 0.3, 3.2, 7), 0, 1.6, 0, 1, 1, 1);
+  const ramo1 = new THREE.CylinderGeometry(0.06, 0.12, 1.8, 5);
+  ramo1.rotateZ(0.7);
+  ramo1.translate(0.5, 3.0, 0);
+  const ramo2 = new THREE.CylinderGeometry(0.06, 0.12, 1.6, 5);
+  ramo2.rotateX(-0.7);
+  ramo2.translate(0, 3.0, 0.45);
+  const verdi = [verde, new THREE.Color(verde).offsetHSL(0.02, 0, 0.05).getHex(), new THREE.Color(verde).offsetHSL(-0.02, 0, -0.04).getHex()];
+  return creaForma([
+    [tronco, 0x4e3b2a], [ramo1, 0x4e3b2a], [ramo2, 0x4e3b2a],
+    [pezzo(new THREE.IcosahedronGeometry(2.2, 0), 0, 4.6, 0, 1, 0.9, 1), verdi[0]],
+    [pezzo(new THREE.IcosahedronGeometry(1.6, 0), 1.4, 4.0, 0.4, 1, 0.85, 1), verdi[1]],
+    [pezzo(new THREE.IcosahedronGeometry(1.5, 0), -1.2, 4.1, -0.6, 1, 0.85, 1), verdi[2]],
+    [pezzo(new THREE.IcosahedronGeometry(1.4, 0), 0.2, 3.9, 1.4, 1, 0.85, 1), verdi[1]],
+    [pezzo(new THREE.IcosahedronGeometry(1.3, 0), 0.3, 5.9, -0.3, 1, 0.9, 1), verdi[2]]
+  ]);
+}
+
+// Conifera (abete, larice): tronco e 4 "piani" di rami, piu' stretti salendo
+function conifera(verde) {
+  const parti = [[pezzo(new THREE.CylinderGeometry(0.12, 0.26, 3, 7), 0, 1.5, 0, 1, 1, 1), 0x4a3524]];
+  const piani = [[2.3, 2.4, 2.6], [1.85, 2.2, 3.9], [1.4, 2.0, 5.1], [0.9, 1.8, 6.2]];
+  for (let i = 0; i < piani.length; i++) {
+    const [raggio, alto, y] = piani[i];
+    const cono = new THREE.ConeGeometry(raggio, alto, 9);
+    cono.translate(0, y, 0);
+    parti.push([cono, new THREE.Color(verde).offsetHSL(0, 0, i * 0.02).getHex()]);
+  }
+  return creaForma(parti);
+}
+
+const FORMA_LATIFOGLIA = latifoglia(0x3f6b2c);
+const FORMA_LATIFOGLIA_2 = latifoglia(0x557a32);   // un verde piu' chiaro, per variare
+const FORMA_CONIFERA = conifera(0x2c4a2a);
 
 const MATERIALE = new THREE.MeshLambertMaterial({ vertexColors: true });
 
@@ -68,6 +100,7 @@ function postoLibero(mondo, x, z) {
 
 function creaCella(mondo, cx, cz) {
   const latifoglie = [];
+  const latifoglie2 = [];
   const conifere = [];
   const rnd = casuale(cx * 73856093 ^ cz * 19349663);
 
@@ -80,8 +113,9 @@ function creaCella(mondo, cx, cz) {
     if (!boscoQui(mondo.terreno, x, z)) continue;
     const y = postoLibero(mondo, x, z);
     if (y === null) continue;
-    const lista = y > QUOTA_CONIFERE ? conifere : latifoglie;
-    lista.push([x, y, z, scala, giro]);
+    if (y > QUOTA_CONIFERE) conifere.push([x, y, z, scala, giro]);
+    else if (rnd() < 0.4) latifoglie2.push([x, y, z, scala, giro]);
+    else latifoglie.push([x, y, z, scala, giro]);
   }
 
   // Alberi singoli di OpenStreetMap che cadono in questa cella
@@ -97,7 +131,7 @@ function creaCella(mondo, cx, cz) {
   const matrice = new THREE.Matrix4();
   const rotazione = new THREE.Quaternion();
   const asse = new THREE.Vector3(0, 1, 0);
-  const coppie = [[latifoglie, FORMA_LATIFOGLIA], [conifere, FORMA_CONIFERA]];
+  const coppie = [[latifoglie, FORMA_LATIFOGLIA], [latifoglie2, FORMA_LATIFOGLIA_2], [conifere, FORMA_CONIFERA]];
   for (const [lista, forma] of coppie) {
     if (lista.length === 0) continue;
     const istanze = new THREE.InstancedMesh(forma, MATERIALE, lista.length);
