@@ -21,7 +21,7 @@ for (const s of lista) for (let i = 0; i < s.p.length; i += 3) {
   const k = Math.round(s.p[i] * 2) + "," + Math.round(s.p[i + 2] * 2);
   const prima = nodi.get(k);
   if (prima === undefined) nodi.set(k, s.p[i + 1]);
-  else if (Math.abs(prima - s.p[i + 1]) < 3 && Math.abs(prima - s.p[i + 1]) > 0.01) { nodiDiversi++; peggioNodo = Math.max(peggioNodo, Math.abs(prima - s.p[i + 1])); }
+  else if (Math.abs(prima - s.p[i + 1]) < 3 && Math.abs(prima - s.p[i + 1]) > 0.01) { if (process.env.DBG) console.log("nodo", k, prima.toFixed(2), s.p[i + 1].toFixed(2), s.n, s.g, s.b, i / 3, s.p.length / 3); nodiDiversi++; peggioNodo = Math.max(peggioNodo, Math.abs(prima - s.p[i + 1])); }
 }
 // 2) punti di una strada sulla carreggiata di un'altra: dislivello
 let sovrapposti = 0, scalini = 0, peggio = 0;

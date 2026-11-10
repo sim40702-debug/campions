@@ -3,7 +3,14 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.5) – strade sullo stesso piano, macchina guidabile, cartelli veri
+### Novità di questa versione (0.14.6) – strade rifatte sui dati veri
+
+- **Quote delle strade ricalcolate su tutta la rete**: prima ogni incrocio e ogni capo di ponte era agganciato al terreno grezzo, e su pendii e burroni nascevano rampe impossibili (anche 6 m di dislivello in 7 m). Ora le quote si calcolano tutte insieme: gli incroci hanno una sola quota, niente strappi, pendenza massima 22 %, ponti e gallerie dritti da un capo all'altro e allo stesso livello della strada che li raggiunge.
+- **Il terreno non copre più le strade**: sotto ogni carreggiata il terreno sta sotto l'asfalto (controllato punto per punto); dove passano due strade a quote diverse (tornanti) vince la più bassa.
+- **Muri di sostegno**: dove il terreno a lato è più basso della strada (tornanti, mezza costa) un muro scende dal bordo fino a terra: la strada non resta sospesa nel vuoto.
+- Scarpate più dolci dove la strada è scavata o rialzata; sotto i ponti il terreno non viene riempito.
+
+### Novità della 0.14.5 – strade sullo stesso piano, macchina guidabile, cartelli veri
 
 - **Strade tutte sullo stesso piano dove si toccano**: agli incroci le strade hanno una sola quota, la strada laterale arriva già in piano su quella principale e i bordi dell'asfalto seguono il piano dell'altra strada. Niente più asfalti sovrapposti a quote diverse né scalini. Dove due strade si incrociano senza un nodo in comune viene aggiunto.
 - **Il terreno segue le strade**: sotto l'asfalto il terreno viene risistemato all'avvio (niente prato che buca la strada, niente strade sospese).
