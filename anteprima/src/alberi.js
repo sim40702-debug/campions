@@ -13,6 +13,8 @@ import { quotaTerreno, boscoQui } from "./terreno.js";
 import { stradaVicina } from "./strade.js";
 import { dentroEdificio, zonaQui, ZONA } from "./edifici.js";
 import { profiloQui } from "./luoghi.js";
+import { aggiungiMeteo } from "./meteo_shader.js";
+import { usoQui } from "./uso_suolo.js";
 
 const CELLA = 250;            // metri
 let RAGGIO = 900;             // fino a che distanza ci sono gli alberi (impostazioni)
@@ -185,7 +187,7 @@ const FORME = {
 // Il materiale delle chiome ondeggia al vento: l'altezza del vertice decide quanto si muove.
 // "tempo" e' condiviso con l'ambiente (uniformi.tempo)
 let MATERIALE = null;
-function materiale(tempo) {
+function materiale(tempo, ambiente) {
   if (MATERIALE) return MATERIALE;
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
   m.onBeforeCompile = function (shader) {
@@ -208,6 +210,7 @@ function materiale(tempo) {
         }`);
   };
   m.customProgramCacheKey = function () { return "alberi-vento"; };
+  aggiungiMeteo(m, ambiente, { neve: 0.55, bagnato: 0.5 });
   MATERIALE = m;
   return m;
 }
@@ -271,23 +274,30 @@ function creaCella(mondo, cx, cz) {
 
   // Verde urbano: viali lungo le strade abitate e giardini negli isolati (non nei boschi veri)
   const base = (zonaQui(mondo.edifici, (cx + 0.5) * CELLA, (cz + 0.5) * CELLA));
-  if (base.densita > 0.015 || mondo.luoghiVicini) {
+  if (base.densita > 0.015 || mondo.terreno.uso) {
     const tentativi = Math.round(420 * (ALBERI_PER_CELLA / 650));
     for (let i = 0; i < tentativi; i++) {
       const x = (cx + rnd()) * CELLA;
       const z = (cz + rnd()) * CELLA;
       const info = zonaQui(mondo.edifici, x, z);
-      if (info.densita < 0.03 || info.zona === ZONA.INDUSTRIALE || boscoQui(mondo.terreno, x, z)) continue;
+      const uso = usoQui(mondo.terreno, x, z);
+      if (uso === 3) continue;   // campo sportivo: erba libera
+      if (uso === 0 && (info.densita < 0.03 || info.zona === ZONA.INDUSTRIALE) || boscoQui(mondo.terreno, x, z)) continue;
       const profilo = profiloQui(mondo.luoghi, x, z);
       const stradaVic = stradaVicina(mondo.strade, x, z, 14);
       const quota = quotaTerreno(mondo.terreno, x, z);
       let ok = false;
-      if (stradaVic !== null && !stradaVic.galleria) {
+      if (uso === 1) {
+        // parco: alberi sparsi con radure, cespugli e qualche conifera
+        ok = rnd() < 0.09 * (0.6 + profilo.alberi);
+      } else if (uso === 4) {
+        ok = rnd() < 0.06;   // cimitero: cipressi e siepi
+      } else if (stradaVic !== null && !stradaVic.galleria) {
         // viale: a 2.6-3.6 m dal bordo dell'asfalto, un po' alla volta (non ovunque)
         const d = stradaVic.distanza - stradaVic.larghezza / 2;
         ok = d > 2.4 && d < 3.7 && rnd() < 0.12 * profilo.alberi * (info.zona === ZONA.STORICO ? 0.35 : 1);
       }
-      if (!ok && info.densita < 0.3 && info.zona !== ZONA.STORICO) {
+      if (!ok && uso === 0 && info.densita < 0.3 && info.zona !== ZONA.STORICO) {
         // giardini degli isolati abitati
         ok = rnd() < 0.05 * profilo.alberi * (0.4 + info.densita * 4);
       }
@@ -295,7 +305,8 @@ function creaCella(mondo, cx, cz) {
       const y = postoLibero(mondo, x, z, 2.2);
       if (y === null) continue;
       void quota;
-      scegliUrbano(citta, profilo, x, y, z, rnd, y < mondo.terreno.info.livello_lago + 9);
+      if (uso === 4) citta[rnd() < 0.7 ? "cipresso" : "cespuglio"].push([x, y, z, 0.9 + rnd() * 0.4, rnd() * 6, rnd()]);
+      else scegliUrbano(citta, profilo, x, y, z, rnd, y < mondo.terreno.info.livello_lago + 9);
     }
   }
 
@@ -304,7 +315,7 @@ function creaCella(mondo, cx, cz) {
   const rotazione = new THREE.Quaternion();
   const asse = new THREE.Vector3(0, 1, 0);
   const colore = new THREE.Color();
-  const mat = materiale(mondo.tempo);
+  const mat = materiale(mondo.tempo, mondo.ambiente);
   const costruisci = function (specie, forme, ombra) {
     for (const nome of Object.keys(specie)) {
       const lista = specie[nome];
@@ -364,8 +375,10 @@ export function creaAlberi(scena, terreno, strade, edifici, alberiSingoli, conte
     edifici: edifici,
     luoghi: contesto.luoghi,
     tempo: contesto.ambiente.uniformi.tempo,
+    ambiente: contesto.ambiente,
     alberiSingoli: perCella,
     celle: new Map(),
+    statistiche: { ms: 0, celle: 0 },   // costo medio di una cella di alberi (si legge nel benchmark)
     attesa: 0
   };
 }
@@ -401,7 +414,10 @@ export function aggiornaAlberi(mondo, x, z, dt) {
       if (Math.abs(ix * CELLA) > mondo.terreno.metaX + CELLA || Math.abs(iz * CELLA) > mondo.terreno.metaZ + CELLA) continue;
       // Massimo 3 celle nuove alla volta, cosi' il gioco non si blocca
       if (create >= 3) continue;
+      const tc = performance.now();
       const gruppo = creaCella(mondo, ix, iz);
+      mondo.statistiche.ms += performance.now() - tc;
+      mondo.statistiche.celle++;
       mondo.scena.add(gruppo);
       mondo.celle.set(chiave, gruppo);
       create = create + 1;

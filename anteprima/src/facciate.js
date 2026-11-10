@@ -6,6 +6,7 @@
 // Ogni atlante ha tre immagini: colore, luce (finestre accese di notte) e ruvidita' (vetro lucido, muro opaco).
 
 import * as THREE from "three";
+import { aggiungiMeteo } from "./meteo_shader.js";
 
 const T = 256;       // lato di una campata
 const VARIANTI = 4;
@@ -637,7 +638,7 @@ function creaAtlante(disegna, anisotropia) {
 }
 
 // Crea tutti i materiali di facciata e di tetto (una sola volta)
-export function creaMateriali(notte, anisotropia) {
+export function creaMateriali(notte, anisotropia, ambiente) {
   const tipi = {
     persiane: disegnaPersiane, finestre: disegnaFinestre, moderno: disegnaModerno, storico: disegnaStorico,
     pietra: disegnaPietra, uffici: disegnaUffici, capannone: disegnaCapannone, negozio: disegnaNegozio
@@ -650,6 +651,7 @@ export function creaMateriali(notte, anisotropia) {
       map: atlante.colore, vertexColors: true, roughness: 1, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 1.0
     });
     modificaFacciata(materiale, atlante, notte, probabilita[nome]);
+    aggiungiMeteo(materiale, ambiente, { neve: 0, bagnato: 0.7 });
     facciate[nome] = materiale;
   }
   const liscio = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
@@ -660,5 +662,8 @@ export function creaMateriali(notte, anisotropia) {
     ardesia: new THREE.MeshStandardMaterial({ map: struttura(texArdesia(), anisotropia, true), vertexColors: true, roughness: 0.9, side: THREE.DoubleSide })
   };
   const dettagli = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.15, side: THREE.DoubleSide });
+  aggiungiMeteo(liscio, ambiente, { neve: 0.5, bagnato: 0.6 });
+  aggiungiMeteo(dettagli, ambiente, { neve: 0.85, bagnato: 0.6 });
+  for (const t of Object.values(tetti)) aggiungiMeteo(t, ambiente, { neve: 1, bagnato: 1 });
   return { facciate: facciate, liscio: liscio, tetti: tetti, dettagli: dettagli };
 }

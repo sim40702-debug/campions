@@ -3,6 +3,8 @@
 
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
+import { aggiungiMeteo } from "./meteo_shader.js";
+import { liberaDopoCaricamento } from "./memoria.js";
 
 const CELLA = 40;   // griglia di ricerca: celle da 40 x 40 m
 
@@ -288,6 +290,7 @@ function meshDa(g, materiale, ricevi) {
   geometria.setIndex(g.indici);
   geometria.computeVertexNormals();
   geometria.computeBoundingSphere();
+  liberaDopoCaricamento(geometria);
   const m = new THREE.Mesh(geometria, materiale);
   m.receiveShadow = ricevi !== false;
   m.matrixAutoUpdate = false;
@@ -425,6 +428,12 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   const righeMateriale = new THREE.MeshStandardMaterial({
     color: 0xf2f2ee, roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide
   });
+
+  if (ctx.ambiente) {
+    aggiungiMeteo(asfaltoMateriale, ctx.ambiente, { neve: 0.85, bagnato: 1, pozzanghere: true });
+    aggiungiMeteo(marciapiedeMateriale, ctx.ambiente, { neve: 0.95, bagnato: 0.9 });
+    aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0.8, bagnato: 0.5 });
+  }
 
   // Marciapiedi: serve sapere dove la citta' e' fitta e dove ci sono muri
   let marciapiedi = false;

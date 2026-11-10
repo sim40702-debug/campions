@@ -43,7 +43,7 @@ const PAESI = [
 function quota(x, z) {
   // pianura attorno al lago, monti a nord
   const nord = Math.max(0, (-z - 1500) / 4500);
-  let q = 196 + rumore(x, z) * 25 + nord * nord * 900 + Math.max(0, (-z - 300)) * 0.02;
+  let q = 196 + rumore(x, z) * 25 + nord * nord * 2200 + Math.max(0, (-z - 300)) * 0.02;
   // lago in basso a sinistra (z > 900 + curva): scende sotto il livello
   const riva = 1500 + 250 * Math.sin(x / 900);
   const dentroLago = riva - z;
@@ -85,6 +85,7 @@ const strade = [];
 const edifici = [];
 const lampioni = [], semafori = [], stop = [], precedenza = [], strisce = [];
 const alberi = [];
+const aree = [];   // uso del suolo (parchi, prati, sport, cimiteri)
 const localita = [];
 const quotaY = (x, z) => quota(x, z) + 0.05;
 
@@ -146,6 +147,20 @@ function paese(p) {
     strada(tipoV, p.n + " via " + (i + 100), largV, ptsH);
     reti.push([a, b], [c, d]);
   }
+  // parchi, campi sportivi, cimitero e prati: isolati interi della griglia lasciati liberi dalle case
+  const liberi = [];
+  const tipiAree = ["parco", "parco", p.stile === "industriale" ? "prato" : "sport", p.stile === "storico" || p.stile === "borgo" ? "cimitero" : "prato", "prato"];
+  for (let a = 0; a < tipiAree.length; a++) {
+    const bx = (Math.floor(r(-3, 3)) + 0.5) * passoV, bz = (Math.floor(r(-3, 3)) + 0.5) * passoV;
+    if (Math.hypot(bx, bz) > R * 0.8) continue;
+    const h = passoV / 2 - 10;
+    liberi.push([bx, bz, h]);
+    const ang0 = p.angolo;
+    const pts = [[bx - h, bz - h], [bx + h, bz - h], [bx + h, bz + h], [bx - h, bz + h]].map(([a1, b1]) => ruota(a1, b1));
+    aree.push({ t: tipiAree[a], n: tipiAree[a] === "parco" ? "Parco " + p.n + " " + (a + 1) : (tipiAree[a] === "cimitero" ? "Cimitero di " + p.n : ""),
+      o: pts.flatMap(([x, z]) => [+x.toFixed(1), +z.toFixed(1)]), f: [] });
+    void ang0;
+  }
   // case lungo la griglia
   const spazio = { storico: 11, lungolago: 15, residenziale: 24, industriale: 55, periferia: 30, borgo: 9 }[p.stile];
   for (let gx = -R; gx < R; gx += spazio) {
@@ -159,6 +174,7 @@ function paese(p) {
       const mx = ((gx % passoV) + passoV) % passoV, mz = ((gz % passoV) + passoV) % passoV;
       const bordoX = Math.min(mx, passoV - mx), bordoZ = Math.min(mz, passoV - mz);
       if (bordoX < 9 || bordoZ < 9) continue;
+      if (liberi.some(([bx, bz, h]) => Math.abs(gx - bx) < h + 4 && Math.abs(gz - bz) < h + 4)) continue;
       if (rnd() < (p.stile === "periferia" ? 0.55 : 0.12)) continue;
       const centro = 1 - dc / R;
       let lx, lz, h, t = 0, k = 0;
@@ -221,7 +237,7 @@ collega(PAESI[4], PAESI[3], "Via Tenero", "tertiary", 6.5);
 // strada di montagna
 {
   const pts = [];
-  for (let k = 0; k < 60; k++) { const t = k / 59; pts.push([600 + Math.sin(t * 6) * 250 + t * 600, -300 - t * 2500]); }
+  for (let k = 0; k < 160; k++) { const t = k / 159; pts.push([600 + Math.sin(t * 6) * 250 + t * 600, -300 - t * 4900]); }
   strada("unclassified", "Via alla Cimetta", 5, pts);
 }
 // ponte
@@ -258,4 +274,5 @@ scrivi("dettagli.json", { semafori, stop, precedenza, lampioni, strisce, localit
 scrivi("acqua.json", acqua);
 scrivi("ferrovie.json", { ferrovie });
 scrivi("funivie.json", { funivie: [] });
+scrivi("uso_suolo.json", { aree });
 console.log("Dati di prova in " + uscita + ": " + strade.length + " strade, " + edifici.length + " edifici, " + alberi.length / 2 + " alberi");

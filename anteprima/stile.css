@@ -602,3 +602,14 @@ canvas {
   border-radius: 3px;
   background: #e8323c;
 }
+
+#coordMappa {
+  position: absolute;
+  left: 346px;
+  bottom: 18px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2933;
+  font-size: 12px;
+}

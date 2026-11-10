@@ -1,0 +1,47 @@
+[
+  {
+    "nome": "avvio e caricamento del mondo",
+    "ok": true,
+    "dettaglio": "21 s"
+  },
+  {
+    "nome": "la versione dell'app e' quella attesa",
+    "ok": true,
+    "dettaglio": "0.14.1"
+  },
+  {
+    "nome": "minimappa disegnata nel pacchetto",
+    "ok": true,
+    "dettaglio": "240 px, 233 colori"
+  },
+  {
+    "nome": "mappa grande: la ricerca 'Asc' filtra e trova Ascona",
+    "ok": true,
+    "dettaglio": "40 risultati: Ascona, Ascona via -1, Ascona via -10"
+  },
+  {
+    "nome": "meteo: pioggia intensa attiva (particelle e asfalto bagnato)",
+    "ok": true,
+    "dettaglio": "{\"meteo\":\"pioggia_intensa\",\"pioggia\":1,\"bagnato\":1}"
+  },
+  {
+    "nome": "impostazioni salvate (qualita', meteo, ora)",
+    "ok": true,
+    "dettaglio": "{\"q\":\"alta\",\"m\":\"pioggia_intensa\",\"o\":\"22.00\"}"
+  },
+  {
+    "nome": "benchmark eseguibile nel pacchetto",
+    "ok": true,
+    "dettaglio": "{\"n\":1,\"fps\":0.22,\"grafica\":true}"
+  },
+  {
+    "nome": "nessun errore di runtime in console",
+    "ok": true,
+    "dettaglio": ""
+  },
+  {
+    "nome": "persistenza dopo il riavvio dell'app",
+    "ok": true,
+    "dettaglio": "{\"q\":\"alta\",\"m\":\"pioggia_intensa\",\"meteoAttivo\":\"pioggia_intensa\",\"ora\":22}"
+  }
+]

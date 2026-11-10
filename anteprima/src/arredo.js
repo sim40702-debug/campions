@@ -225,7 +225,7 @@ export function aggiungiArredoUrbano(scena, terreno, strade, ctx, lampioni, dett
       const n = amb.uniformi.notte.value;
       matTesta.emissiveIntensity = n * 6;
       matAlone.opacity = n * 0.85;
-      matMacchia.opacity = n * 0.55;
+      matMacchia.opacity = n * (0.55 + 0.35 * amb.uniformi.bagnato.value);   // l'asfalto bagnato riflette di piu'
       nuvola.visible = n > 0.02;
       if (pozze) pozze.visible = n > 0.02;
     });

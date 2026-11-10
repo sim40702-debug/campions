@@ -279,7 +279,24 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
     spostato = 0;
     trascinando = true;
   });
+  const elCoordinate = document.getElementById("coordMappa");
+  let ultimaLettura = 0;
+  function leggiPunto(evento) {
+    // coordinate, quota e strada sotto il cursore (10 volte al secondo al massimo)
+    const adesso = performance.now();
+    if (adesso - ultimaLettura < 100) return;
+    ultimaLettura = adesso;
+    const [x, z] = daSchermo(evento.clientX, evento.clientY);
+    if (Math.abs(x) > metaX || Math.abs(z) > metaZ) {
+      elCoordinate.textContent = "Fuori dall'area";
+      return;
+    }
+    const strada = vista.scala > 0.25 ? mappa.stradaVicina(x, z, 14) : null;
+    elCoordinate.textContent = "LV95 " + Math.round(terreno.info.centro_lv95[0] + x) + " / " + Math.round(terreno.info.centro_lv95[1] - z) +
+      " \u00b7 quota " + Math.round(quotaTerreno(terreno, x, z)) + " m" + (strada ? " \u00b7 " + (strada.n || "strada senza nome") : "");
+  }
   tela.addEventListener("pointermove", function (evento) {
+    leggiPunto(evento);
     if (!trascinando || !ultimoPunto) return;
     const dx = evento.clientX - ultimoPunto[0], dy = evento.clientY - ultimoPunto[1];
     spostato += Math.abs(dx) + Math.abs(dy);

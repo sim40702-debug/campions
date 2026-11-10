@@ -6,17 +6,17 @@
 import { impostaAlberi } from "./alberi.js";
 import { impostaDettaglioTerreno } from "./terreno.js";
 import { impostaEdifici } from "./edifici.js";
-import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, testoOra, descrizioneMomento } from "./ambiente.js";
+import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, impostaMeteoRealistico, testoOra, descrizioneMomento } from "./ambiente.js";
 
 // pixel = rapporto di pixel; raggioAlberi/densitaAlberi = boschi; visibilita = fino a dove si vede (m);
 // terreno = distanza del terreno dettagliato; ombre = risoluzione delle ombre; areaOmbre = quanti metri attorno
 // alla moto hanno le ombre; dettagli = distanza (m) dei dettagli delle case (balconi, comignoli, impianti);
 // vistaCitta' = distanza (m) degli edifici; nuvole/ombreCitta = nuvole e ombre degli edifici
 export const QUALITA = {
-  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024, areaOmbre: 26, dettagli: 150, vistaCitta: 3500, nuvole: false, ombreCitta: false },
-  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048, areaOmbre: 40, dettagli: 320, vistaCitta: 6500, nuvole: true, ombreCitta: true },
-  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096, areaOmbre: 55, dettagli: 520, vistaCitta: 8500, nuvole: true, ombreCitta: true },
-  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096, areaOmbre: 75, dettagli: 800, vistaCitta: 10500, nuvole: true, ombreCitta: true }
+  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024, areaOmbre: 26, dettagli: 150, vistaCitta: 3500, nuvole: false, ombreCitta: false, gocce: 2500 },
+  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048, areaOmbre: 40, dettagli: 320, vistaCitta: 6500, nuvole: true, ombreCitta: true, gocce: 5000 },
+  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096, areaOmbre: 55, dettagli: 520, vistaCitta: 8500, nuvole: true, ombreCitta: true, gocce: 8000 },
+  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096, areaOmbre: 75, dettagli: 800, vistaCitta: 10500, nuvole: true, ombreCitta: true, gocce: 12000 }
 };
 
 const CHIAVE = "mrw-qualita";
@@ -89,13 +89,14 @@ export function applicaQualita(chiave, mondo) {
   // la nebbia (colore e distanza) la gestisce l'ambiente: gli dico la visibilita' della qualita'
   mondo.ambiente.visibilita = q.visibilita;
   mondo.ambiente.qualitaNuvole = q.nuvole && preferenze.nuvole;
-  impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta);
+  if (mondo.precipitazioni) mondo.precipitazioni.imposta(q.gocce);
+  impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta, q.areaOmbre);
   impostaAlberi(mondo.alberi, q.raggioAlberi, q.densitaAlberi);
   impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno);
   salvaQualita(chiave);
 }
 
-export function preparaMenu(mondo, avviaTest) {
+export function preparaMenu(mondo, avviaTest, avviaBenchmark) {
   const menu = document.getElementById("menu");
   const pulsante = document.getElementById("pulsanteMenu");
   const scelte = document.getElementById("sceltaQualita");
@@ -151,6 +152,11 @@ export function preparaMenu(mondo, avviaTest) {
   function aggiornaMeteo() {
     for (const b of meteo.querySelectorAll("button")) b.classList.toggle("scelto", b.dataset.meteo === amb.meteo);
   }
+  const realistico = document.getElementById("meteoRealistico");
+  realistico.checked = amb.realistico;
+  realistico.addEventListener("change", function () {
+    impostaMeteoRealistico(amb, realistico.checked);
+  });
   const nuvole = document.getElementById("sceltaNuvole");
   nuvole.checked = preferenze.nuvole;
   nuvole.addEventListener("change", function () {
@@ -182,6 +188,11 @@ export function preparaMenu(mondo, avviaTest) {
   });
   window.addEventListener("keydown", function (evento) {
     if (evento.code === "Escape" && document.getElementById("mappaGrande").style.display !== "block") apriChiudi();
+  });
+  document.getElementById("avviaBenchmark").addEventListener("click", function (evento) {
+    evento.currentTarget.blur();
+    menu.style.display = "none";
+    avviaBenchmark();
   });
   document.getElementById("avviaTest").addEventListener("click", function (evento) {
     evento.currentTarget.blur();

@@ -11,7 +11,16 @@ const elNomeMoto = document.getElementById("nomeMoto");
 const elQuota = document.getElementById("quota");
 const elCoordinate = document.getElementById("coordinate");
 const elOra = document.getElementById("oraGioco");
+let ultimoAggiornamento = 0;
+
 export function aggiornaInterfaccia(moto, terreno, localita, mappa, ambiente) {
+  // le scritte (DOM) si aggiornano 10 volte al secondo: scrivere nel DOM ad ogni fotogramma costa e non serve
+  const adesso = performance.now();
+  if (adesso - ultimoAggiornamento < 100) {
+    mappa.disegnaMini(moto);
+    return;
+  }
+  ultimoAggiornamento = adesso;
   elLocalita.textContent = localita;
   elVelocita.innerHTML = Math.round(Math.abs(moto.velocita) * 3.6) + " <small>km/h</small>";
   // Marcia e contagiri (rosso vicino al limitatore)

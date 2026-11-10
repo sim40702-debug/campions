@@ -416,25 +416,34 @@ export function preparaMinimappa(o) {
       ctx.restore();
     }
 
-    // quartieri: colore delle celle da 80 m
+    // quartieri: colore delle celle da 80 m. Si disegna una piccola immagine (1 punto per cella) e la si
+    // ingrandisce con l'interpolazione: i bordi diventano morbidi senza usare filtri costosi.
     if (F.quartieri && edifici.zone && scala < 0.9) {
-      const lato = 80 * scala;
-      ctx.save();
-      ctx.filter = "blur(" + Math.max(2, Math.min(14, lato * 0.55)) + "px)";
-      const colori = [null, tav.residenziale, tav.storico, tav.commerciale, tav.industriale];
-      for (let i = 1; i < 5; i++) {
-        ctx.fillStyle = colori[i];
-        ctx.beginPath();
-        for (const [chiave, z] of edifici.zone) {
-          if (z.zona !== i) continue;
-          const sep = chiave.indexOf(",");
-          const gx = +chiave.slice(0, sep) * 80, gz = +chiave.slice(sep + 1) * 80;
-          if (gx > x1 || gx + 80 < x0 || gz > z1 || gz + 80 < z0) continue;
-          ctx.rect(sx(gx) - 0.5, sz(gz) - 0.5, lato + 1, lato + 1);
+      const gx0 = Math.floor(x0 / 80), gz0 = Math.floor(z0 / 80);
+      const gx1 = Math.floor(x1 / 80), gz1 = Math.floor(z1 / 80);
+      const nw = gx1 - gx0 + 3, nh = gz1 - gz0 + 3;
+      if (nw * nh < 40000) {
+        if (!mappa.telaQuartieri) mappa.telaQuartieri = document.createElement("canvas");
+        const tq = mappa.telaQuartieri;
+        tq.width = nw;
+        tq.height = nh;
+        const cq = tq.getContext("2d");
+        const colori = [null, tav.residenziale, tav.storico, tav.commerciale, tav.industriale];
+        for (let gz = gz0 - 1; gz <= gz1 + 1; gz++) {
+          for (let gx = gx0 - 1; gx <= gx1 + 1; gx++) {
+            const z = edifici.zone.get(gx + "," + gz);
+            if (!z || z.zona === 0) continue;
+            cq.fillStyle = colori[z.zona];
+            cq.fillRect(gx - gx0 + 1, gz - gz0 + 1, 1, 1);
+          }
         }
-        ctx.fill();
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "medium";
+        const lato = 80 * scala;
+        ctx.drawImage(tq, sx((gx0 - 1) * 80), sz((gz0 - 1) * 80), nw * lato, nh * lato);
+        ctx.restore();
       }
-      ctx.restore();
     }
 
     // parchi, giardini, prati, cimiteri, campi sportivi
@@ -518,7 +527,8 @@ export function preparaMinimappa(o) {
       for (const el of lista) {
         if (el.e.k === 1) continue;
         const p = el.e.p;
-        if ((el.x1 - el.x0) * scala < 1.2 && (el.z1 - el.z0) * scala < 1.2) {
+        // a basso ingrandimento (sotto 1.4 punti per metro) un rettangolo (il riquadro dell'edificio) basta e costa molto meno del contorno
+        if (scala < 1.4 || ((el.x1 - el.x0) * scala < 1.2 && (el.z1 - el.z0) * scala < 1.2)) {
           ctx.rect(sx(el.x0), sz(el.z0), Math.max(1, (el.x1 - el.x0) * scala), Math.max(1, (el.z1 - el.z0) * scala));
           continue;
         }
@@ -527,7 +537,7 @@ export function preparaMinimappa(o) {
         ctx.closePath();
       }
       ctx.fill();
-      if (scala > 0.45) ctx.stroke();
+      if (scala > 1.6) ctx.stroke();
       // chiese in colore diverso
       ctx.fillStyle = tav.chiesa;
       ctx.beginPath();

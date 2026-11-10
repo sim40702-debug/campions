@@ -72,7 +72,7 @@ export function creaMaterialeAcqua(ambiente, opzioni) {
           vec3 n2 = texture2D(normalMap, p * 2.3 - vec2(uTempoOnde * uVelocita * 1.1, -uTempoOnde * uVelocita * 0.7)).xyz * 2.0 - 1.0;
           vec3 mappaN = normalize(vec3((n1.xy + n2.xy * 0.6) * normalScale, n1.z + n2.z * 0.6));
           // normale "su" nel mondo -> in vista: uso la normale geometrica e la inclino con le onde
-          normal = normalize(normal + (normalMatrix * vec3(mappaN.x, 0.0, mappaN.y)) * 0.9);
+          normal = normalize(normal + (viewMatrix * vec4(mappaN.x, 0.0, mappaN.y, 0.0)).xyz * 0.9);
         }`);
   };
   m.customProgramCacheKey = function () { return "acqua-onde"; };

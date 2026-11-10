@@ -21,16 +21,30 @@ const PUNTI = [
   { el: 70, sole: 0xfffaf0, ints: 2.7, cielo: 0xe3f0ff, terra: 0x4a5a3a, hemi: 1.22, nebbia: 0xa4c4e6, espo: 1.08, env: 0.38 }
 ];
 
+// Condizioni atmosferiche. nuvole = copertura, nebbia = quanta visibilita' resta, sole = quanta luce diretta,
+// grigio = cielo spento, pioggia/neve = intensita' della precipitazione (0-1)
 const METEO = {
-  sereno: { nome: "Sereno", nuvole: 0.28, nebbia: 1.0, sole: 1.0, grigio: 0.0 },
-  variabile: { nome: "Variabile", nuvole: 0.55, nebbia: 0.9, sole: 0.85, grigio: 0.15 },
-  nuvoloso: { nome: "Nuvoloso", nuvole: 0.9, nebbia: 0.65, sole: 0.4, grigio: 0.55 },
-  nebbia: { nome: "Nebbia", nuvole: 0.7, nebbia: 0.22, sole: 0.3, grigio: 0.45 }
+  sereno: { nome: "Sereno", nuvole: 0.15, nebbia: 1.0, sole: 1.0, grigio: 0.0, pioggia: 0, neve: 0 },
+  variabile: { nome: "Parzialmente nuvoloso", nuvole: 0.5, nebbia: 0.95, sole: 0.85, grigio: 0.1, pioggia: 0, neve: 0 },
+  nuvoloso: { nome: "Nuvoloso", nuvole: 0.9, nebbia: 0.7, sole: 0.4, grigio: 0.55, pioggia: 0, neve: 0 },
+  nebbia: { nome: "Nebbia", nuvole: 0.7, nebbia: 0.2, sole: 0.3, grigio: 0.45, pioggia: 0, neve: 0 },
+  pioggia_leggera: { nome: "Pioggia leggera", nuvole: 0.85, nebbia: 0.6, sole: 0.3, grigio: 0.65, pioggia: 0.35, neve: 0 },
+  pioggia_intensa: { nome: "Pioggia intensa", nuvole: 1.0, nebbia: 0.38, sole: 0.12, grigio: 0.9, pioggia: 1, neve: 0 },
+  neve_leggera: { nome: "Neve leggera", nuvole: 0.9, nebbia: 0.5, sole: 0.28, grigio: 0.65, pioggia: 0, neve: 0.35 },
+  neve_intensa: { nome: "Neve intensa", nuvole: 1.0, nebbia: 0.25, sole: 0.1, grigio: 0.8, pioggia: 0, neve: 1 }
 };
-export const ELENCO_METEO = Object.keys(METEO).map(function (k) { return { chiave: k, nome: METEO[k].nome }; });
+export const ELENCO_METEO = Object.keys(METEO).map(function (k) { return { chiave: k, nome: METEO[k].nome }; })
+  .concat([{ chiave: "auto", nome: "Automatico" }]);
+
+// Geografia e stagione del Ticino (per mese, gennaio = 0):
+// - quota della neve permanente sui monti (sopra questa quota c'e' neve anche senza nevicare);
+// - quota alla quale nevica con le perturbazioni (sotto piove). Locarno (200 m) vede la neve solo in pieno inverno.
+const NEVE_PERMANENTE = [1300, 1350, 1550, 1950, 2450, 2850, 3150, 3150, 2850, 2350, 1800, 1400];
+const NEVE_CADUTA = [450, 550, 850, 1400, 1950, 2500, 2900, 2900, 2200, 1600, 1000, 550];
 
 const CHIAVE_ORA = "mrw-ora";
 const CHIAVE_METEO = "mrw-meteo";
+const CHIAVE_REALISTICO = "mrw-meteo-realistico";
 const CHIAVE_CICLO = "mrw-ciclo";
 
 function leggi(chiave, difetto) {
@@ -169,10 +183,21 @@ export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
   const ambiente = {
     ora: parseFloat(leggi(CHIAVE_ORA, "15.5")),
     meteo: leggi(CHIAVE_METEO, "variabile"),
+    realistico: leggi(CHIAVE_REALISTICO, "1") === "1",   // la neve dipende da quota e stagione
+    mese: new Date().getMonth(),
+    meteoAttivo: "variabile",
+    pioggia: 0, neve: 0,                                 // intensita' attuale delle particelle (con transizione)
+    sottoCopertura: 0,                                   // in galleria niente pioggia
     ciclo: leggi(CHIAVE_CICLO, "0") === "1",
     cielo: cielo, stelle: stelle, luna: luna, nuvole: nuvole,
     sole: sole, hemi: hemi, scena: scena, disegnatore: disegnatore, telecamera: telecamera,
-    uniformi: { notte: { value: 0 }, tempo: { value: 0 } },   // condiviso dai materiali (finestre, lampioni, vento)
+    uniformi: {
+      notte: { value: 0 }, tempo: { value: 0 },
+      bagnato: { value: 0 },                 // 0-1: asfalto e superfici bagnati
+      neveDin: { value: 0 },                 // 0-1: neve caduta (si accumula e si scioglie)
+      quotaNeveDin: { value: 1000 },         // m: sotto questa quota la neve caduta non c'e'
+      quotaNeveFissa: { value: 2800 }        // m: neve permanente di stagione
+    },   // condiviso dai materiali (finestre, lampioni, vento)
     direzioneSole: new THREE.Vector3(-0.5, 1, 0.3).normalize(),
     direzioneLuce: new THREE.Vector3(-0.5, 1, 0.3).normalize(),
     qualitaNuvole: true,
@@ -186,7 +211,7 @@ export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
     uniformiNuvole: uniformiNuvole,
     osservatori: []           // funzioni chiamate ad ogni fotogramma (lampioni, ecc.)
   };
-  if (!METEO[ambiente.meteo]) ambiente.meteo = "variabile";
+  if (!METEO[ambiente.meteo] && ambiente.meteo !== "auto") ambiente.meteo = "variabile";
   if (!(ambiente.ora >= 0 && ambiente.ora < 24)) ambiente.ora = 15.5;
   aggiornaAmbiente(ambiente, 0, new THREE.Vector3());
   return ambiente;
@@ -233,7 +258,8 @@ export function aggiornaAmbiente(amb, dt, posizioneCamera) {
   }
   amb.tempo += dt;
   amb.uniformi.tempo.value = amb.tempo;
-  const meteo = METEO[amb.meteo];
+  const meteo = METEO[meteoEffettivo(amb)];
+  aggiornaPrecipitazioni(amb, meteo, dt, posizioneCamera);
 
   const elevazione = posizioneSole(amb.ora, amb.direzioneSole);
   amb.elevazione = elevazione;
@@ -263,7 +289,7 @@ export function aggiornaAmbiente(amb, dt, posizioneCamera) {
   amb.hemi.intensity = punto(elevazione, "hemi") * (1 + grigio * 0.15);
   amb.colore.nebbia.copy(punto(elevazione, "nebbia")).lerp(_a.setHex(0xa8b0b8).multiplyScalar(1 - notte * 0.85), grigio * 0.7);
   amb.disegnatore.toneMappingExposure = punto(elevazione, "espo");
-  amb.scena.environmentIntensity = punto(elevazione, "env") * (1 - notte * 0.4);
+  amb.scena.environmentIntensity = punto(elevazione, "env") * (1 - notte * 0.4) * (1 - 0.5 * meteo.grigio);
 
   // nebbia: colore e distanza
   const dist = amb.visibilita * meteo.nebbia;
@@ -283,11 +309,11 @@ export function aggiornaAmbiente(amb, dt, posizioneCamera) {
   // posizioni dipendenti dalla telecamera
   amb.cielo.position.copy(posizioneCamera);
   amb.stelle.position.copy(posizioneCamera);
-  amb.stelle.material.opacity = Math.max(0, notte - 0.35) / 0.65 * (1 - meteo.nuvole * 0.55 * (amb.meteo === "sereno" ? 0 : 1));
+  amb.stelle.material.opacity = Math.max(0, notte - 0.35) / 0.65 * (1 - meteo.nuvole * 0.55 * (amb.meteoAttivo === "sereno" ? 0 : 1));
   // luna: nel cielo opposta al sole (solo quando il sole e' basso)
   const lunaDir = _v.set(-amb.direzioneSole.x, Math.max(0.25, -amb.direzioneSole.y + 0.15), -amb.direzioneSole.z).normalize();
   amb.luna.position.copy(posizioneCamera).addScaledVector(lunaDir, 4500);
-  amb.luna.material.opacity = Math.max(0, notte - 0.25) / 0.75 * (amb.meteo === "nebbia" ? 0.3 : 1);
+  amb.luna.material.opacity = Math.max(0, notte - 0.25) / 0.75 * (amb.meteoAttivo === "nebbia" ? 0.3 : 1);
 
   // nuvole
   amb.nuvole.visible = amb.qualitaNuvole;
@@ -317,7 +343,7 @@ export function impostaOra(amb, ora) {
   scrivi(CHIAVE_ORA, amb.ora.toFixed(2));
 }
 export function impostaMeteo(amb, chiave) {
-  if (!METEO[chiave]) return;
+  if (!METEO[chiave] && chiave !== "auto") return;
   amb.meteo = chiave;
   scrivi(CHIAVE_METEO, chiave);
 }
@@ -340,4 +366,78 @@ export function descrizioneMomento(amb) {
   if (e < 4) return amb.ora < 12 ? "Alba" : "Tramonto";
   if (e < 20) return amb.ora < 12 ? "Mattino" : "Sera";
   return "Giorno";
+}
+
+export function impostaMeteoRealistico(amb, si) {
+  amb.realistico = si;
+  scrivi(CHIAVE_REALISTICO, si ? "1" : "0");
+}
+
+// Meteo automatico: ogni 10 minuti veri una nuova situazione, scelta in modo ripetibile dal giorno e dal mese.
+// D'inverno piu' neve e nebbia, d'estate piu' sole e temporali; la quota decide poi se cade pioggia o neve.
+function casuale01(n) {
+  let h = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+export function meteoAutomatico(mese, data) {
+  const freddo = (Math.cos((mese - 0.5) / 12 * Math.PI * 2) + 1) / 2;   // 1 in inverno, 0 in estate
+  const pesi = {
+    sereno: 0.34 - 0.1 * freddo, variabile: 0.22, nuvoloso: 0.14, nebbia: 0.03 + 0.07 * freddo,
+    pioggia_leggera: 0.14 * (1 - freddo * 0.4), pioggia_intensa: 0.08 * (1 - freddo * 0.5),
+    neve_leggera: 0.12 * freddo * freddo, neve_intensa: 0.06 * freddo * freddo
+  };
+  const fascia = Math.floor(data / 600000);
+  let r = casuale01(fascia) * Object.values(pesi).reduce(function (a, b) { return a + b; }, 0);
+  for (const k of Object.keys(pesi)) {
+    r -= pesi[k];
+    if (r <= 0) return k;
+  }
+  return "sereno";
+}
+export function meteoEffettivo(amb) {
+  amb.meteoAttivo = amb.meteo === "auto" ? meteoAutomatico(amb.mese, Date.now()) : amb.meteo;
+  return amb.meteoAttivo;
+}
+export function quotaNeveCaduta(amb) {
+  return amb.realistico ? NEVE_CADUTA[amb.mese] : 120;
+}
+
+// Precipitazioni con transizione graduale. Pioggia o neve dipendono dalla quota della telecamera:
+// con una perturbazione "da neve" sotto la quota di caduta piove, sopra nevica.
+// Asfalto bagnato e neve a terra si accumulano e si sciolgono piano.
+function aggiornaPrecipitazioni(amb, meteo, dt, cam) {
+  const quotaCad = quotaNeveCaduta(amb);
+  const perturbazione = Math.max(meteo.pioggia, meteo.neve);
+  const sopraNeve = cam.y >= quotaCad;
+  let pioggiaVoluta = meteo.pioggia > 0 ? meteo.pioggia : (meteo.neve > 0 && !sopraNeve ? meteo.neve * 0.7 : 0);
+  let neveVoluta = meteo.neve > 0 && sopraNeve ? meteo.neve : 0;
+  // una perturbazione "da pioggia" sopra la quota di neve porta neve (pioggia che diventa neve in quota)
+  if (meteo.pioggia > 0 && cam.y > NEVE_CADUTA[amb.mese] + 600 && amb.realistico) {
+    neveVoluta = meteo.pioggia * 0.8;
+    pioggiaVoluta = 0;
+  }
+  const copertura = 1 - amb.sottoCopertura;
+  const k = Math.min(1, dt * 0.5);
+  amb.pioggia += (pioggiaVoluta * copertura - amb.pioggia) * k;
+  amb.neve += (neveVoluta * copertura - amb.neve) * k;
+  const u = amb.uniformi;
+  // asfalto: si bagna in fretta, si asciuga in qualche minuto
+  const bagnato = pioggiaVoluta > 0 ? Math.min(1, 0.35 + pioggiaVoluta * 0.8) : 0;
+  u.bagnato.value += (bagnato - u.bagnato.value) * Math.min(1, dt * (bagnato > u.bagnato.value ? 0.12 : 0.02));
+  // neve a terra: si accumula mentre nevica in alto, si scioglie piano
+  u.quotaNeveFissa.value = NEVE_PERMANENTE[amb.mese];
+  if (perturbazione > 0) {
+    // quota della neve caduta: quella di stagione (la pioggia in quota diventa neve)
+    u.quotaNeveDin.value += (quotaCad - u.quotaNeveDin.value) * Math.min(1, dt * 0.3);
+  }
+  const accumulo = meteo.neve > 0 ? 0.012 + 0.03 * meteo.neve : (meteo.pioggia > 0 && amb.realistico ? 0.005 * meteo.pioggia : 0);
+  u.neveDin.value = Math.max(0, Math.min(1, u.neveDin.value + (accumulo - (accumulo > 0 ? 0 : 0.004)) * dt));
+}
+
+// Cambia il meteo senza ricordarlo (benchmark e prove)
+export function impostaMeteoSenzaSalvare(amb, chiave) {
+  if (METEO[chiave] || chiave === "auto") amb.meteo = chiave;
 }

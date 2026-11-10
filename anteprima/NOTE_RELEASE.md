@@ -3,7 +3,17 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.0) – grande upgrade grafico
+### Novità di questa versione (0.14.1) – meteo completo, benchmark, mondo più curato
+
+- **Meteo completo**: sereno, parzialmente nuvoloso, nuvoloso, nebbia, **pioggia leggera e intensa**, **neve leggera e intensa**, più la modalità **Automatico** (cambia da sola, in base al mese). Pioggia e neve sono particelle 3D; l'asfalto si **bagna** (più scuro, pozzanghere lucide, riflessi dei lampioni più forti) e la **neve si deposita** su tetti, prati, strade e alberi.
+- **Neve coerente con la geografia**: la quota della neve dipende dal mese; a Locarno (200 m) nevica solo in pieno inverno, in montagna molto prima, e con una perturbazione "da neve" sotto la quota piove. Nelle Impostazioni si può togliere "Meteo realistico" per vedere la neve ovunque. In galleria non piove.
+- **Parchi, prati, campi sportivi, cimiteri** (da `uso_suolo.json`) ora esistono anche in 3D: prato curato, alberi e cipressi, oltre che sulla mappa.
+- **Benchmark ripetibile** (Impostazioni): 8 scenari fissi (centro storico, lungolago, residenziale, industriale, montagna, panorama, notte, pioggia e neve) con FPS medi e minimi, 1% low, tempi di fotogramma, memoria, triangoli e chiamate; il risultato dice su che computer è stato misurato.
+- **Prestazioni**: le ombre degli edifici sono calcolate solo per i pezzi vicini alla moto, particolari fini degli edifici nascosti oltre 1,4 km, scritte dello schermo aggiornate 10 volte al secondo, luce del faro spenta di giorno.
+- **Mappa grande**: coordinate, quota e nome della strada sotto il cursore.
+- Altri 18 paesi del Ticino con architettura propria (Mendrisio, Chiasso, Biasca, Airolo, Morcote, Orselina…).
+
+### Novità della 0.14.0 – grande upgrade grafico
 
 - **Città tutte diverse**: ogni città e paese ha un'identità sua (colori dei muri e dei tetti, tipo di facciata, balconi, palme, alberi di strada), ricavata dal nome: Locarno ocra e terracotta, Ascona mediterranea con palme, Muralto pastello, Tenero moderno, Losone alpino, Ponte Brolla di granito… e lo stesso vale per qualsiasi altro paese dei dati.
 - **Quartieri riconosciuti da soli** (centro storico, commerciale, industriale, residenziale, periferia): palazzi con negozi al piano terra, cornicioni, capannoni di lamiera con lucernari, uffici a vetri, case con gronda, comignoli e pannelli solari, balconi, impianti sui tetti, tetti di pietra in quota.

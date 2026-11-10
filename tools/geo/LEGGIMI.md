@@ -80,3 +80,17 @@ servono per lo Sprint Report.
 - Bordo fuori Svizzera: Copernicus DEM GLO-30
 
 Dettagli: `docs/FONTI_E_LICENZE.md`.
+
+## Aggiungere solo parchi, prati e zone (senza rifare tutto)
+
+I passi non riscaricano i file che ci sono gia' (`Gia' scaricato: ...`), quindi per avere i parchi basta:
+
+```
+python3 passo2_scarica_osm.py --pilota
+python3 passo7_esporta_anteprima.py
+python3 verifica_uso_suolo.py
+```
+
+Il passo 2 scarica solo i dati d'uso del suolo (`uso_suolo_pilota.json`); il passo 7 riscrive i file di `anteprima/dati`
+(stessi dati di prima piu' `uso_suolo.json`); `verifica_uso_suolo.py` controlla che le aree siano valide e dentro il terreno.
+Le dipendenze: il passo 7 ha bisogno dei passi 1 e 3 (terreno) e 2 (OpenStreetMap).

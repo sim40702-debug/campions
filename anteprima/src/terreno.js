@@ -8,12 +8,15 @@
 
 import * as THREE from "three";
 import { creaMaterialeAcqua } from "./onde.js";
+import { aggiungiMeteo } from "./meteo_shader.js";
+import { usoQui } from "./uso_suolo.js";
+import { liberaDopoCaricamento } from "./memoria.js";
 
 const QUAD_PEZZO = 508;   // 508 x 3.94 m = 2000 m
 
 // Materiale del terreno: i colori vengono dai vertici (o dalla foto aerea); un programma della scheda video
 // aggiunge una grana fine e macchie di colore a due scale, cosi' il prato non e' una superficie liscia.
-function materialeTerreno() {
+function materialeTerreno(ambiente) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0 });
   m.onBeforeCompile = function (shader) {
     shader.vertexShader = shader.vertexShader
@@ -39,7 +42,7 @@ function materialeTerreno() {
         }`);
   };
   m.customProgramCacheKey = function () { return "terreno-grana"; };
-  return m;
+  return aggiungiMeteo(m, ambiente, { neve: 1, bagnato: 0.8 });
 }
 
 export async function caricaTerreno() {
@@ -121,7 +124,7 @@ function rumore2(a, b) {
   const v = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
   return v - Math.floor(v);
 }
-function coloreTerreno(quota, pendenza, livelloLago, bosco, colore, x, z) {
+function coloreTerreno(quota, pendenza, livelloLago, bosco, colore, x, z, uso) {
   const grana = rumore2(Math.floor(x / 9), Math.floor(z / 9));          // macchie da 9 m
   const macchia = Math.sin(x * 0.011 + Math.cos(z * 0.009) * 2) * Math.cos(z * 0.013 - x * 0.004);   // zone grandi
   if (quota < livelloLago - 0.3) {
@@ -130,11 +133,17 @@ function coloreTerreno(quota, pendenza, livelloLago, bosco, colore, x, z) {
     colore.setRGB(0.56 - fondo * 0.46, 0.52 - fondo * 0.36, 0.38 - fondo * 0.22);
   } else if (quota < livelloLago + 0.7) {
     colore.setRGB(0.66 + grana * 0.06, 0.6 + grana * 0.05, 0.47);   // spiaggia e riva di ghiaia
+  } else if (uso === 1 || uso === 3) {
+    // parco e campo sportivo: prato curato, verde brillante e uniforme
+    const v = grana * 0.03;
+    colore.setRGB(0.17 + v, 0.4 + v, 0.13);
+  } else if (uso === 4) {
+    colore.setRGB(0.22 + grana * 0.03, 0.36, 0.16);   // cimitero: prato e ghiaietto
   } else if (bosco && pendenza < 1.5) {
     const v = (Math.sin(quota * 0.11) + 1) * 0.02 + grana * 0.03;
     colore.setRGB(0.14 + v, 0.26 + v, 0.11 + v * 0.5);
   } else if (quota > 2150 + macchia * 120 && pendenza < 1.1) {
-    colore.setRGB(0.92, 0.94, 0.97);     // neve sulle cime
+    colore.setRGB(0.5, 0.5, 0.47);       // pietraia d'alta quota (la neve la mette il meteo)
   } else if (pendenza > 1.0) {
     const v = grana * 0.08;
     colore.setRGB(0.44 + v, 0.42 + v, 0.39 + v);   // roccia
@@ -186,7 +195,8 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
       const sotto = q[Math.min(riga + 1, terreno.righe - 1) * n + colonna];
       const pendenza = Math.hypot(destra - quota, sotto - quota) / terreno.passo;
       const bosco = terreno.bosco !== null && terreno.bosco[riga * n + colonna] === 1;
-      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ);
+      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ,
+        terreno.uso ? usoQui(terreno, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ) : 0);
       colori[indice] = colore.r;
       colori[indice + 1] = colore.g;
       colori[indice + 2] = colore.b;
@@ -254,7 +264,8 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
   geometria.setAttribute("normal", new THREE.BufferAttribute(nor2, 3));
   geometria.setAttribute("uv", new THREE.BufferAttribute(uv2, 2));
   geometria.setIndex(indici);
-  return geometria;
+  geometria.computeBoundingSphere();
+  return liberaDopoCaricamento(geometria);
 }
 
 export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
@@ -270,7 +281,7 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
       const centroX = (px + 0.5) * latoPezzo - terreno.metaX;
       const centroZ = (py + 0.5) * latoPezzo - terreno.metaZ;
       // Il terreno si vede solo da sopra: cosi' dentro le gallerie non copre il tubo
-      const materiale = materialeTerreno();
+      const materiale = materialeTerreno(ambiente);
       const lontano = new THREE.Mesh(
         creaGeometriaPezzo(terreno, px * QUAD_PEZZO, py * QUAD_PEZZO, 4, centroX, centroZ), materiale);
       lontano.position.set(centroX, 0, centroZ);

@@ -69,8 +69,10 @@
     <label class="spunta"><input id="cicloGiorno" type="checkbox"> Il tempo scorre (un giorno in 8 minuti)</label>
     <p>Meteo</p>
     <div id="sceltaMeteo"></div>
+    <label class="spunta"><input id="meteoRealistico" type="checkbox" checked> Meteo realistico: la neve dipende da quota e stagione</label>
     <label class="spunta"><input id="sceltaNuvole" type="checkbox" checked> Nuvole</label>
     <label class="spunta"><input id="sceltaOmbreCitta" type="checkbox" checked> Ombre degli edifici</label>
+    <button id="avviaBenchmark">Benchmark ripetibile (8 scenari)</button>
     <button id="avviaTest">Test prestazioni (45 s)</button>
     <button id="chiudiMenu">Chiudi</button>
     <p class="piccolo">Tasti: F = FPS · Esc = questo menu</p>
@@ -105,6 +107,7 @@
       <button id="zoomPiu">+</button>
       <button id="zoomMeno">&minus;</button>
     </div>
+    <div id="coordMappa">Muovi il mouse sulla mappa</div>
     <div id="scalaMappa"></div>
   </div>
 

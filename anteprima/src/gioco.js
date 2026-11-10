@@ -15,7 +15,11 @@ import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
 import { caricaEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
 import { creaLuoghi } from "./luoghi.js";
-import { caricaUsoSuolo } from "./uso_suolo.js";
+import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
+import { creaPrecipitazioni } from "./precipitazioni.js";
+import { creaBenchmark, inMarkdown } from "./benchmark.js";
+
+const VERSIONE = "0.14.1";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -73,6 +77,9 @@ sole.shadow.normalBias = 0.05;
 
 // Ora del giorno, cielo con stelle e luna, nuvole, nebbia e meteo
 const ambiente = creaAmbiente(scena, disegnatore, sole, emisfero, telecamera);
+
+// Pioggia e neve (particelle attorno alla telecamera)
+const precipitazioni = creaPrecipitazioni(scena, ambiente);
 
 // Fari della moto (di notte): un faro che illumina la strada davanti
 const faro = new THREE.SpotLight(0xfff0d0, 0, 90, 0.5, 0.95, 1.4);
@@ -247,6 +254,7 @@ function mettiSullaStrada(moto, strade, x, z) {
 function aggiornaFaro(moto) {
   const buio = ambiente.uniformi.notte.value;
   faro.intensity = buio * 260;
+  faro.visible = buio > 0.02;   // di giorno la luce non entra nei calcoli dei materiali
   if (buio < 0.02) return;
   const dirX = -Math.sin(moto.angolo);
   const dirZ = -Math.cos(moto.angolo);
@@ -259,6 +267,9 @@ async function avvia() {
   try {
     await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
+    // uso del suolo (parchi, prati, sport, cimiteri): serve prima del terreno, che li colora
+    const usoSuolo = await caricaUsoSuolo();
+    terreno.uso = creaMascheraUso(usoSuolo, terreno);
     const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
 
     await mostraStato("Caricamento delle strade (OpenStreetMap)...");
@@ -273,7 +284,7 @@ async function avvia() {
     const dettagli = await caricaDettagli();
     const luoghi = creaLuoghi(dettagli.localita);
     await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");
-    aggiungiEdifici(edifici, scena, { luoghi: luoghi, strade: strade, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
+    aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
     aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
     aggiungiOpere(strade, scena, terreno);
 
@@ -283,7 +294,6 @@ async function avvia() {
 
     await mostraStato("Segnaletica, lampioni e arredo urbano...");
     aggiungiDettagli(dettagli, scena, terreno, strade, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
-    const usoSuolo = await caricaUsoSuolo();
     const mappa = preparaMinimappa({ usoSuolo: usoSuolo, strade: strade, terreno: terreno, localita: dettagli.localita, trasporti: trasporti, edifici: edifici, luoghi: luoghi, acqua: acquaDati, ambiente: ambiente });
 
     await mostraStato("Preparazione dei boschi e del verde urbano...");
@@ -306,11 +316,40 @@ async function avvia() {
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi };
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
+    const bench = creaBenchmark({
+      disegnatore: disegnatore, telecamera: telecamera, moto: moto, ambiente: ambiente, edifici: edifici, luoghi: luoghi,
+      strade: strade, terreno: terreno, versione: VERSIONE, qualita: qualitaSalvata,
+      mettiSullaStrada: function (m, x, z) { mettiSullaStrada(m, strade, x, z); },
+      preparaVicino: function (x, z) { preparaTerrenoVicino(terrenoMesh, x, z); },
+      riflessi: aggiornaRiflessi, alberi: alberi
+    });
+    window.__mrw = window.__mrw || {};
+    bench.tempoCarico = performance.now();
+    window.__mrw.eseguiBenchmark = function (opzioni) { return bench.esegui(opzioni); };
+    window.__mrw.benchmarkMarkdown = inMarkdown;
+    window.__mrw.mappa = mappa;
+    window.__mrw.luoghi = luoghi;
+    window.__mrw.edifici = edifici;
+    window.__mrw.vaiA = function (x, z) {
+      mettiSullaStrada(moto, strade, x, z);
+      preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
+      telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
+    };
+    window.__mrw.moto = moto;
+    window.__mrw.alberi = alberi;
     preparaMenu(mondo, function () {
       avviaTest(test);
+    }, function () {
+      // benchmark ripetibile: risultato nella finestra dei risultati
+      const out = document.getElementById("testoRisultato");
+      document.getElementById("risultatoTest").style.display = "block";
+      out.textContent = "Benchmark in corso (8 scenari)... non toccare nulla.";
+      bench.esegui({ fotogrammi: 120, durata: 5, riscaldamento: 4 }).then(function (r) {
+        out.textContent = inMarkdown(r);
+      });
     });
     preparaRisultato();
     preparaGarage(moto);
@@ -324,7 +363,7 @@ async function avvia() {
     const segni = creaSegni(scena);
 
     // per i test automatici (tools/anteprima_prova): contatori del disegnatore
-    window.__mrw = { disegnatore: disegnatore, scena: scena, ambiente: ambiente };
+    window.__mrw = Object.assign(window.__mrw || {}, { disegnatore: disegnatore, scena: scena, ambiente: ambiente, telecamera: telecamera });
     nascondiCaricamento();
     const orologio = new THREE.Clock();
     let tempoGioco = 0;
@@ -337,7 +376,13 @@ async function avvia() {
         mettiSullaStrada(moto, strade, moto.x, moto.z);
         richiestaReset = false;
       }
-      if (test.attivo) {
+      if (bench.attivo) {
+        // benchmark: la moto sta ferma e la telecamera gira intorno al punto da misurare
+        bench.aggiorna(vero);
+        aggiornaAlberi(alberi, bench.x, bench.z, dt);
+        aggiornaTerreno(terrenoMesh, bench.x, bench.z, vero);
+        aggiornaMoto(moto, { su: false, giu: false, sinistra: false, destra: false, frenoDietro: false, pesoDietro: false, pesoAvanti: false }, 0.0001, terreno, strade, edifici);
+      } else if (test.attivo) {
         // durante il test la telecamera vola da sola
         const punto = aggiornaTest(test, vero, telecamera, terreno, disegnatore);
         aggiornaAlberi(alberi, punto.x, punto.z, dt);
@@ -349,10 +394,13 @@ async function avvia() {
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
       // ora del giorno, cielo, nuvole; il sole (e le sue ombre) segue la moto
+      // in galleria non piove ne' nevica
+      ambiente.sottoCopertura += ((moto.inGalleria ? 1 : 0) - ambiente.sottoCopertura) * Math.min(1, vero * 4);
       aggiornaAmbiente(ambiente, vero, telecamera.position);
+      precipitazioni.aggiorna(telecamera, window.innerHeight * disegnatore.getPixelRatio());
       posizionaLuce(ambiente, moto.x, moto.y, moto.z);
       aggiornaRiflessi(false);
-      aggiornaEdifici(edifici, moto.x, moto.z, vero);
+      aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);
       aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);

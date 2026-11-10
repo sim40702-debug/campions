@@ -16,6 +16,7 @@ import * as THREE from "three";
 import { creaMateriali } from "./facciate.js";
 import { profiloQui, scegliPesato, coloreVariato } from "./luoghi.js";
 import { stradaVicina } from "./strade.js";
+import { liberaDopoCaricamento } from "./memoria.js";
 
 const PEZZO = 500;       // metri: pezzi dei muri e dei tetti
 const PEZZO_DET = 250;   // metri: pezzi dei dettagli (LOD)
@@ -541,7 +542,7 @@ export function aggiungiEdifici(edifici, scena, contesto) {
     dettagli: new Map()
   };
   analizzaZone(edifici);
-  const materiali = creaMateriali(contesto.notte, contesto.anisotropia || 8);
+  const materiali = creaMateriali(contesto.notte, contesto.anisotropia || 8, contesto.ambiente);
 
   for (let i = 0; i < edifici.lista.length; i++) {
     costruisciEdificio(i, edifici.lista[i], ctx);
@@ -566,7 +567,9 @@ export function aggiungiEdifici(edifici, scena, contesto) {
       geometria.setAttribute("seme", new THREE.Float32BufferAttribute(g.seme, 1));
       geometria.computeVertexNormals();
       geometria.computeBoundingSphere();
+      liberaDopoCaricamento(geometria);
       const mesh = new THREE.Mesh(geometria, mappaMateriali[nome]);
+      mesh.name = nome;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.matrixAutoUpdate = false;
@@ -586,6 +589,7 @@ export function aggiungiEdifici(edifici, scena, contesto) {
     geometria.setAttribute("color", new THREE.Float32BufferAttribute(g.colori, 3));
     geometria.computeVertexNormals();
     geometria.computeBoundingSphere();
+    liberaDopoCaricamento(geometria);
     const mesh = new THREE.Mesh(geometria, materiali.dettagli);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -595,37 +599,46 @@ export function aggiungiEdifici(edifici, scena, contesto) {
     pezziDettaglio.push(mesh);
   }
 
-  edifici.sistema = { pezzi: pezzi, dettagli: pezziDettaglio, raggioVista: 8000, raggioDettaglio: 500, attesa: 0, ombre: true };
+  edifici.sistema = { pezzi: pezzi, dettagli: pezziDettaglio, raggioVista: 8000, raggioDettaglio: 500, attesa: 0, ombre: true, areaOmbre: 40 };
   return edifici.sistema;
 }
 
-// Ogni tanto: nasconde i pezzi lontani (culling per distanza) e mostra i dettagli solo vicino
+// Ogni tanto: nasconde i pezzi lontani (culling per distanza), mostra i dettagli solo vicino e
+// fa proiettare l'ombra solo ai pezzi che possono cadere nella mappa delle ombre (il resto non costa nulla).
+// Anche i particolari piccoli (zoccoli, cornicioni, vetrine) spariscono oltre 1.4 km: da lontano non si distinguono.
 export function aggiornaEdifici(edifici, x, z, dt) {
   const s = edifici.sistema;
   if (!s) return;
   s.attesa -= dt;
   if (s.attesa > 0) return;
-  s.attesa = 0.4;
+  s.attesa = 0.3;
+  const raggioOmbra = s.areaOmbre + 380;   // 380 m = mezza diagonale di un pezzo da 500 m
   for (const g of s.pezzi) {
-    g.visible = Math.hypot(g.userData.centro.x - x, g.userData.centro.y - z) < s.raggioVista + PEZZO;
+    const d = Math.hypot(g.userData.centro.x - x, g.userData.centro.y - z);
+    g.visible = d < s.raggioVista + PEZZO;
+    if (!g.visible) continue;
+    const ombra = s.ombre && d < raggioOmbra;
+    for (const m of g.children) {
+      m.castShadow = ombra;
+      if (m.name === "liscio" || m.name === "negozio") m.visible = d < 1400 + PEZZO / 2;
+    }
   }
   for (const m of s.dettagli) {
-    m.visible = Math.hypot(m.userData.centro.x - x, m.userData.centro.y - z) < s.raggioDettaglio + PEZZO_DET;
+    const d = Math.hypot(m.userData.centro.x - x, m.userData.centro.y - z);
+    m.visible = d < s.raggioDettaglio + PEZZO_DET;
+    m.castShadow = s.ombre && d < raggioOmbra - 130;
   }
 }
 
-// Impostazioni di qualita': distanza di vista, distanza dei dettagli, ombre degli edifici
-export function impostaEdifici(edifici, raggioVista, raggioDettaglio, ombre) {
+// Impostazioni di qualita': distanza di vista, distanza dei dettagli, ombre degli edifici e area delle ombre
+export function impostaEdifici(edifici, raggioVista, raggioDettaglio, ombre, areaOmbre) {
   const s = edifici.sistema;
   if (!s) return;
   s.raggioVista = raggioVista;
   s.raggioDettaglio = raggioDettaglio;
+  s.ombre = ombre;
+  s.areaOmbre = areaOmbre || 40;
   s.attesa = 0;
-  if (s.ombre !== ombre) {
-    s.ombre = ombre;
-    for (const g of s.pezzi) for (const m of g.children) m.castShadow = ombre;
-    for (const m of s.dettagli) m.castShadow = ombre;
-  }
 }
 
 // La moto (alla quota y) e' dentro un edificio?

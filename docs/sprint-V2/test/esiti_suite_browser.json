@@ -1,0 +1,182 @@
+[
+  {
+    "nome": "qualita' bassa: carica e gira senza errori",
+    "ok": true,
+    "dettaglio": "13.4 s, 1211066 triangoli, 78 chiamate"
+  },
+  {
+    "nome": "qualita' media: carica e gira senza errori",
+    "ok": true,
+    "dettaglio": "13.0 s, 1392396 triangoli, 88 chiamate"
+  },
+  {
+    "nome": "qualita' alta: carica e gira senza errori",
+    "ok": true,
+    "dettaglio": "12.1 s, 1491202 triangoli, 88 chiamate"
+  },
+  {
+    "nome": "qualita' ultra: carica e gira senza errori",
+    "ok": true,
+    "dettaglio": "12.3 s, 1491202 triangoli, 88 chiamate"
+  },
+  {
+    "nome": "identita' dei 8 luoghi: tutte con profilo (famiglia, facciate, palme)",
+    "ok": true,
+    "dettaglio": "Locarno:ocra Muralto:pastello Minusio:pastello Tenero:moderno Gordola:ocra Ascona:mediterraneo Losone:alpino Ponte Brolla:pietra"
+  },
+  {
+    "nome": "identita' distinte tra i luoghi (nessuna coppia identica)",
+    "ok": true,
+    "dettaglio": "8 profili su 8"
+  },
+  {
+    "nome": "scene delle citta' visivamente diverse (colore medio)",
+    "ok": true,
+    "dettaglio": "8 colori medi distinti su 8"
+  },
+  {
+    "nome": "nessun errore visitando tutte le citta'",
+    "ok": true,
+    "dettaglio": ""
+  },
+  {
+    "nome": "giorno > tramonto > notte (luminanza)",
+    "ok": true,
+    "dettaglio": "162.0 > 92.1 > 38.4"
+  },
+  {
+    "nome": "di notte la variabile 'notte' (finestre, lampioni, faro) e' attiva",
+    "ok": true,
+    "dettaglio": "notte=1.00"
+  },
+  {
+    "nome": "meteo sereno: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":0,\"bagnato\":0,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo variabile: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":0,\"bagnato\":0,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo nuvoloso: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":0,\"bagnato\":0,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo nebbia: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":0,\"bagnato\":0,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo pioggia_leggera: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0.35,\"neve\":0,\"bagnato\":0.63,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo pioggia_intensa: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":1,\"neve\":0,\"bagnato\":1,\"neveAccumulata\":0}"
+  },
+  {
+    "nome": "meteo neve_leggera: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":0.35,\"bagnato\":0.4,\"neveAccumulata\":0.97}"
+  },
+  {
+    "nome": "meteo neve_intensa: stato coerente",
+    "ok": true,
+    "dettaglio": "{\"pioggia\":0,\"neve\":1,\"bagnato\":0,\"neveAccumulata\":1}"
+  },
+  {
+    "nome": "sereno piu' luminoso di pioggia intensa e di neve intensa",
+    "ok": true,
+    "dettaglio": "sereno 160.0 / pioggia 111.1 / neve 167.4"
+  },
+  {
+    "nome": "meteo realistico: perturbazione 'da neve' a 200 m (novembre) = pioggia",
+    "ok": true,
+    "dettaglio": "{\"p\":0.7,\"n\":0}"
+  },
+  {
+    "nome": "meteo realistico: in montagna (1628 m) nevica e la neve si accumula",
+    "ok": true,
+    "dettaglio": "{\"y\":1628.23,\"p\":0,\"n\":1,\"nd\":1}"
+  },
+  {
+    "nome": "meteo automatico sceglie una condizione valida",
+    "ok": true,
+    "dettaglio": "variabile"
+  },
+  {
+    "nome": "minimappa disegnata (colori distinti)",
+    "ok": true,
+    "dettaglio": "337 colori"
+  },
+  {
+    "nome": "mappa fluida: disegno a tutti gli zoom sotto i 120 ms",
+    "ok": true,
+    "dettaglio": "{\"tutto_il_mondo_ms\":29,\"citta_zoom_0.3_ms\":20.3,\"strade_zoom_1_ms\":37.7,\"palazzi_zoom_3_ms\":7.1}"
+  },
+  {
+    "nome": "mappa: la ricerca non scrive la lettera del tasto di apertura",
+    "ok": true,
+    "dettaglio": "valore: Lug, risultati: 0"
+  },
+  {
+    "nome": "mappa: il risultato mette il segnaposto con nome, quota e coordinate",
+    "ok": true,
+    "dettaglio": "AsconaStrada: Via Locarno-AsconaZona: AsconaQuota: 196 mLV95: 2702100 / 1114700"
+  },
+  {
+    "nome": "mappa: coordinate sotto il cursore",
+    "ok": true,
+    "dettaglio": "LV95 2702271 / 1114871 · quota 194 m · Ascona via 3"
+  },
+  {
+    "nome": "mappa: filtro 'Edifici' disattivabile e salvato",
+    "ok": true,
+    "dettaglio": "edifici=false"
+  },
+  {
+    "nome": "mappa: 'Parti da qui' porta la moto e chiude la mappa",
+    "ok": true,
+    "dettaglio": "display=none"
+  },
+  {
+    "nome": "mappa: la partenza viene ricordata",
+    "ok": true,
+    "dettaglio": "{\"x\":-1900,\"z\":1300,\"nome\":\"Ascona\"}"
+  },
+  {
+    "nome": "nessun errore in console (mappa e minimappa)",
+    "ok": true,
+    "dettaglio": ""
+  },
+  {
+    "nome": "impostazioni salvate dopo il ricaricamento (qualita', meteo, ora, meteo realistico, nuvole)",
+    "ok": true,
+    "dettaglio": "{\"q\":\"alta\",\"m\":\"neve_leggera\",\"o\":20.5,\"r\":false,\"nuv\":false}"
+  },
+  {
+    "nome": "benchmark: 8 scenari (9 fasi) con FPS, 1% low, frame time, triangoli, chiamate",
+    "ok": true,
+    "dettaglio": "centro_storico:6.94 lungolago:4.17 residenziale:0.68 industriale:0.26 montana:0.18 panorama:0.3 notte:0.56 pioggia_neve:0.27 pioggia_neve:0.26"
+  },
+  {
+    "nome": "benchmark: dichiara l'ambiente di misura",
+    "ok": true,
+    "dettaglio": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) (Google Inc. (Google)) [software]"
+  },
+  {
+    "nome": "benchmark: ripristina meteo e ora",
+    "ok": true,
+    "dettaglio": "{\"p\":0,\"ora\":15.5}"
+  },
+  {
+    "nome": "benchmark: nessun errore",
+    "ok": true,
+    "dettaglio": ""
+  }
+]

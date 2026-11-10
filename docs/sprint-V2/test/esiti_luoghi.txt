@@ -1,0 +1,11 @@
+Luoghi provati: 134, profili validi: 134, profili distinti: 129
+Famiglie di colori: {"ocra":28,"pastello":19,"mediterraneo":19,"pietra":31,"moderno":20,"alpino":17}
+OK      Airolo e' di pietra/alpino (pesi pietra > 0.5)
+OK      Ascona ha piu' palme di Airolo
+OK      Morcote (lago) ha palme
+OK      Chiasso e' moderno
+OK
+(node:16508) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/user/campions/anteprima/src/luoghi.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/user/campions/anteprima/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

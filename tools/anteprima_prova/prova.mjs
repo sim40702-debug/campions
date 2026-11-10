@@ -27,6 +27,7 @@ for (const voce of process.argv.slice(3)) {
   pagina.on("console", (m) => { if (["error", "warning"].includes(m.type())) errori.push(m.type() + ": " + m.text()); });
   pagina.on("pageerror", (e) => errori.push("pageerror: " + e.message));
   await pagina.addInitScript((d) => { window.__dbg = d; }, process.env.DBG || "");
+  await pagina.addInitScript((m) => { if (m) { localStorage.setItem("mrw-meteo", m.split(":")[0]); if (m.split(":")[1] === "0") localStorage.setItem("mrw-meteo-realistico", "0"); } }, process.env.METEO || "");
   await pagina.addInitScript(([x, z, q, o]) => {
     localStorage.setItem("mrw-partenza", JSON.stringify({ x: +x, z: +z, nome: "prova" }));
     localStorage.setItem("mrw-qualita", q || "media");

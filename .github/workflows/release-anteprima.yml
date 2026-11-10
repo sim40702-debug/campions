@@ -168,6 +168,14 @@ jobs:
               exit 1
             fi
           done
+          # tutti i moduli del gioco (src/*.js) devono essere nell'app: un import mancante ferma il gioco
+          for percorso in src/*.js; do
+            nome=$(basename "$percorso")
+            if [ "$(find dist -path "*app/src/$nome" | wc -l)" -eq 0 ]; then
+              echo "::error::Nell'app manca src/$nome"
+              exit 1
+            fi
+          done
 
       - name: Salva l'app
         uses: actions/upload-artifact@v4
