@@ -6,7 +6,7 @@ import { Sky } from "three/addons/objects/Sky.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { caricaModelli3D } from "./modelli3d.js";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
-import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
+import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
 import { partenzaSalvata, preparaPartenza } from "./partenza.js";
@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.4";
+const VERSIONE = "0.14.5";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -294,10 +294,10 @@ async function avvia() {
     // uso del suolo (parchi, prati, sport, cimiteri): serve prima del terreno, che li colora
     const usoSuolo = await caricaUsoSuolo();
     terreno.uso = creaMascheraUso(usoSuolo, terreno);
-    const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
-
     await mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
+    adattaTerreno(terreno, strade);   // il terreno segue le strade (prima di disegnarlo)
+    const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
 
     await mostraStato("Fiumi e torrenti...");
     const acquaDati = await caricaAcqua();
@@ -367,6 +367,7 @@ async function avvia() {
     };
     window.__mrw.moto = moto;
     window.__mrw.terreno = terreno;
+    window.__mrw.strade = strade;
     window.__mrw.alberi = alberi;
     preparaMenu(mondo, function () {
       avviaTest(test);

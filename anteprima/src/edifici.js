@@ -15,7 +15,7 @@
 import * as THREE from "three";
 import { creaMateriali } from "./facciate.js";
 import { profiloQui, scegliPesato, coloreVariato } from "./luoghi.js";
-import { stradaVicina } from "./strade.js";
+import { stradaVicina, larghezzaIn } from "./strade.js";
 import { liberaDopoCaricamento } from "./memoria.js";
 
 const PEZZO = 500;       // metri: pezzi dei muri e dei tetti
@@ -52,32 +52,67 @@ function costruisciGriglia(lista) {
   return griglia;
 }
 
-// Toglie gli edifici che stanno IN MEZZO alla strada: i contorni OpenStreetMap e le strade (linee al centro con
-// larghezza stimata) a volte non combaciano. Un edificio si toglie se il suo centro, o almeno 2 punti del contorno
-// (vertici e meta' dei lati), cadono sull'asfalto di una strada (non in galleria; sui ponti solo se alla stessa quota).
+// Toglie gli edifici che toccano la strada: i contorni OpenStreetMap e le strade (linee al centro con larghezza
+// stimata) a volte non combaciano. Si misura la distanza VERA tra il contorno dell'edificio e la linea al centro di
+// ogni pezzo di strada vicino: se e' meno di meta' carreggiata (+15 cm), o se la strada passa dentro l'edificio,
+// l'edificio si toglie. Non conta in galleria; sui ponti solo se alla stessa quota.
 // Ritorna quanti ne ha tolti. Non sposta nulla: strade ed edifici restano dove sono nei dati.
+function puntoSegmento(px, pz, ax, az, bx, bz) {
+  const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+  let t = lungo > 0 ? ((px - ax) * (bx - ax) + (pz - az) * (bz - az)) / lungo : 0;
+  t = Math.min(Math.max(t, 0), 1);
+  return [Math.hypot(px - (ax + (bx - ax) * t), pz - (az + (bz - az) * t)), t];
+}
+function siIncrociano(ax, az, bx, bz, cx, cz, dx, dz) {
+  const o = function (px, pz, qx, qz, rx, rz) { return Math.sign((qx - px) * (rz - pz) - (qz - pz) * (rx - px)); };
+  return o(ax, az, bx, bz, cx, cz) !== o(ax, az, bx, bz, dx, dz) && o(cx, cz, dx, dz, ax, az) !== o(cx, cz, dx, dz, bx, bz);
+}
 export function pulisciEdifici(edifici, strade) {
-  const dentroStrada = function (x, z, base) {
-    const s = stradaVicina(strade, x, z, 14);
-    if (s === null || s.galleria) return false;
-    if (s.ponte && Math.abs(s.y - base) > 4) return false;
-    return s.distanza < s.larghezza / 2 - 0.2;
-  };
+  const MARGINE = 0.15;
   const tenuti = [];
+  const visti = new Set();
   for (const e of edifici.lista) {
     const p = e.p;
-    let cx = 0, cz = 0;
-    for (let k = 0; k < p.length; k += 2) { cx += p[k]; cz += p[k + 1]; }
-    cx /= p.length / 2;
-    cz /= p.length / 2;
-    let dentro = dentroStrada(cx, cz, e.b) ? 2 : 0;
     const n = p.length / 2;
-    for (let k = 0; k < n && dentro < 2; k++) {
-      const j = (k + 1) % n;
-      if (dentroStrada(p[k * 2], p[k * 2 + 1], e.b)) dentro++;
-      if (dentro < 2 && dentroStrada((p[k * 2] + p[j * 2]) / 2, (p[k * 2 + 1] + p[j * 2 + 1]) / 2, e.b)) dentro++;
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let k = 0; k < n; k++) {
+      minX = Math.min(minX, p[k * 2]); maxX = Math.max(maxX, p[k * 2]);
+      minZ = Math.min(minZ, p[k * 2 + 1]); maxZ = Math.max(maxZ, p[k * 2 + 1]);
     }
-    if (dentro < 2) tenuti.push(e);
+    let tocca = false;
+    visti.clear();
+    for (let cx = Math.floor((minX - 8) / CELLA); cx <= Math.floor((maxX + 8) / CELLA) && !tocca; cx++) {
+      for (let cz = Math.floor((minZ - 8) / CELLA); cz <= Math.floor((maxZ + 8) / CELLA) && !tocca; cz++) {
+        const pezzi = strade.griglia.get(cx + "," + cz);
+        if (!pezzi) continue;
+        for (const [s, i] of pezzi) {
+          const chiave = s * 100000 + i;
+          if (visti.has(chiave)) continue;
+          visti.add(chiave);
+          const strada = strade.lista[s];
+          if (strada.g) continue;
+          const q = strada.p;
+          const ax = q[i], az = q[i + 2], bx = q[i + 3], bz = q[i + 5];
+          if (Math.max(ax, bx) < minX - 8 || Math.min(ax, bx) > maxX + 8 || Math.max(az, bz) < minZ - 8 || Math.min(az, bz) > maxZ + 8) continue;
+          if (strada.b && Math.abs((q[i + 1] + q[i + 4]) / 2 - e.b) > 4) continue;
+          const w0 = larghezzaIn(strada, i / 3) / 2, w1 = larghezzaIn(strada, i / 3 + 1) / 2;
+          // la strada passa dentro l'edificio
+          if (dentroPoligono(p, ax, az) || dentroPoligono(p, bx, bz)) { tocca = true; break; }
+          for (let k = 0; k < n; k++) {
+            const j = (k + 1) % n;
+            const ex = p[k * 2], ez = p[k * 2 + 1], fx = p[j * 2], fz = p[j * 2 + 1];
+            if (siIncrociano(ax, az, bx, bz, ex, ez, fx, fz)) { tocca = true; break; }
+            // spigoli dell'edificio contro la linea della strada (larghezza in quel punto)
+            const [d1, t1] = puntoSegmento(ex, ez, ax, az, bx, bz);
+            if (d1 < w0 + (w1 - w0) * t1 + MARGINE) { tocca = true; break; }
+            // capi del pezzo di strada contro il lato dell'edificio
+            if (puntoSegmento(ax, az, ex, ez, fx, fz)[0] < w0 + MARGINE || puntoSegmento(bx, bz, ex, ez, fx, fz)[0] < w1 + MARGINE) { tocca = true; break; }
+          }
+          if (tocca) break;
+        }
+      }
+    }
+    if (!tocca) tenuti.push(e);
   }
   const tolti = edifici.lista.length - tenuti.length;
   if (tolti > 0) {
