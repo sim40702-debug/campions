@@ -208,6 +208,7 @@ bool AMRWMoto::UsaModello3D()
 		Pilota->SetupAttachment(PernoImpennata);
 		Pilota->SetRelativeLocationAndRotation(FVector(55.0f, 0.0f, 76.0f), CorrezioneModello);
 		Pilota->RegisterComponent();
+		PilotaModello = Pilota;
 	}
 
 	// Ogni pezzo va attaccato alla parte che si muove con lui (ruote che girano, sterzo che gira)
@@ -437,6 +438,7 @@ void AMRWMoto::Riparti()
 		Terreno->PuntoStradaVicino(GetActorLocation(), Punto, Direzione);
 	}
 	TempoCaduta = 0.0f;
+	RimettiPilota();
 	Posiziona(Punto, Direzione);
 }
 
@@ -446,10 +448,55 @@ void AMRWMoto::Cadi(const FString& Motivo)
 	{
 		return;
 	}
-	TempoCaduta = 2.5f;
+	TempoCaduta = 3.0f;
 	Messaggio = TEXT("Caduta: ") + Motivo;
+
+	// Il pilota 3D si stacca dalla moto e vola avanti (poi rimbalza e striscia: AggiornaPilotaInVolo)
+	if (PilotaModello != nullptr)
+	{
+		PilotaModello->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		const FVector Avanti = GetActorForwardVector();
+		VoloPilota = Avanti * Velocita * 85.0f + FVector(0.0f, 0.0f, 150.0f + FMath::Min(600.0f, Velocita * 12.0f));
+		GiroPilota = FRotator(-(200.0f + Velocita * 15.0f), 0.0f, FMath::FRandRange(-150.0f, 150.0f));
+	}
 	Velocita = 0.0f;
 	VelocitaBeccheggio = 0.0f;
+	Derapata = 0.0f;
+	Slittamento = 0.0f;
+}
+
+void AMRWMoto::AggiornaPilotaInVolo(float Dt)
+{
+	if (PilotaModello == nullptr || PilotaModello->GetAttachParent() != nullptr)
+	{
+		return;
+	}
+	VoloPilota.Z -= G * 100.0f * Dt;
+	FVector Posizione = PilotaModello->GetComponentLocation() + VoloPilota * Dt;
+	const FRotator Rotazione = PilotaModello->GetComponentRotation() + GiroPilota * Dt;
+	// tocca terra: rimbalza poco e striscia
+	FHitResult Suolo;
+	if (TrovaSuolo(Posizione, 40.0f, 30.0f, Suolo) && Posizione.Z < Suolo.ImpactPoint.Z + 25.0f)
+	{
+		Posizione.Z = Suolo.ImpactPoint.Z + 25.0f;
+		VoloPilota.Z = FMath::Abs(VoloPilota.Z) > 200.0f ? -VoloPilota.Z * 0.25f : 0.0f;
+		const FVector Orizzontale(VoloPilota.X, VoloPilota.Y, 0.0f);
+		const float Piano = FMath::Max(0.0f, Orizzontale.Size() - 700.0f * Dt);
+		const FVector Nuova = Orizzontale.GetSafeNormal() * Piano;
+		VoloPilota.X = Nuova.X;
+		VoloPilota.Y = Nuova.Y;
+		GiroPilota *= 0.9f;
+	}
+	PilotaModello->SetWorldLocationAndRotation(Posizione, Rotazione);
+}
+
+void AMRWMoto::RimettiPilota()
+{
+	if (PilotaModello != nullptr && PilotaModello->GetAttachParent() == nullptr)
+	{
+		PilotaModello->AttachToComponent(PernoImpennata, FAttachmentTransformRules::KeepRelativeTransform);
+		PilotaModello->SetRelativeLocationAndRotation(FVector(55.0f, 0.0f, 76.0f), CorrezioneModello);
+	}
 }
 
 bool AMRWMoto::TrovaSuolo(const FVector& Punto, float Sopra, float Sotto, FHitResult& Colpo) const
@@ -596,19 +643,40 @@ void AMRWMoto::Fisica(float Dt)
 			VelocitaImbardata *= 0.3f;   // ruota davanti in aria: si gira poco
 		}
 	}
+	// 7b) Derapata (supermotard): freno dietro tirato + sterzo in velocita' -> la ruota dietro scivola fuori,
+	// la moto entra di traverso e gira piu' stretta. Lasciando il freno torna dritta.
+	const float DerapataVoluta = (FrenoPosteriore > 0.5f && Velocita > 6.0f && bAppoggiata && Beccheggio < 3.0f)
+		? SterzoComando * 34.0f * FMath::Min(1.0f, Velocita / 15.0f) : 0.0f;
+	Derapata = FMath::FInterpConstantTo(Derapata, DerapataVoluta, Dt, DerapataVoluta != 0.0f ? 140.0f : 200.0f);
+	if (FMath::Abs(Derapata) > 5.0f)
+	{
+		VelocitaImbardata *= 1.0f + FMath::Min(0.6f, FMath::DegreesToRadians(FMath::Abs(Derapata)));
+		if (Velocita > 33.0f && FMath::Abs(Derapata) > 25.0f)
+		{
+			Cadi(TEXT("derapata troppo veloce: highside"));
+			return;
+		}
+	}
 	Imbardata += VelocitaImbardata * Dt;
 
-	// 8) Controllo aderenza: forza di lato + forza in avanti/indietro non possono superare quella delle gomme
-	if (bAppoggiata && Velocita > 4.0f)
+	// 8) Controllo aderenza: forza di lato + forza in avanti/indietro contro quella che le gomme possono dare.
+	// Se si chiede troppo la gomma scivola; si cade solo se si insiste (circa un secondo e mezzo).
+	// Il pilota dosa il freno in piega: conta il 70% della frenata.
+	if (bAppoggiata && Velocita > 4.0f && FMath::Abs(Derapata) < 5.0f)
 	{
 		const float Laterale = Velocita * FMath::DegreesToRadians(FMath::Abs(VelocitaImbardata));
-		const float Longitudinale = FMath::Max(AccFreni, AccMotore);
-		if (FMath::Sqrt(Laterale * Laterale + Longitudinale * Longitudinale) > AccMassima * 1.08f)
+		const float Longitudinale = FMath::Max(AccFreni * 0.7f, AccMotore);
+		const float Rapporto = FMath::Sqrt(Laterale * Laterale + Longitudinale * Longitudinale) / AccMassima;
+		Slittamento = Rapporto > 1.0f ? Slittamento + (Rapporto - 1.0f) * 3.0f * Dt : FMath::Max(0.0f, Slittamento - Dt);
+		if (Slittamento > 1.5f && (Velocita > 25.0f || (AccFreni > 0.0f && Velocita > 14.0f)))
 		{
 			Cadi(Bagnato > 0.3f ? TEXT("aderenza persa sul bagnato") : TEXT("aderenza persa"));
 			return;
 		}
 	}
+
+	// 8b) Sospensioni: in frenata la forcella affonda (il muso scende), in accelerazione il dietro si schiaccia
+	Affondamento = FMath::FInterpTo(Affondamento, FMath::Clamp((AccMotore - AccFreni) * 0.35f, -3.5f, 2.0f), Dt, 8.0f);
 
 	// 9) Movimento in avanti, con controllo degli ostacoli
 	const FVector Avanti = FRotator(0.0f, Imbardata, 0.0f).Vector();
@@ -622,7 +690,7 @@ void AMRWMoto::Fisica(float Dt)
 		if (GetWorld()->LineTraceSingleByChannel(Muro, Davanti, Davanti + Avanti * (Spostamento.Size() + 30.0f), ECC_Visibility, Parametri)
 			&& Muro.ImpactNormal.Z < 0.6f)
 		{
-			if (Velocita > 7.0f)
+			if (Velocita > 8.0f)
 			{
 				Cadi(TEXT("urto"));
 			}
@@ -673,7 +741,7 @@ void AMRWMoto::Fisica(float Dt)
 		}
 		if (ZSuolo > -1.0e8f && Posizione.Z <= ZSuolo + 1.0f)
 		{
-			if (VelocitaVerticale < -9.0f)
+			if (VelocitaVerticale < -11.0f)
 			{
 				Cadi(TEXT("atterraggio troppo duro"));
 			}
@@ -688,7 +756,8 @@ void AMRWMoto::Fisica(float Dt)
 		}
 	}
 
-	SetActorLocationAndRotation(Posizione, FRotator(bAppoggiata ? PendenzaSuolo : PendenzaSuolo * 0.98f, Imbardata, 0.0f));
+	// in derapata il dietro esce: la moto e' girata verso l'interno rispetto a dove va
+	SetActorLocationAndRotation(Posizione, FRotator(bAppoggiata ? PendenzaSuolo : PendenzaSuolo * 0.98f, Imbardata + Derapata, 0.0f));
 
 	// 11) Punto sicuro per ripartire dopo una caduta (ogni 2 secondi, se tutto e' tranquillo)
 	TempoPuntoSicuro -= Dt;
@@ -714,7 +783,7 @@ void AMRWMoto::AggiornaGrafica(float Dt)
 	const float Raggio = RaggioRuota * 100.0f;
 	if (Beccheggio >= 0.0f)
 	{
-		PernoImpennata->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, Raggio), FRotator(Beccheggio, 0.0f, 0.0f));
+		PernoImpennata->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, Raggio), FRotator(Beccheggio + Affondamento, 0.0f, 0.0f));
 	}
 	else
 	{
@@ -765,6 +834,7 @@ void AMRWMoto::Tick(float DeltaSeconds)
 
 	if (TempoCaduta > 0.0f)
 	{
+		AggiornaPilotaInVolo(FMath::Min(DeltaSeconds, 0.05f));
 		TempoCaduta -= DeltaSeconds;
 		if (TempoCaduta <= 0.0f)
 		{

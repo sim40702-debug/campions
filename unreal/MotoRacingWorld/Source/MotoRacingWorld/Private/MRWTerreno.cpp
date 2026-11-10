@@ -71,6 +71,7 @@ void AMRWTerreno::BeginPlay()
 	SetActorLocation(FVector::ZeroVector);
 
 	const FString Cartella = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Dati"));
+	CartellaDati = Cartella;
 	if (!LeggiTerreno(Cartella))
 	{
 		UE_LOG(LogTemp, Error, TEXT("[MRW] %s"), *Errore);
@@ -78,6 +79,20 @@ void AMRWTerreno::BeginPlay()
 	}
 	LeggiStrade(Cartella);
 	LeggiFoto(Cartella);
+	FFileHelper::LoadFileToArray(Bosco, *(Cartella / TEXT("bosco.bin")));
+	if (Bosco.Num() != Colonne * Righe)
+	{
+		Bosco.Empty();
+	}
+	// griglia delle strade per sapere in fretta se un punto e' vicino a una strada
+	for (const FMRWStrada& Strada : ListaStrade)
+	{
+		for (int32 i = 0; i < Strada.Punti.Num(); i++)
+		{
+			const FIntPoint Cella(FMath::FloorToInt(Strada.Punti[i].X / 5000.0f), FMath::FloorToInt(Strada.Punti[i].Y / 5000.0f));
+			GrigliaStrade.FindOrAdd(Cella).Add(FVector(Strada.Punti[i].X, Strada.Punti[i].Y, Strada.Larghezze[i] / 2.0f));
+		}
+	}
 
 	CreaTerrenoLontano();
 	CreaStrade();
@@ -513,4 +528,45 @@ void AMRWTerreno::Tick(float DeltaSeconds)
 		TempoAggiornamento = 0.25f;
 		AggiornaTerrenoVicino();
 	}
+}
+
+bool AMRWTerreno::BoscoQui(float X, float Y) const
+{
+	if (Bosco.Num() == 0)
+	{
+		return false;
+	}
+	const int32 Colonna = FMath::RoundToInt((X / 100.0f + MetaX) / PassoM);
+	const int32 Riga = FMath::RoundToInt((Y / 100.0f + MetaY) / PassoM);
+	if (Colonna < 0 || Riga < 0 || Colonna >= Colonne || Riga >= Righe)
+	{
+		return false;
+	}
+	return Bosco[Riga * Colonne + Colonna] == 1;
+}
+
+bool AMRWTerreno::VicinoAStrada(float X, float Y, float Margine) const
+{
+	const int32 Cx = FMath::FloorToInt(X / 5000.0f);
+	const int32 Cy = FMath::FloorToInt(Y / 5000.0f);
+	for (int32 dy = -1; dy <= 1; dy++)
+	{
+		for (int32 dx = -1; dx <= 1; dx++)
+		{
+			const TArray<FVector>* Punti = GrigliaStrade.Find(FIntPoint(Cx + dx, Cy + dy));
+			if (Punti == nullptr)
+			{
+				continue;
+			}
+			for (const FVector& Punto : *Punti)
+			{
+				// Punto.Z = mezza larghezza della strada (cm)
+				if (FVector::Dist2D(Punto, FVector(X, Y, 0.0f)) < Punto.Z + Margine)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }

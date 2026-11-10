@@ -76,6 +76,15 @@ public:
 	// Punto di strada piu' vicino a "Vicino": posizione e direzione della strada
 	bool PuntoStradaVicino(const FVector& Vicino, FVector& Punto, FVector& Direzione) const;
 
+	// C'e' bosco nel punto X, Y (cm)? (da bosco.bin, stessa griglia del terreno)
+	bool BoscoQui(float X, float Y) const;
+
+	// Il punto X, Y (cm) e' sull'asfalto o a meno di "Margine" cm dal bordo di una strada?
+	bool VicinoAStrada(float X, float Y, float Margine) const;
+
+	// Cartella dei dati (per gli altri attori che leggono i file)
+	FString CartellaDati;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -118,6 +127,9 @@ private:
 	TMap<FIntPoint, TObjectPtr<UMaterialInterface>> MaterialiFoto;
 
 	TArray<float> Quote;       // metri, riga per riga da nord a sud
+	TArray<uint8> Bosco;       // 1 = bosco (puo' essere vuoto)
+	// Griglia veloce delle strade: cella da 50 m -> punti di strada (posizione + mezza larghezza in Z)
+	TMap<FIntPoint, TArray<FVector>> GrigliaStrade;
 	TArray<FMRWStrada> ListaStrade;
 	int32 Colonne = 0;
 	int32 Righe = 0;

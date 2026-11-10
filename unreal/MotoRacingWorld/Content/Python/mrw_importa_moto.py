@@ -1,4 +1,4 @@
-# Ticino Motorcycle Simulator - importa la moto 3D "MRW SM 450" in Unreal
+# Ticino Motorcycle Simulator - importa la moto 3D "MRW SM 450" e gli alberi in Unreal
 #
 # Da lanciare DENTRO l'editor: Tools -> Execute Python Script... -> questo file
 #
@@ -49,6 +49,31 @@ for pezzo in PEZZI:
             break
     else:
         scrivi("ATTENZIONE: nessuna mesh trovata in " + file)
+
+# Alberi (tools/moto/crea_alberi.py) -> /Game/MRW/Alberi
+for nome in ["MRW_Latifoglia", "MRW_Conifera"]:
+    file = os.path.join(progetto, "ImportMoto", "Alberi", nome + ".glb")
+    if not os.path.exists(file):
+        scrivi("Manca " + file)
+        continue
+    compito = unreal.AssetImportTask()
+    compito.set_editor_property("filename", file)
+    compito.set_editor_property("destination_path", "/Game/MRW/Alberi/" + nome)
+    compito.set_editor_property("automated", True)
+    compito.set_editor_property("replace_existing", True)
+    compito.set_editor_property("save", True)
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([compito])
+    finale = "/Game/MRW/Alberi/" + nome
+    for percorso in compito.get_editor_property("imported_object_paths"):
+        risorsa = unreal.EditorAssetLibrary.load_asset(percorso)
+        if isinstance(risorsa, unreal.StaticMesh):
+            if percorso.split(".")[0] != finale:
+                if unreal.EditorAssetLibrary.does_asset_exist(finale):
+                    unreal.EditorAssetLibrary.delete_asset(finale)
+                unreal.EditorAssetLibrary.rename_asset(percorso.split(".")[0], finale)
+            scrivi("Importato " + finale)
+            break
+unreal.EditorAssetLibrary.save_directory("/Game/MRW/Alberi")
 
 unreal.EditorAssetLibrary.save_directory(DESTINAZIONE)
 scrivi("Fatto: premi Play, la moto usa il modello 3D")

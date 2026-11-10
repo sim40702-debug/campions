@@ -92,6 +92,7 @@ public:
 	float GetGiri() const { return Giri; }
 	float GetPiega() const { return Piega; }
 	float GetImpennata() const { return Beccheggio; }
+	float GetDerapata() const { return Derapata; }
 	bool IsCaduta() const { return TempoCaduta > 0.0f; }
 	bool IsSuStrada() const { return bSuStrada; }
 	bool IsPronta() const { return bPosizionata; }
@@ -153,11 +154,14 @@ private:
 	void Fisica(float Dt);
 	bool TrovaSuolo(const FVector& Punto, float Sopra, float Sotto, FHitResult& Colpo) const;
 	void Cadi(const FString& Motivo);
+	void AggiornaPilotaInVolo(float Dt);
+	void RimettiPilota();
 	void Posiziona(const FVector& Punto, const FVector& Direzione);
 	void AggiornaGrafica(float Dt);
 	float LeggiValore(UInputAction* Azione) const;
 
 	UPROPERTY() TObjectPtr<AMRWTerreno> Terreno;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> PilotaModello;
 	UPROPERTY() TObjectPtr<AMRWCicloGiorno> Meteo;
 
 	// Comandi letti ad ogni frame
@@ -174,6 +178,11 @@ private:
 	float Piega = 0.0f;           // gradi (+ = a destra)
 	float Beccheggio = 0.0f;      // gradi (+ = impennata, - = stoppie)
 	float VelocitaBeccheggio = 0.0f; // gradi/s
+	float Derapata = 0.0f;        // gradi: di quanto il dietro esce in derapata
+	float Slittamento = 0.0f;     // oltre 1.5 la gomma perde aderenza e si cade
+	float Affondamento = 0.0f;    // gradi: forcella che affonda in frenata (-) o dietro schiacciato (+)
+	FVector VoloPilota = FVector::ZeroVector;   // velocita' del pilota caduto (cm/s)
+	FRotator GiroPilota = FRotator::ZeroRotator; // capriola del pilota caduto (gradi/s)
 	float PendenzaSuolo = 0.0f;   // gradi
 	float Giri = 1200.0f;
 	int32 Marcia = 1;

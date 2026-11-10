@@ -40,6 +40,7 @@ export function creaMoto(scena, idMoto) {
     latoCaduta: 1,
     riparti: false,
     derapata: 0,        // di quanto il dietro della moto e' "girato" fuori (radianti): derapata in entrata di curva
+    affondamento: 0,    // sospensioni: forcella che affonda in frenata (-), dietro schiacciato in accelerazione (+)
     impennata: 0,       // angolo della ruota davanti in alto (+) o della ruota dietro in alto (-), radianti
     velImpennata: 0
   };
@@ -411,8 +412,10 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
       moto.inAria = false;
     }
   }
-  // Sospensioni: tornano su piano
+  // Sospensioni: tornano su piano; in frenata la forcella affonda, in accelerazione il muso si alza un po'
   moto.molla += (0 - moto.molla) * Math.min(1, dt * 6);
+  const affondamentoVoluto = Math.max(-0.06, Math.min(0.035, (accMotore - accFreni) * 0.006));
+  moto.affondamento += (affondamentoVoluto - moto.affondamento) * Math.min(1, dt * 8);
 
   // Inclinazione avanti/indietro (a terra segue la strada, in volo resta com'era)
   if (!moto.inAria) {
@@ -443,7 +446,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const indietroM = mezzoPasso * (1 - Math.cos(moto.impennata)) * verso;
   moto.modello.position.set(moto.x - dirX * indietroM, moto.y - moto.molla + su, moto.z - dirZ * indietroM);
   // in derapata il dietro esce: la moto e' girata verso l'interno della curva rispetto a dove va
-  moto.modello.rotation.set(moto.beccheggio + moto.impennata, moto.angolo + moto.derapata, moto.piega);
+  moto.modello.rotation.set(moto.beccheggio + moto.impennata + moto.affondamento, moto.angolo + moto.derapata, moto.piega);
   dati.ruotaDavanti.rotation.x -= (moto.velocita * dt) / dati.rDav;
   dati.ruotaDietro.rotation.x -= (moto.velocita * dt) / dati.rDie;
   dati.sterzo.rotation.y = moto.sterzoVisto;

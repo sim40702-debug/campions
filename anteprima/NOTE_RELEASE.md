@@ -29,6 +29,10 @@ La versione principale del gioco resta quella in Unreal Engine 5.
 - **Prestazioni**: edifici in pezzi da 500 m con culling per distanza, dettagli dei tetti e dei balconi solo vicino (LOD), tutto "instanced"; Impostazioni con distanze e ombre diverse per Bassa / Media / Alta / Ultra, e nuvole e ombre degli edifici attivabili.
 - **Dati** (per chi crea la release): il passo 7 esporta anche parchi, giardini e prati (`uso_suolo.json`) che compaiono sulla mappa.
 
+### Novità della 0.13.2
+
+- **Sospensioni**: in frenata la forcella affonda e il muso scende, in accelerazione il dietro si schiaccia.
+
 ### Novità della 0.13.1
 
 
