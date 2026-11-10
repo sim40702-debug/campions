@@ -29,10 +29,11 @@
   <canvas id="minimappa" width="220" height="220"></canvas>
 
   <div id="aiuto">
-    Frecce/WASD: guida (S freno davanti) &nbsp;|&nbsp; Spazio: freno dietro &nbsp;|&nbsp; Shift: peso dietro (impennata) &nbsp;|&nbsp; E: peso avanti (stoppie) &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; H: nascondi aiuto
+    Frecce/WASD: guida (S freno davanti) &nbsp;|&nbsp; Spazio: freno dietro &nbsp;|&nbsp; Shift: peso dietro (impennata) &nbsp;|&nbsp; E: peso avanti (stoppie) &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; P: partenza &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; H: nascondi aiuto
   </div>
 
   <div id="aggiorna">
+    <button id="pulsantePartenza">Partenza</button>
     <button id="pulsanteGarage">Garage</button>
     <button id="pulsanteMenu">Impostazioni</button>
     <button id="pulsanteAggiorna">Aggiorna</button>
@@ -58,6 +59,15 @@
     <div id="listaMoto"></div>
     <button id="chiudiGarage">Chiudi</button>
     <p class="piccolo">Clicca su una moto per sceglierla. Tasti: G = garage · M = suono sì/no</p>
+  </div>
+
+  <div id="partenza" class="finestra">
+    <h2>Da dove parti?</h2>
+    <canvas id="mappaPartenza"></canvas>
+    <p class="piccolo">Clicca un punto sulla mappa (si parte dalla strada più vicina) oppure un paese:</p>
+    <div id="listaLuoghi"></div>
+    <button id="chiudiPartenza">Chiudi</button>
+    <p class="piccolo">Tasto P = partenza. La scelta viene ricordata per la prossima volta.</p>
   </div>
 
   <div id="risultatoTest" class="finestra">

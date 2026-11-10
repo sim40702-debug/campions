@@ -246,6 +246,7 @@ export function puntoStradaVicino(strade, x, z) {
   let migliore = null;
   let distanzaMigliore = Infinity;
   for (const strada of strade.lista) {
+    if (strada.galleria) continue;   // non si riparte dentro una galleria
     const p = strada.p;
     for (let i = 0; i + 5 < p.length; i += 3) {
       const distanza = Math.hypot(p[i] - x, p[i + 2] - z);

@@ -299,3 +299,24 @@ canvas {
   border-radius: 3px;
   background: #e8323c;
 }
+
+#mappaPartenza {
+  display: block;
+  width: 520px;
+  max-width: 80vw;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: crosshair;
+}
+
+#listaLuoghi {
+  max-height: 160px;
+  max-width: 520px;
+  overflow-y: auto;
+}
+
+#listaLuoghi button {
+  padding: 5px 10px;
+  font-size: 13px;
+}

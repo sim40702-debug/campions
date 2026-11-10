@@ -3,7 +3,16 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.11.0)
+### Novità di questa versione (0.12.0)
+
+- **Scegli dove partire** (pulsante Partenza o tasto P): clic su un punto della mappa (si parte dalla strada più vicina) oppure su uno dei 35 paesi della lista. La scelta viene ricordata: la volta dopo il gioco parte da lì.
+- **Aggiornamento pulito**: dalla prossima volta il pulsante Aggiorna toglie la versione vecchia, installa la nuova e la riapre, senza lasciare file in giro.
+  - Mac: l'app vecchia viene cancellata e la nuova messa nello stesso posto (in Applicazioni se la vecchia girava dal .dmg).
+  - Windows (installazione): il programma di installazione lavora in silenzio, toglie la vecchia versione e riapre il gioco.
+  - Windows (portatile): quando il gioco si chiude, il nuovo .exe prende il posto del vecchio e si riapre.
+  - Vengono cancellati anche i vecchi programmi di installazione rimasti nella cartella Download.
+
+### Novità della 0.11.0
 
 - **Tutte le moto del garage in 3D vero** (fatte con Blender, disegni originali MRW): SM 690, Strada 700, Naked 890, Sport 1000 RR (carena intera e semimanubri), Enduro 450 (gomme tassellate) e Scooter 125, ognuna con il suo pilota (casco da cross o integrale, posizione di guida diversa per ogni moto).
 - **Case con finestre vere**: cornici, vetri, davanzali e persiane verdi come in Ticino (altre case con finestre senza persiane), capannoni con lamiera e finestre a nastro, tetti di coppi.

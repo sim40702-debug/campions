@@ -9,6 +9,7 @@ import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaT
 import { caricaStrade, aggiungiStrade, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
+import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
@@ -177,8 +178,8 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
       break;
     }
   }
-  if (bloccata || moto.inGalleria) {
-    // contro un muro o in galleria: niente movimento morbido, la telecamera resta dentro
+  // contro un muro, in galleria o appena spostati (partenza, R): niente movimento morbido
+  if (bloccata || moto.inGalleria || telecamera.position.distanceTo(obiettivo) > 60) {
     telecamera.position.copy(obiettivo);
   } else {
     telecamera.position.lerp(obiettivo, 1 - Math.exp(-dt * 5));
@@ -228,8 +229,14 @@ async function avvia() {
       mostraStato("Moto 3D: " + nome + "...");
     });
     const moto = creaMoto(scena, motoSalvata());
-    const partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
-    const partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
+    // Partenza: quella scelta l'ultima volta (tasto P), altrimenti Piazza Grande
+    let partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
+    let partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
+    const scelta = partenzaSalvata();
+    if (scelta && Math.abs(scelta.x) < terreno.metaX && Math.abs(scelta.z) < terreno.metaZ) {
+      partenzaX = scelta.x;
+      partenzaZ = scelta.z;
+    }
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
@@ -243,6 +250,10 @@ async function avvia() {
     });
     preparaRisultato();
     preparaGarage(moto);
+    preparaPartenza(moto, dettagli.localita, function (m, x, z) {
+      mettiSullaStrada(m, strade, x, z);
+      preparaTerrenoVicino(terrenoMesh, m.x, m.z);
+    });
 
     const danni = creaDanni();
 

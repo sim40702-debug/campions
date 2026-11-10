@@ -119,6 +119,11 @@ export function aggiornaInterfaccia(moto, terreno, localita) {
   pennello.stroke();
 }
 
+// La mappa disegnata (serve anche alla scelta della partenza)
+export function immagineMinimappa() {
+  return { canvas: sfondoMinimappa, scala: scala, mezzoX: mezzoX, mezzoZ: mezzoZ };
+}
+
 export function mostraStato(testo) {
   document.getElementById("stato").textContent = testo;
 }
