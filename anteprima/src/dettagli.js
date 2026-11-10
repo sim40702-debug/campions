@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { stradaVicina } from "./strade.js";
 import { aggiungiArredoUrbano } from "./arredo.js";
+import { creaSegnali } from "./segnali.js";
 
 export async function caricaDettagli() {
   const risposta = await fetch("dati/dettagli.json");
@@ -140,7 +141,7 @@ function istanze(forma, oggetti, scena, materiale, ombra) {
 export function aBordoStrada(strade, terreno, x, z, spostamento) {
   const strada = stradaVicina(strade, x, z, 25);
   if (strada === null || strada.galleria) {
-    return { x: x, y: quotaTerreno(terreno, x, z), z: z, angolo: 0 };
+    return { x: x, y: quotaTerreno(terreno, x, z), z: z, angolo: 0, strada: null };
   }
   const distanza = strada.larghezza / 2 + spostamento;
   // destra rispetto alla direzione della strada = (-dirZ, dirX)
@@ -148,7 +149,7 @@ export function aBordoStrada(strade, terreno, x, z, spostamento) {
   const nz = strada.z + strada.dirX * distanza;
   // La faccia del cartello (verso -z del modello) deve guardare chi arriva
   const angolo = Math.atan2(strada.dirX, strada.dirZ);
-  return { x: nx, y: Math.max(quotaTerreno(terreno, nx, nz), strada.y - 0.3), z: nz, angolo: angolo };
+  return { x: nx, y: Math.max(quotaTerreno(terreno, nx, nz), strada.y - 0.3), z: nz, angolo: angolo, strada: strada };
 }
 
 function coppie(lista) {
@@ -167,10 +168,16 @@ export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   for (const l of lampioni) l.angolo = l.angolo - Math.PI / 2;
 
   istanze(formaLampione(), lampioni, scena);
-  if (contesto) aggiungiArredoUrbano(scena, terreno, strade, contesto, lampioni, dettagli, testaLampione());
+  if (contesto) {
+    aggiungiArredoUrbano(scena, terreno, strade, contesto, lampioni, dettagli, testaLampione());
+    creaSegnali(scena, terreno, strade, contesto, dettagli);
+  }
   istanze(formaSemaforo(), semafori, scena);
-  istanze(formaStop(), stop, scena);
-  istanze(formaPrecedenza(), precedenze, scena);
+  // STOP e precedenze: li disegna segnali.js (forme e segni giusti per la Svizzera)
+  if (!contesto) {
+    istanze(formaStop(), stop, scena);
+    istanze(formaPrecedenza(), precedenze, scena);
+  }
 
   // Strisce pedonali gialle: rettangoli di traverso sulla strada
   const posizioni = [];

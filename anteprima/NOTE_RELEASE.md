@@ -9,6 +9,7 @@ La versione principale del gioco resta quella in Unreal Engine 5.
 - **Strade più dritte**: le quote delle strade sono ammorbidite (le posizioni non cambiano) e gli incroci restano allineati.
 - **Contro un muro di roccia o una montagna ripida ci si schianta** (e si muore se si va forte): non si "sale" più sopra la montagna. Vale per moto e macchina.
 - **Macchina più guidabile**: aiuto al controsterzo, meno sovrasterzo, derapata più morbida e controllabile.
+- **Segnaletica svizzera**: **STOP** ottagonale con linea di arresto, **dare precedenza** (triangolo a punta in basso, bordo rosso) con i **denti di squalo** sull'asfalto, **strada con precedenza** (rombo giallo) e **limite 50** ai bordi dei paesi, **Zone 30** nelle vie residenziali, **rotonda** (cerchio blu con le tre frecce) con dare precedenza all'ingresso, **attenzione pedoni**; strisce pedonali gialle. Le posizioni di STOP, precedenze e strisce sono quelle vere di OpenStreetMap.
 
 ### Novità della 0.14.3 – fluidità, incroci, rotonde, urti
 

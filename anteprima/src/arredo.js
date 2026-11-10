@@ -324,14 +324,11 @@ export function aggiungiArredoUrbano(scena, terreno, strade, ctx, lampioni, dett
         const py = Math.max(p[i + 1], p[i - 2]);
         oggetti.push({ x: px, y: py, z: pz, angolo: Math.atan2(-dx, -dz) + Math.PI });
         // limite: un po' prima del cartello
-        oggetti.push({ x: px - dx / l * 25, y: py, z: pz - dz / l * 25, angolo: Math.atan2(-dx, -dz) + Math.PI, limite: true });
       }
     }
     if (oggetti.length === 0) continue;
     matrici(oggetti.filter(function (o) { return !o.limite; }), pannelloNome, matNome, scena, false);
     matrici(oggetti.filter(function (o) { return !o.limite; }), paloCartello, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.4 }), scena);
-    matrici(oggetti.filter(function (o) { return o.limite; }), formaLimite, matLimite, scena, false);
-    matrici(oggetti.filter(function (o) { return o.limite; }), paloCartello, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.4 }), scena);
     risultato.cartelli += oggetti.length;
   }
   return risultato;
