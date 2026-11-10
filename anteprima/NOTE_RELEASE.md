@@ -3,7 +3,11 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.13.1)
+### Novità di questa versione (0.13.2)
+
+- **Sospensioni**: in frenata la forcella affonda e il muso scende, in accelerazione il dietro si schiaccia.
+
+### Novità della 0.13.1
 
 - **Si cade molto meno facilmente**:
   - sterzo al massimo = tutta l'aderenza delle gomme, non di più: tenendo lo sterzo in curva non si scivola più (provato a 120 km/h);

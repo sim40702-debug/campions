@@ -14,6 +14,7 @@
 # - ciclo giorno/notte e meteo (AMRWCicloGiorno, C++)
 # - materiali del terreno (foto aeree), dell'asfalto e del lago, che diventano bagnati con la pioggia
 # - il terreno e le strade del Locarnese (AMRWTerreno, C++), che legge la cartella Dati
+# - gli edifici con le finestre (AMRWEdifici) e gli alberi nei boschi (AMRWAlberi)
 #
 # Prima scarica i dati con mrw_scarica_dati.py.
 # Se un oggetto c'e' gia' non viene creato di nuovo: lo script si puo' lanciare piu' volte.
@@ -174,6 +175,61 @@ def crea_materiale_acqua():
     return materiale
 
 
+def crea_materiale_edificio(mpc):
+    # Facciate e tetti: texture "Facciata" (disegnata dal C++) per il colore dei vertici (colore di ogni casa);
+    # con la pioggia piu' scuro e piu' lucido
+    materiale, nuovo = nuovo_materiale("M_MRW_Edificio")
+    if not nuovo:
+        return materiale
+    materiale.set_editor_property("two_sided", True)
+    facciata = nodo(materiale, unreal.MaterialExpressionTextureSampleParameter2D, -800, -150)
+    facciata.set_editor_property("parameter_name", "Facciata")
+    facciata.set_editor_property("texture", unreal.load_asset("/Engine/EngineResources/DefaultTexture.DefaultTexture"))
+    colore_vertici = nodo(materiale, unreal.MaterialExpressionVertexColor, -800, 120)
+    per = nodo(materiale, unreal.MaterialExpressionMultiply, -500, -50)
+    materiali.connect_material_expressions(facciata, "RGB", per, "A")
+    materiali.connect_material_expressions(colore_vertici, "", per, "B")
+    bagnato = nodo_bagnato(materiale, mpc, -800, 320)
+    scuro = nodo_lerp(materiale, 1.0, 0.75, bagnato, -500, 200)
+    colore = nodo(materiale, unreal.MaterialExpressionMultiply, -250, 0)
+    materiali.connect_material_expressions(per, "", colore, "A")
+    materiali.connect_material_expressions(scuro, "", colore, "B")
+    materiali.connect_material_property(colore, "", unreal.MaterialProperty.MP_BASE_COLOR)
+    ruvido = nodo_lerp(materiale, 0.85, 0.35, bagnato, -250, 300)
+    materiali.connect_material_property(ruvido, "", unreal.MaterialProperty.MP_ROUGHNESS)
+    finisci_materiale(materiale, "M_MRW_Edificio")
+    return materiale
+
+
+def prepara_citta(mpc):
+    # Edifici con finestre e alberi nei boschi (classi C++)
+    if hasattr(unreal, "MRWEdifici"):
+        edifici = trova_o_crea(unreal.MRWEdifici)
+        edifici.set_editor_property("materiale_edificio", crea_materiale_edificio(mpc))
+    if hasattr(unreal, "MRWAlberi"):
+        trova_o_crea(unreal.MRWAlberi)
+
+
+def prepara_post_processing(post):
+    # Aspetto "da film": esposizione automatica limitata, un po' di bloom e di vignetta,
+    # occlusione ambientale, motion blur leggero
+    impostazioni = post.get_editor_property("settings")
+    valori = {
+        "override_auto_exposure_min_brightness": True, "auto_exposure_min_brightness": 0.6,
+        "override_auto_exposure_max_brightness": True, "auto_exposure_max_brightness": 2.0,
+        "override_bloom_intensity": True, "bloom_intensity": 0.45,
+        "override_vignette_intensity": True, "vignette_intensity": 0.25,
+        "override_ambient_occlusion_intensity": True, "ambient_occlusion_intensity": 0.6,
+        "override_motion_blur_amount": True, "motion_blur_amount": 0.3,
+    }
+    for nome, valore in valori.items():
+        try:
+            impostazioni.set_editor_property(nome, valore)
+        except Exception as errore:
+            scrivi("post-processing: " + nome + " non impostato (" + str(errore) + ")")
+    post.set_editor_property("settings", impostazioni)
+
+
 def prepara_terreno(mpc):
     if not hasattr(unreal, "MRWTerreno"):
         scrivi("ATTENZIONE: classe C++ MRWTerreno non trovata. Compila il progetto e rilancia lo script.")
@@ -206,6 +262,7 @@ def prepara_luci_e_cielo():
 
     post = trova_o_crea(unreal.PostProcessVolume)
     post.set_editor_property("unbound", True)
+    prepara_post_processing(post)
     return sole, nebbia
 
 
@@ -225,5 +282,6 @@ mpc = crea_parametri_meteo()
 sole, nebbia = prepara_luci_e_cielo()
 prepara_ciclo_giorno(sole, nebbia, mpc)
 prepara_terreno(mpc)
+prepara_citta(mpc)
 livelli.save_current_level()
 scrivi("Fatto: " + MAPPA)

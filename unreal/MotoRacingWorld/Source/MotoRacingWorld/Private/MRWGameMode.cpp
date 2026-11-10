@@ -6,6 +6,8 @@
 #include "GameFramework/GameUserSettings.h"
 #include "MRWHud.h"
 #include "MRWMoto.h"
+#include "MRWAlberi.h"
+#include "MRWEdifici.h"
 #include "MRWTerreno.h"
 
 AMRWGameMode::AMRWGameMode()
@@ -25,6 +27,15 @@ void AMRWGameMode::StartPlay()
 	if (!bCeTerreno)
 	{
 		GetWorld()->SpawnActor<AMRWTerreno>(AMRWTerreno::StaticClass(), FTransform::Identity);
+	}
+	// lo stesso per edifici e alberi (se lo script del livello non li ha messi)
+	if (!TActorIterator<AMRWEdifici>(GetWorld()))
+	{
+		GetWorld()->SpawnActor<AMRWEdifici>(AMRWEdifici::StaticClass(), FTransform::Identity);
+	}
+	if (!TActorIterator<AMRWAlberi>(GetWorld()))
+	{
+		GetWorld()->SpawnActor<AMRWAlberi>(AMRWAlberi::StaticClass(), FTransform::Identity);
 	}
 
 	// Prima partita su questo computer: Unreal misura CPU e scheda video e sceglie il preset
