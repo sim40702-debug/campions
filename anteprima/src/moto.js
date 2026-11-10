@@ -116,7 +116,7 @@ export function calcolaMarcia(moto) {
 // --- Fisica -------------------------------------------------------------------
 const G = 9.81;                 // gravita' (m/s2)
 const ADERENZA_ASFALTO = 1.05;  // gomme stradali su asfalto asciutto
-const ADERENZA_PRATO = 0.6;     // erba e terra
+const ADERENZA_PRATO = 0.75;    // erba e terra
 const BARICENTRO_ALTO = 0.68;   // altezza del baricentro moto + pilota (m)
 const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m)
 
@@ -323,33 +323,35 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
 
   // --- Curva: le gomme hanno un limite -----------------------------------------
   // Da piano si gira con il manubrio; in velocita' si piega, e la piega dipende da quanta curva chiedi.
-  // Sterzo al massimo = chiedere un po' PIU' di quello che le gomme danno: se lo tieni, la moto scivola.
+  // Sterzo al massimo = tutta l'aderenza delle gomme (non di piu'): si scivola solo frenando in piega
+  // o sul prato, non solo perche' si tiene lo sterzo.
   const giroManubrio = moto.sterzoDolce * s.agilita * Math.min(1, v / 3) / (1 + v * 0.05);
-  const giroGomme = (moto.sterzoDolce * 1.15 * limite) / Math.max(v, 1);
+  const giroGomme = (moto.sterzoDolce * 0.97 * limite) / Math.max(v, 1);
   let giro = Math.abs(giroManubrio) < Math.abs(giroGomme) ? giroManubrio : giroGomme;
   if (moto.inAria) giro = 0;
   if (moto.impennata > 0.1) giro = giro * 0.35;   // ruota davanti in aria: si gira poco
 
   // In frenata resta meno aderenza per curvare (cerchio di aderenza)
   const frenata = accFreni;
-  const disponibile = Math.sqrt(Math.max(0.5, limite * limite - frenata * frenata));
+  // (il pilota dosa il freno in piega: conta il 70% della frenata)
+  const disponibile = Math.sqrt(Math.max(0.5, limite * limite - (frenata * 0.7) * (frenata * 0.7)));
   const laterale = v * Math.abs(giro);
   if (Math.abs(moto.derapata) > 0.08) {
     // in derapata la gomma dietro scivola di proposito: la moto gira di piu' (fino al 60% in piu')
     // e non si accumula "slittamento"; ma oltre i 100 km/h di traverso si va per terra (highside)
     giro = giro * (1 + Math.min(0.6, Math.abs(moto.derapata)));
     moto.slittamento = 0;
-    if (v > 28 && Math.abs(moto.derapata) > 0.3) cadi(moto, "Derapata troppo veloce: highside", moto.velocita);
+    if (v > 33 && Math.abs(moto.derapata) > 0.45) cadi(moto, "Derapata troppo veloce: highside", moto.velocita);
   } else if (laterale > disponibile && v > 1) {
     // si chiede troppo: la moto allarga la curva e le gomme cominciano a scivolare
     giro = giro * disponibile / laterale;
-    moto.slittamento += dt * (laterale / disponibile - 1) * 5;
+    moto.slittamento += dt * (laterale / disponibile - 1) * 3;
   } else {
     moto.slittamento = Math.max(0, moto.slittamento - dt);
   }
   moto.angolo += giro * dt * Math.sign(moto.velocita || 1);
-  // Si cade se si insiste: forte (oltre 72 km/h) oppure frenando in piega
-  if (moto.slittamento > 1 && (v > 20 || (frenata > 0 && v > 12))) {
+  // Si cade solo se si insiste a lungo: forte (oltre 90 km/h) oppure frenando forte in piega
+  if (moto.slittamento > 1.5 && (v > 25 || (frenata > 0 && v > 14))) {
     cadi(moto, "Hai perso aderenza in curva", moto.velocita);
   }
 
@@ -368,7 +370,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   // Contro un edificio: piano si rimbalza, forte si cade
   // (sulla strada no: a volte la strada passa sotto un edificio, come un portico)
   if (edifici && !moto.suStrada && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
-    if (v > 5) {
+    if (v > 8) {
       cadi(moto, "Sei finito contro un edificio", moto.velocita);
       moto.velocita = 0;
     } else {
@@ -402,7 +404,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     moto.y += moto.vy * dt;
     if (moto.y <= suolo.y) {
       // atterraggio: oltre 8 m/s verso il basso (come cadere da piu' di 3 metri) non regge
-      if (moto.vy < -8) cadi(moto, "Atterraggio troppo duro", Math.hypot(moto.vy, moto.velocita * 0.3));
+      if (moto.vy < -11) cadi(moto, "Atterraggio troppo duro", Math.hypot(moto.vy, moto.velocita * 0.3));
       moto.molla = Math.min(0.12, -moto.vy * 0.015);   // le sospensioni si schiacciano
       moto.y = suolo.y;
       moto.vy = 0;

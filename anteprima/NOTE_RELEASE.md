@@ -3,7 +3,16 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.13.0)
+### Novità di questa versione (0.13.1)
+
+- **Si cade molto meno facilmente**:
+  - sterzo al massimo = tutta l'aderenza delle gomme, non di più: tenendo lo sterzo in curva non si scivola più (provato a 120 km/h);
+  - si scivola solo frenando forte in piega a lungo, o sul prato (che ora tiene di più);
+  - contro gli edifici si cade solo sopra i 29 km/h (prima 18);
+  - atterraggi: si cade solo da salti molto più alti;
+  - derapata: highside solo sopra i 120 km/h molto di traverso.
+
+### Novità della 0.13.0
 
 - **Derapate in moto** (come in supermotard): in velocità tieni **Spazio** (freno dietro) e sterza: la ruota dietro scivola fuori, la moto entra di traverso e chiude la curva. Lasci Spazio e torna dritta. Sopra i 100 km/h di traverso si cade (highside).
 - **Segni neri delle gomme** sull'asfalto e **rumore delle gomme** che strisciano.
