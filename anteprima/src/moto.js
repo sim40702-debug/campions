@@ -122,6 +122,16 @@ const BARICENTRO_ALTO = 0.68;   // altezza del baricentro moto + pilota (m)
 const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m)
 
 // La moto cade: da aggiornaMoto (scivolata, urto, atterraggio). Il resto lo decide danni.js
+// Contro un muro di roccia o una montagna ripida non si "sale": ci si schianta (e si muore se si va forte).
+// Si guarda la pendenza del terreno nel passo che sta per fare: oltre ~52 gradi e almeno 30 cm di dislivello e' un muro.
+export function urtoControMontagna(m, terreno, strade, nx, nz, v) {
+  if (v < 6 || m.inAria) return false;
+  const s = quotaSuolo(m, terreno, strade, nx, nz);
+  const dy = s.y - m.y;
+  const passo = Math.hypot(nx - m.x, nz - m.z) || 0.01;
+  return dy > 0.3 && dy / passo > 1.3;
+}
+
 function cadi(moto, motivo, velocitaUrto) {
   if (moto.caduta > 0) return;
   moto.caduta = 3;   // secondi a terra prima di ripartire
@@ -367,6 +377,13 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     nuovaX = Math.min(Math.max(nuovaX, -limiteX), limiteX);
     nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
     moto.velocita = 0;
+  }
+  // Contro la montagna: schianto (mortale sopra ~42 km/h: la roccia non perdona)
+  if (urtoControMontagna(moto, terreno, strade, nuovaX, nuovaZ, v)) {
+    cadi(moto, "Sei finito contro la montagna", moto.velocita * 1.8);
+    moto.velocita = 0;
+    nuovaX = moto.x;
+    nuovaZ = moto.z;
   }
   // Contro un edificio non si entra mai (neanche sulla strada): piano si rimbalza, forte ci si schianta e si cade
   if (edifici && !moto.inGalleria && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {

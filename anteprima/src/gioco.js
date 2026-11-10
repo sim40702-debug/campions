@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.3";
+const VERSIONE = "0.14.4";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -366,6 +366,7 @@ async function avvia() {
       telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
     };
     window.__mrw.moto = moto;
+    window.__mrw.terreno = terreno;
     window.__mrw.alberi = alberi;
     preparaMenu(mondo, function () {
       avviaTest(test);

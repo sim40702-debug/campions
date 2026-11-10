@@ -243,6 +243,10 @@ for (const [cx, cz] of [[PAESI[1].x + 40, PAESI[1].z + 40], [PAESI[0].x - 33, PA
   strada("secondary", "Uscita rotonda", 7, densifica([cx + 17, cz], [cx + 120, cz], 15));
   strada("secondary", "Ingresso nord", 7, densifica([cx, cz - 120], [cx, cz - 17], 15));
 }
+// galleria di prova (retta, sotto la collina)
+strada("secondary", "Galleria di prova", 8, densifica([1300, -2600], [1300, -3000], 4), { g: true });
+strada("secondary", "Accesso galleria sud", 8, densifica([1300, -2400], [1300, -2600], 20));
+strada("secondary", "Uscita galleria nord", 8, densifica([1300, -3000], [1300, -3200], 20));
 // strada di montagna
 {
   const pts = [];

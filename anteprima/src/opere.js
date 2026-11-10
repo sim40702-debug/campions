@@ -14,8 +14,10 @@ function quad(posizioni, a, b, c, d) {
   posizioni.push(a[0], a[1], a[2], d[0], d[1], d[2], c[0], c[1], c[2]);
 }
 
+// Sezione della galleria nel punto i: un anello ad ARCO (due pareti dritte e volta a botte), non una scatola.
+// Ritorna i punti dell'anello (dal pavimento sinistro, su per la volta, al pavimento destro) e la direzione.
+const PUNTI_ARCO = 9;
 function sezione(p, i, larghezza) {
-  // Punti della sezione della galleria nel punto i: sinistra/destra, in basso/in alto
   const punti = p.length / 3;
   const a = Math.max(i - 1, 0) * 3;
   const b = Math.min(i + 1, punti - 1) * 3;
@@ -26,39 +28,80 @@ function sezione(p, i, larghezza) {
   dz = dz / lunghezza;
   const meta = larghezza / 2 + 1.0;
   const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
-  return {
-    sx: [x - dz * meta, y - 0.08, z + dx * meta],
-    dx: [x + dz * meta, y - 0.08, z - dx * meta],
-    sxAlto: [x - dz * meta, y + ALTEZZA_GALLERIA, z + dx * meta],
-    dxAlto: [x + dz * meta, y + ALTEZZA_GALLERIA, z - dx * meta],
-    centro: [x, y + ALTEZZA_GALLERIA - 0.1, z],
-    dirX: dx,
-    dirZ: dz
+  const spalla = 2.6;                 // altezza delle pareti dritte
+  const freccia = ALTEZZA_GALLERIA - spalla;   // quanto sale la volta sopra le spalle
+  const anello = [];
+  const punto = function (lato, alto) {
+    return [x - dz * lato, y + alto, z + dx * lato];
   };
+  anello.push(punto(-meta, -0.08));
+  anello.push(punto(-meta, spalla));
+  for (let k = 1; k < PUNTI_ARCO - 1; k++) {
+    const t = Math.PI * k / (PUNTI_ARCO - 1);   // da sinistra (0) a destra (PI) sopra la testa
+    anello.push(punto(-meta * Math.cos(t), spalla + freccia * Math.sin(t)));
+  }
+  anello.push(punto(meta, spalla));
+  anello.push(punto(meta, -0.08));
+  return { anello: anello, centro: [x, y + ALTEZZA_GALLERIA - 0.15, z], dirX: dx, dirZ: dz, x: x, y: y, z: z, meta: meta };
 }
 
-function aggiungiPortale(posizioni, s, verso) {
-  // Facciata di cemento attorno all'ingresso, larga 2 m in piu' per lato e alta 2 m in piu'
-  const fx = -s.dirZ, fz = s.dirX;   // direzione di traverso
-  const allarga = 2;
-  const [x1, y1, z1] = s.sx;
-  const [x2, , z2] = s.dx;
-  const yAlto = s.sxAlto[1];
-  const ox = s.dirX * 0.3 * verso, oz = s.dirZ * 0.3 * verso;
-  const esternoSx = [x1 + fx * allarga + ox, y1, z1 + fz * allarga + oz];
-  const esternoDx = [x2 - fx * allarga + ox, y1, z2 - fz * allarga + oz];
-  const internoSx = [x1 + ox, y1, z1 + oz];
-  const internoDx = [x2 + ox, y1, z2 + oz];
-  const alto = function (punto, y) { return [punto[0], y, punto[2]]; };
-  // pilastro sinistro, pilastro destro, trave sopra
-  quad(posizioni, esternoSx, internoSx, alto(esternoSx, yAlto + 2), alto(internoSx, yAlto + 2));
-  quad(posizioni, internoDx, esternoDx, alto(internoDx, yAlto + 2), alto(esternoDx, yAlto + 2));
-  quad(posizioni, alto(internoSx, yAlto), alto(internoDx, yAlto), alto(internoSx, yAlto + 2), alto(internoDx, yAlto + 2));
+// Portale: facciata di cemento con apertura ad arco, cornice in rilievo e muri d'ala inclinati che "tengono" la montagna.
+// verso = -1 all'inizio della galleria, +1 alla fine.
+function aggiungiPortale(posizioni, cornice, s, verso, terreno) {
+  const fx = -s.dirZ, fz = s.dirX;
+  const fuori = 0.35 * verso;
+  const sposta = function (pt, extra, y) {
+    return [pt[0] + s.dirX * (fuori + (extra || 0)), y === undefined ? pt[1] : y, pt[2] + s.dirZ * (fuori + (extra || 0))];
+  };
+  const anello = s.anello;
+  // contorno esterno: sale in verticale dai due lati fino a un rettangolo largo meta + 3 m e alto 8.2 m sopra la strada
+  const largo = s.meta + 3.2;
+  const yTetto = s.y + ALTEZZA_GALLERIA + 3.2;
+  const esterno = function (lato, y) { return [s.x - fz * 0 + (-s.dirZ) * lato * 1, y, s.z + s.dirX * lato]; };
+  const pt = function (lato, y) { return sposta([s.x - s.dirZ * lato, y, s.z + s.dirX * lato], 0); };
+  // facciata: fascia tra l'arco (apertura) e il bordo alto, divisa nei tratti dell'arco
+  for (let k = 0; k < anello.length - 1; k++) {
+    const a = anello[k], b = anello[k + 1];
+    // lato dell'arco del punto (distanza di traverso dal centro, con segno)
+    const la = (a[0] - s.x) * (-s.dirZ) + (a[2] - s.z) * s.dirX;
+    const lb = (b[0] - s.x) * (-s.dirZ) + (b[2] - s.z) * s.dirX;
+    const sopraA = pt(Math.max(-largo, Math.min(largo, la * 1.0)), yTetto);
+    const sopraB = pt(Math.max(-largo, Math.min(largo, lb * 1.0)), yTetto);
+    quad(posizioni, sposta(a), sposta(b), sopraA, sopraB);
+  }
+  // pilastri laterali (dal bordo dell'apertura al bordo esterno, da terra al tetto)
+  const baseSx = sposta(anello[0]), baseDx = sposta(anello[anello.length - 1]);
+  quad(posizioni, pt(-largo, s.y - 0.08), [baseSx[0], baseSx[1], baseSx[2]], pt(-largo, yTetto), [baseSx[0], yTetto, baseSx[2]]);
+  quad(posizioni, [baseDx[0], baseDx[1], baseDx[2]], pt(largo, s.y - 0.08), [baseDx[0], yTetto, baseDx[2]], pt(largo, yTetto));
+  // cornice in rilievo attorno all'arco (una striscia piu' avanti di 0.25 m)
+  for (let k = 0; k < anello.length - 1; k++) {
+    const a = sposta(anello[k], 0.25 * verso), b = sposta(anello[k + 1], 0.25 * verso);
+    const dentroA = sposta(anello[k], 0.25 * verso), dentroB = sposta(anello[k + 1], 0.25 * verso);
+    void dentroA; void dentroB;
+    const alza = function (q) { return [q[0] - (q[0] - s.x) * 0.0, q[1] + 0.0, q[2]]; };
+    // striscia larga 0.6 m verso l'esterno dell'arco (alza il punto verso l'esterno)
+    const fuoriA = [a[0] + ((a[0] - s.x) * 0.12), a[1] + 0.5, a[2] + ((a[2] - s.z) * 0.12)];
+    const fuoriB = [b[0] + ((b[0] - s.x) * 0.12), b[1] + 0.5, b[2] + ((b[2] - s.z) * 0.12)];
+    quad(cornice, alza(a), alza(b), fuoriA, fuoriB);
+  }
+  // muri d'ala: da ogni lato un muro che parte alto come la facciata e scende fino al terreno in 12 m, lungo la strada all'indietro
+  for (const lato of [-1, 1]) {
+    const x0 = s.x - s.dirZ * lato * largo, z0 = s.z + s.dirX * lato * largo;
+    const lungo = 12;
+    const x1 = x0 - s.dirX * verso * lungo, z1 = z0 - s.dirZ * verso * lungo;
+    const suolo1 = Math.min(s.y + 0.5, quotaTerreno(terreno, x1, z1));
+    const alto0 = [x0 + s.dirX * fuori, yTetto, z0 + s.dirZ * fuori];
+    const basso0 = [x0 + s.dirX * fuori, s.y - 0.08, z0 + s.dirZ * fuori];
+    const alto1 = [x1, Math.max(suolo1, s.y) + 0.2, z1];
+    const basso1 = [x1, s.y - 0.08, z1];
+    if (lato < 0) quad(posizioni, basso1, basso0, alto1, alto0); else quad(posizioni, basso0, basso1, alto0, alto1);
+  }
 }
 
 export function aggiungiOpere(strade, scena, terreno) {
   const tubo = [];
   const portali = [];
+  const cornici = [];
   const luci = [];
   const piloni = [];
 
@@ -71,10 +114,10 @@ export function aggiungiOpere(strade, scena, terreno) {
       let prima = sezione(p, 0, strada.w);
       for (let i = 1; i < punti; i++) {
         const ora = sezione(p, i, strada.w);
-        quad(tubo, prima.sx, ora.sx, prima.sxAlto, ora.sxAlto);            // muro sinistro
-        quad(tubo, ora.dx, prima.dx, ora.dxAlto, prima.dxAlto);            // muro destro
-        quad(tubo, prima.sxAlto, ora.sxAlto, prima.dxAlto, ora.dxAlto);    // soffitto
-        quad(tubo, prima.dx, ora.dx, prima.sx, ora.sx);                    // pavimento
+        // il tubo: un quadrilatero per ogni tratto dell'anello (pareti e volta ad arco); il pavimento e' la strada
+        for (let k = 0; k < ora.anello.length - 1; k++) {
+          quad(tubo, prima.anello[k], ora.anello[k], prima.anello[k + 1], ora.anello[k + 1]);
+        }
         if (i % OGNI_QUANTI_PUNTI_LUCE === 0) luci.push(ora.centro);
         prima = ora;
       }
@@ -82,7 +125,7 @@ export function aggiungiOpere(strade, scena, terreno) {
       for (const [indice, verso] of [[0, -1], [punti - 1, 1]]) {
         const x = p[indice * 3], z = p[indice * 3 + 2];
         if (dentroArea(terreno, x, z, 3)) {
-          aggiungiPortale(portali, sezione(p, indice, strada.w), verso);
+          aggiungiPortale(portali, cornici, sezione(p, indice, strada.w), verso, terreno);
         }
       }
     }
@@ -97,12 +140,17 @@ export function aggiungiOpere(strade, scena, terreno) {
   }
 
   const cemento = new THREE.MeshLambertMaterial({ color: 0x8e8d87, side: THREE.DoubleSide });
-  for (const posizioni of [tubo, portali]) {
+  const cementoChiaro = new THREE.MeshLambertMaterial({ color: 0xb3b0a8, side: THREE.DoubleSide });
+  const cementoInterno = new THREE.MeshLambertMaterial({ color: 0x7a7974, side: THREE.DoubleSide });
+  for (const [posizioni, materiale] of [[tubo, cementoInterno], [portali, cemento], [cornici, cementoChiaro]]) {
     if (posizioni.length === 0) continue;
     const geometria = new THREE.BufferGeometry();
     geometria.setAttribute("position", new THREE.Float32BufferAttribute(posizioni, 3));
     geometria.computeVertexNormals();
-    scena.add(new THREE.Mesh(geometria, cemento));
+    geometria.computeBoundingSphere();
+    const mesh = new THREE.Mesh(geometria, materiale);
+    mesh.receiveShadow = true;
+    scena.add(mesh);
   }
 
   const matrice = new THREE.Matrix4();

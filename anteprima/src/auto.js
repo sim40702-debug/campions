@@ -7,7 +7,7 @@
 //   moto.direzione  = dove va davvero la macchina
 // La differenza tra i due e' l'angolo di derapata.
 
-import { quotaSuolo, calcolaMarcia } from "./moto.js";
+import { quotaSuolo, calcolaMarcia, urtoControMontagna } from "./moto.js";
 import { dentroEdificio } from "./edifici.js";
 import { accelerazioneMax } from "./moto_modelli.js";
 
@@ -66,24 +66,26 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   v -= G * Math.sin(auto.beccheggio) * dt;
 
   // --- sterzo e derapata
-  const angoloRuote = auto.sterzoDolce * 0.6 / (1 + Math.abs(v) * 0.035);   // piu' si va forte, meno si sterza: stabile in rettilineo
+  // aiuto al controsterzo: se la macchina e' di traverso e non si usa il freno a mano, le ruote si raddrizzano da sole
+  const sterzoAiuto = tasti.frenoDietro ? 0 : Math.max(-0.5, Math.min(0.5, -normale(auto.angolo - auto.direzione) * 0.9));
+  const angoloRuote = Math.max(-1, Math.min(1, auto.sterzoDolce + sterzoAiuto)) * 0.6 / (1 + Math.abs(v) * 0.035);   // piu' si va forte, meno si sterza: stabile in rettilineo
   const giroVoluto = v * Math.tan(angoloRuote) / dati.passo;
   // quanta presa hanno le gomme dietro
   let presaDietro = 1;
-  if (tasti.frenoDietro && Math.abs(v) > 3) presaDietro = 0.2;                                // freno a mano
-  else if (tasti.su && Math.abs(auto.sterzoDolce) > 0.6 && v > 14) presaDietro = 0.7;           // troppo gas in curva
+  if (tasti.frenoDietro && Math.abs(v) > 3) presaDietro = 0.35;                                // freno a mano
+  else if (tasti.su && Math.abs(auto.sterzoDolce) > 0.8 && v > 18) presaDietro = 0.78;           // troppo gas in curva
   if (!auto.suStrada) presaDietro *= 0.7;
   // con poca presa dietro la macchina gira piu' di quanto vorrebbe lo sterzo (sovrasterzo)
-  const giroDerapata = giroVoluto * (1 + (1 - presaDietro) * 1.3);
+  const giroDerapata = giroVoluto * (1 + (1 - presaDietro) * 0.9);
   auto.giroAuto += (giroDerapata - auto.giroAuto) * Math.min(1, dt * 3.5);
   auto.angolo += auto.giroAuto * dt;
 
   // la direzione in cui va la macchina "insegue" il muso: veloce con presa, lenta in derapata
   let derapata = normale(auto.angolo - auto.direzione);
-  auto.direzione += derapata * Math.min(1, dt * (presaDietro * 4 + 0.6));
+  auto.direzione += derapata * Math.min(1, dt * (presaDietro * 6 + 1.2));
   derapata = normale(auto.angolo - auto.direzione);
   // di traverso si perde velocita' (le gomme strisciano)
-  v -= Math.abs(Math.sin(derapata)) * v * 0.45 * dt;
+  v -= Math.abs(Math.sin(derapata)) * v * 0.3 * dt;
   // testacoda: oltre 100 gradi la macchina gira su se stessa e si ferma piano
   if (Math.abs(derapata) > 1.75) {
     auto.direzione = auto.angolo - Math.sign(derapata) * 1.75;
@@ -99,6 +101,12 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   const limiteZ = terreno.metaZ - 5;
   nuovaX = Math.min(Math.max(nuovaX, -limiteX), limiteX);
   nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
+  if (urtoControMontagna(auto, terreno, strade, nuovaX, nuovaZ, Math.abs(v))) {
+    urto(auto, "Macchina distrutta contro la montagna");
+    auto.velocitaUrto *= 1.8;
+    nuovaX = auto.x;
+    nuovaZ = auto.z;
+  }
   if (edifici && !auto.inGalleria && dentroEdificio(edifici, nuovaX, nuovaZ, auto.y + 0.5)) {
     if (Math.abs(v) > 5) {
       urto(auto, "Macchina distrutta contro un edificio");

@@ -208,6 +208,21 @@ if (vuole("collisioni")) {
     return { provati, esiti };
   });
   prova("collisioni: la moto lanciata contro un edificio non entra e cade", r.provati >= 1 && r.esiti.every((x) => !x.dentro), JSON.stringify(r));
+  // muro di roccia: alzo di 25 m un blocco di terreno davanti alla moto (fuori strada) e ci vado contro a 80 km/h
+  const roccia = await pagina.evaluate(async () => {
+    const m = window.__mrw, moto = m.moto, t = m.terreno;
+    const attendi = (n) => new Promise((ok) => { const f0 = m.fotogrammi; const k = setInterval(() => { if (m.fotogrammi >= f0 + n) { clearInterval(k); ok(); } }, 50); });
+    m.vaiA(-4300, -2800);
+    await attendi(5);
+    moto.angolo = 0; moto.caduta = 0; moto.velocita = 22; moto.riparti = false;
+    const x0 = moto.x, z0 = moto.z - 12;
+    const c0 = Math.round((x0 + t.metaX) / t.passo), r0 = Math.round((z0 + t.metaZ) / t.passo);
+    for (let r = r0 - 30; r <= r0; r++) for (let c = c0 - 10; c <= c0 + 10; c++) t.quote[r * t.colonne + c] += 25;
+    const inizioY = moto.y;
+    await attendi(30);
+    return { motivo: moto.motivoCaduta, velocitaUrto: Math.round(moto.velocitaUrto || 0), quotaMassima: moto.y - inizioY, caduta: moto.caduta > 0 || moto.riparti === true };
+  });
+  prova("montagna: contro un muro di roccia si muore e non si vola sopra", roccia.motivo === "Sei finito contro la montagna" && roccia.velocitaUrto > 75 && roccia.quotaMassima < 8, JSON.stringify(roccia));
   prova("collisioni: nessun errore", errori.length === 0, errori.slice(0, 2).join(" | "));
   await pagina.close();
 }

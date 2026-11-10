@@ -8,12 +8,43 @@ import { liberaDopoCaricamento } from "./memoria.js";
 
 const CELLA = 40;   // griglia di ricerca: celle da 40 x 40 m
 
+// Profili delle strade piu' dritti: le gallerie e i ponti vanno in linea retta da un capo all'altro (prima seguivano
+// ogni dosso e facevano "su e giu'"); le altre strade hanno le quote ammorbidite (media su circa 25 m) tenendo fermi
+// i due capi, cosi' gli incroci restano allineati. Le posizioni (x, z) non cambiano.
+function lisciaProfili(lista) {
+  for (const s of lista) {
+    const p = s.p;
+    const n = p.length / 3;
+    if (n < 3) continue;
+    const d = new Float32Array(n);
+    for (let i = 1; i < n; i++) d[i] = d[i - 1] + Math.hypot(p[i * 3] - p[i * 3 - 3], p[i * 3 + 2] - p[i * 3 - 1]);
+    const tot = d[n - 1] || 1;
+    const y0 = p[1], y1 = p[(n - 1) * 3 + 1];
+    if (s.g || s.b) {
+      for (let i = 1; i < n - 1; i++) p[i * 3 + 1] = y0 + (y1 - y0) * (d[i] / tot);
+      continue;
+    }
+    // media pesata con finestra di +-25 m, due passate
+    for (let passata = 0; passata < 2; passata++) {
+      const nuove = new Float32Array(n);
+      for (let i = 1; i < n - 1; i++) {
+        let somma = 0, peso = 0;
+        for (let j = i; j >= 0 && d[i] - d[j] <= 25; j--) { const w = 1 - (d[i] - d[j]) / 26; somma += p[j * 3 + 1] * w; peso += w; }
+        for (let j = i + 1; j < n && d[j] - d[i] <= 25; j++) { const w = 1 - (d[j] - d[i]) / 26; somma += p[j * 3 + 1] * w; peso += w; }
+        nuove[i] = somma / peso;
+      }
+      for (let i = 1; i < n - 1; i++) p[i * 3 + 1] = nuove[i];
+    }
+  }
+}
+
 export async function caricaStrade() {
   const risposta = await fetch("dati/strade.json");
   if (!risposta.ok) {
     throw new Error("Mancano i dati delle strade: " + (await risposta.text()));
   }
   const dati = await risposta.json();
+  lisciaProfili(dati.strade);
 
   // Griglia: per ogni cella, l'elenco dei pezzi di strada che ci passano
   const griglia = new Map();
