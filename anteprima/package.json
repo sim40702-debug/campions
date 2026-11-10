@@ -1,7 +1,7 @@
 {
   "name": "moto-racing-world-anteprima-ticino",
   "productName": "MOTO RACING WORLD - Anteprima Ticino",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "Anteprima giocabile del settore pilota di Locarno con dati swisstopo e OpenStreetMap",
   "main": "main.js",
   "author": "Simone",
@@ -32,6 +32,7 @@
       "src/**/*",
       "dati/**/*",
       "modelli/**/*",
+      "terzi/**/*",
       "node_modules/three/**/*",
       "package.json"
     ],

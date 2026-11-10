@@ -3,7 +3,11 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.12.1)
+### Novità di questa versione (0.12.2)
+
+- **Corretto: il gioco si fermava su "Caricamento del territorio..."** (dalla 0.10.0). Nell'app installata mancavano tre file di three.js (caricamento dei modelli 3D, cielo, riflessi). Ora sono dentro l'app, e prima di pubblicare una versione viene controllato che ci siano.
+
+### Novità della 0.12.1
 
 - **Schermata di caricamento animata**: una ruota che gira e la strada che scorre, la barra dei passi fatti e i secondi passati. La ruota gira anche quando il programma lavora sodo: se resta ferma a lungo, il programma è bloccato.
 

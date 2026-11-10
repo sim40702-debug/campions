@@ -160,6 +160,14 @@ jobs:
             echo "ERRORE: nell'app mancano i dati (dati/terreno.bin)"
             exit 1
           fi
+          # BUG-008: i file che il gioco importa devono esserci tutti nell'app (non solo sul computer di sviluppo)
+          for file in terzi/three/loaders/GLTFLoader.js terzi/three/objects/Sky.js terzi/three/environments/RoomEnvironment.js \
+                      node_modules/three/build/three.module.js src/gioco.js modelli/SM450_Telaio.glb; do
+            if [ "$(find dist -path "*app/$file" | wc -l)" -eq 0 ]; then
+              echo "::error::Nell'app manca $file"
+              exit 1
+            fi
+          done
 
       - name: Salva l'app
         uses: actions/upload-artifact@v4

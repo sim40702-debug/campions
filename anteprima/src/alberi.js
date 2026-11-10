@@ -17,7 +17,7 @@ function creaForma(parti) {
   const posizioni = [];
   const coloriVertici = [];
   for (const [geometria, colore] of parti) {
-    const g = geometria.toNonIndexed();
+    const g = geometria.index ? geometria.toNonIndexed() : geometria;
     const pos = g.attributes.position.array;
     const c = new THREE.Color(colore);
     for (let i = 0; i < pos.length; i += 3) {
