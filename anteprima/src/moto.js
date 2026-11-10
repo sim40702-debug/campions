@@ -127,6 +127,7 @@ const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m
 export function urtoControMontagna(m, terreno, strade, nx, nz, v) {
   if (v < 6 || m.inAria) return false;
   const s = quotaSuolo(m, terreno, strade, nx, nz);
+  if (s.strada !== null) return false;   // l'asfalto non e' mai un muro: ci si schianta solo contro il terreno
   const dy = s.y - m.y;
   const passo = Math.hypot(nx - m.x, nz - m.z) || 0.01;
   return dy > 0.3 && dy / passo > 1.3;

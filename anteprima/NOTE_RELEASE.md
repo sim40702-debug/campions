@@ -3,7 +3,15 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.4) – gallerie, strade dritte, montagne che uccidono
+### Novità di questa versione (0.14.5) – strade sullo stesso piano, macchina guidabile, cartelli veri
+
+- **Strade tutte sullo stesso piano dove si toccano**: agli incroci le strade hanno una sola quota, la strada laterale arriva già in piano su quella principale e i bordi dell'asfalto seguono il piano dell'altra strada. Niente più asfalti sovrapposti a quote diverse né scalini. Dove due strade si incrociano senza un nodo in comune viene aggiunto.
+- **Il terreno segue le strade**: sotto l'asfalto il terreno viene risistemato all'avvio (niente prato che buca la strada, niente strade sospese).
+- **Macchina guidabile**: le gomme hanno un limite di aderenza (prima a 100 km/h un colpo di sterzo la faceva girare su se stessa), lo sterzo entra più dolce e torna dritto in fretta, sul prato rallenta piano invece di bloccarsi, un buco tra due pezzi di strada non la frena più. **L'asfalto non è mai un "muro"**: ci si schianta solo contro il terreno vero. Contro gli edifici si distrugge sopra i 40 km/h.
+- **Cartelli veri**: STOP, precedenze e semafori stanno a destra di chi va **verso l'incrocio**, lo guardano in faccia, con il **palo dietro** al pannello (il retro è grigio). Mai sull'asfalto e mai dentro un muro: se serve arretrano con la loro linea di arresto.
+- **Edifici fuori dalla strada**: si toglie ogni edificio il cui contorno tocca la carreggiata o che è attraversato da una strada (prima bastava che ne restasse fuori il centro).
+
+### Novità della 0.14.4 – gallerie, strade dritte, montagne che uccidono
 
 - **Gallerie rifatte**: tubo ad arco (pareti e volta a botte) e **imbocco** con facciata di cemento, apertura ad arco, cornice in rilievo e muri d'ala che scendono nella montagna. Le gallerie e i ponti vanno **in linea retta** da un capo all'altro (non fanno più su e giù).
 - **Strade più dritte**: le quote delle strade sono ammorbidite (le posizioni non cambiano) e gli incroci restano allineati.

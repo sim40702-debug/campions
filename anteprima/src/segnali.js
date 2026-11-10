@@ -10,7 +10,8 @@
 
 import * as THREE from "three";
 import { unisci, aBordoStrada } from "./dettagli.js";
-import { zonaQui, ZONA } from "./edifici.js";
+import { zonaQui, ZONA, dentroEdificio } from "./edifici.js";
+import { sullAsfalto } from "./strade.js";
 
 function tela(w, h) {
   const c = document.createElement("canvas");
@@ -161,14 +162,24 @@ function texPedoni() {
 }
 
 function matSegnale(tex) {
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, metalness: 0.15, alphaTest: 0.5, side: THREE.DoubleSide });
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, metalness: 0.15, alphaTest: 0.5, side: THREE.FrontSide });
 }
 
-// Pannello (la faccia guarda -z come i palo del gioco) a una certa altezza
+// Il retro del cartello: stessa sagoma, grigio lamiera (il disegno si vede solo davanti)
+function matRetro(tex) {
+  return new THREE.MeshStandardMaterial({ map: tex, color: 0x000000, emissive: 0x6f7378, emissiveIntensity: 0.55, roughness: 0.6, metalness: 0.3, alphaTest: 0.5, side: THREE.FrontSide });
+}
+
+// Pannello: la faccia guarda -z (verso chi arriva) e sta DAVANTI al palo; il palo resta dietro.
 function pannello(larg, alt, y) {
   const g = new THREE.PlaneGeometry(larg, alt);
   g.rotateY(Math.PI);
-  g.translate(0, y, 0.04);
+  g.translate(0, y, -0.05);
+  return g;
+}
+function retro(larg, alt, y) {
+  const g = new THREE.PlaneGeometry(larg, alt);
+  g.translate(0, y, -0.045);
   return g;
 }
 function palo(altezza) {
@@ -253,8 +264,9 @@ export function creaSegnali(scena, terreno, strade, ctx, dettagli) {
   const ps = (lista, sp) => {
     const r = [];
     for (let i = 0; i + 1 < lista.length; i += 2) {
-      const o = aBordoStrada(strade, terreno, lista[i], lista[i + 1], sp);
-      r.push(o);
+      const o = aBordoStrada(strade, terreno, lista[i], lista[i + 1], sp, true);
+      // solo cartelli veri: agganciati a una strada, fuori dall'asfalto e fuori dai muri
+      if (o.strada && !o.strada.scarta && !dentroEdificio(ctx.edifici, o.x, o.z, o.y + 1)) r.push(o);
     }
     return r;
   };
@@ -274,6 +286,7 @@ export function creaSegnali(scena, terreno, strade, ctx, dettagli) {
   for (const [lista, tex, larg, alt, y, h, nome] of pannelli) {
     istanze(dritti(lista), palo(h), new THREE.MeshStandardMaterial({ color: 0x8d9096, roughness: 0.5, metalness: 0.4 }), scena);
     istanze(dritti(lista), pannello(larg, alt, y), matSegnale(tex), scena, false);
+    istanze(dritti(lista), retro(larg, alt, y), matRetro(tex), scena, false);
     ris[nome] = lista.length;
   }
   void forma;
@@ -361,10 +374,13 @@ export function creaSegnali(scena, terreno, strade, ctx, dettagli) {
     [rotonde, texRotonda(), 0.8, 0.8, 2.3, 2.6, "rotonda"],
     [cedereRot, texCedere(), 0.9, 0.9, 2.3, 2.6, "cedere"]
   ];
-  for (const [lista, tex, larg, alt, y, h, nome] of gruppi) {
+  for (const [tutti, tex, larg, alt, y, h, nome] of gruppi) {
+    // mai sull'asfalto (per esempio di una strada laterale) e mai dentro un edificio
+    const lista = tutti.filter((o) => !sullAsfalto(strade, o.x, o.z, 0.3) && !dentroEdificio(ctx.edifici, o.x, o.z, o.y + 1));
     if (lista.length === 0) continue;
     istanze(lista, palo(h), pal, scena);
     istanze(lista, pannello(larg, alt, y + (nome === "zona30" ? -0.12 : 0)), matSegnale(tex), scena, false);
+    istanze(lista, retro(larg, alt, y + (nome === "zona30" ? -0.12 : 0)), matRetro(tex), scena, false);
     ris[nome] = (ris[nome] || 0) + lista.length;
   }
   void texPedoni;

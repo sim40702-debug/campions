@@ -3,7 +3,7 @@
 
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
-import { stradaVicina } from "./strade.js";
+import { stradaVicina, stradaSotto, sullAsfalto, distanzaIncrocio } from "./strade.js";
 import { aggiungiArredoUrbano } from "./arredo.js";
 import { creaSegnali } from "./segnali.js";
 
@@ -138,18 +138,61 @@ function istanze(forma, oggetti, scena, materiale, ombra) {
 
 // Il punto OSM di un cartello e' spesso SULLA strada: lo sposto sul bordo destro,
 // girato verso chi arriva
-export function aBordoStrada(strade, terreno, x, z, spostamento) {
+// Con "versoIncrocio" (stop, precedenze, semafori) il cartello vale per chi va VERSO l'incrocio piu' vicino:
+// sta alla sua destra, lo guarda in faccia, e non finisce mai sull'asfalto della strada che incrocia
+// (se serve arretra lungo la sua strada, con la linea di arresto).
+export function aBordoStrada(strade, terreno, x, z, spostamento, versoIncrocio) {
   const strada = stradaVicina(strade, x, z, 25);
   if (strada === null || strada.galleria) {
     return { x: x, y: quotaTerreno(terreno, x, z), z: z, angolo: 0, strada: null };
   }
   const distanza = strada.larghezza / 2 + spostamento;
+  if (versoIncrocio) {
+    const avanti = distanzaIncrocio(strade, strada.indice, strada.segmento, strada.t, 1, 80);
+    const indietro = distanzaIncrocio(strade, strada.indice, strada.segmento, strada.t, -1, 80);
+    if (indietro < avanti) { strada.dirX = -strada.dirX; strada.dirZ = -strada.dirZ; }
+    let libero = false;
+    for (let k = 0; k < 12 && !libero; k++) {
+      const px = strada.x - strada.dirZ * distanza, pz = strada.z + strada.dirX * distanza;
+      // libero se li' non c'e' asfalto e la linea di arresto non cade dentro l'incrocio
+      const lineaX = strada.x - strada.dirZ * strada.larghezza / 4, lineaZ = strada.z + strada.dirX * strada.larghezza / 4;
+      libero = !sullAsfalto(strade, px, pz, 0.3) && !copreAltra(strade, lineaX, lineaZ, strada.indice);
+      if (!libero) {
+        strada.x -= strada.dirX * 1.5;
+        strada.z -= strada.dirZ * 1.5;
+      }
+    }
+    strada.scarta = !libero;   // nessun posto libero entro 18 m: meglio nessun cartello che uno in mezzo alla strada
+    const sotto = stradaSotto(strade, strada.x, strada.z, strada.y);
+    if (sotto !== null) strada.y = sotto.y;
+  }
   // destra rispetto alla direzione della strada = (-dirZ, dirX)
   const nx = strada.x - strada.dirZ * distanza;
   const nz = strada.z + strada.dirX * distanza;
   // La faccia del cartello (verso -z del modello) deve guardare chi arriva
   const angolo = Math.atan2(strada.dirX, strada.dirZ);
   return { x: nx, y: Math.max(quotaTerreno(terreno, nx, nz), strada.y - 0.3), z: nz, angolo: angolo, strada: strada };
+}
+
+// (x, z) e' sulla carreggiata di una strada diversa da "indice"?
+function copreAltra(strade, x, z, indice) {
+  const cx = Math.floor(x / 40), cz = Math.floor(z / 40);
+  for (let ix = cx - 1; ix <= cx + 1; ix++) {
+    for (let iz = cz - 1; iz <= cz + 1; iz++) {
+      const pezzi = strade.griglia.get(ix + "," + iz);
+      if (!pezzi) continue;
+      for (const [s, i] of pezzi) {
+        if (s === indice || strade.lista[s].g) continue;
+        const p = strade.lista[s].p;
+        const ax = p[i], az = p[i + 2], bx = p[i + 3], bz = p[i + 5];
+        const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+        let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
+        t = Math.min(Math.max(t, 0), 1);
+        if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) < strade.lista[s].w / 2) return true;
+      }
+    }
+  }
+  return false;
 }
 
 function coppie(lista) {
@@ -160,9 +203,9 @@ function coppie(lista) {
 
 export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   const lampioni = coppie(dettagli.lampioni).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.6));
-  const semafori = coppie(dettagli.semafori).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.8));
-  const stop = coppie(dettagli.stop).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7));
-  const precedenze = coppie(dettagli.precedenza).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7));
+  const semafori = coppie(dettagli.semafori).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.8, true));
+  const stop = coppie(dettagli.stop).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7, true));
+  const precedenze = coppie(dettagli.precedenza).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7, true));
 
   // I lampioni girano il braccio verso il centro della strada
   for (const l of lampioni) l.angolo = l.angolo - Math.PI / 2;

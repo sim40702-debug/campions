@@ -46,13 +46,18 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   let sterzo = 0;
   if (tasti.sinistra) sterzo = sterzo + 1;
   if (tasti.destra) sterzo = sterzo - 1;
-  auto.sterzoDolce += Math.max(-dt * 4.5, Math.min(dt * 4.5, sterzo - auto.sterzoDolce));
+  // lo sterzo entra piano (piu' piano se si va forte) e torna dritto in fretta: niente scatti
+  const versoCentro = Math.abs(sterzo) < Math.abs(auto.sterzoDolce) || sterzo * auto.sterzoDolce < 0;
+  const passoSterzo = dt * (versoCentro ? 6 : 3.2 / (1 + Math.abs(auto.velocita) * 0.02));
+  auto.sterzoDolce += Math.max(-passoSterzo, Math.min(passoSterzo, sterzo - auto.sterzoDolce));
   auto.gas += ((tasti.su ? 1 : 0) - auto.gas) * Math.min(1, dt * 6);
 
   const sotto = quotaSuolo(auto, terreno, strade, auto.x, auto.z);
-  auto.suStrada = sotto.strada !== null;
-  auto.nomeStrada = auto.suStrada ? sotto.strada.nome : "";
-  auto.inGalleria = auto.suStrada && sotto.strada.galleria;
+  // fuori strada solo dopo 0.3 s senza asfalto sotto: un buco tra due pezzi di strada non frena la macchina
+  auto.senzaAsfalto = sotto.strada !== null ? 0 : (auto.senzaAsfalto || 0) + dt;
+  auto.suStrada = auto.senzaAsfalto < 0.3;
+  auto.nomeStrada = sotto.strada !== null ? sotto.strada.nome : (auto.suStrada ? auto.nomeStrada : "");
+  auto.inGalleria = sotto.strada !== null && sotto.strada.galleria;
 
   const vmax = s.vmax / 3.6;
   let v = auto.velocita;
@@ -62,14 +67,19 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   if (tasti.frenoDietro && v > 0) v = Math.max(0, v - 3 * dt);   // il freno a mano frena un po'
   if (!tasti.su && !tasti.giu) v -= Math.sign(v) * Math.min(Math.abs(v), 1.2 * dt);
   v -= v * Math.abs(v) * 0.0009 * dt;
-  if (!auto.suStrada) v = Math.min(v, s.fuoristrada / 3.6);
+  // sul prato la macchina rallenta (non si blocca di colpo)
+  if (!auto.suStrada && v > s.fuoristrada / 3.6) v = Math.max(s.fuoristrada / 3.6, v - 7 * dt);
   v -= G * Math.sin(auto.beccheggio) * dt;
 
   // --- sterzo e derapata
   // aiuto al controsterzo: se la macchina e' di traverso e non si usa il freno a mano, le ruote si raddrizzano da sole
   const sterzoAiuto = tasti.frenoDietro ? 0 : Math.max(-0.5, Math.min(0.5, -normale(auto.angolo - auto.direzione) * 0.9));
   const angoloRuote = Math.max(-1, Math.min(1, auto.sterzoDolce + sterzoAiuto)) * 0.6 / (1 + Math.abs(v) * 0.035);   // piu' si va forte, meno si sterza: stabile in rettilineo
-  const giroVoluto = v * Math.tan(angoloRuote) / dati.passo;
+  let giroVoluto = v * Math.tan(angoloRuote) / dati.passo;
+  // le gomme hanno un limite: in curva non si supera una certa forza di lato (1.25 g su asfalto, 0.75 g sul prato).
+  // Senza questo limite a 100 km/h un colpo di sterzo faceva girare la macchina su se stessa.
+  const giroMax = (auto.suStrada ? 12.3 : 7.4) * (tasti.frenoDietro ? 1.5 : 1) / Math.max(Math.abs(v), 4);
+  giroVoluto = Math.max(-giroMax, Math.min(giroMax, giroVoluto));
   // quanta presa hanno le gomme dietro
   let presaDietro = 1;
   if (tasti.frenoDietro && Math.abs(v) > 3) presaDietro = 0.35;                                // freno a mano
@@ -108,10 +118,10 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
     nuovaZ = auto.z;
   }
   if (edifici && !auto.inGalleria && dentroEdificio(edifici, nuovaX, nuovaZ, auto.y + 0.5)) {
-    if (Math.abs(v) > 5) {
+    if (Math.abs(v) > 11) {
       urto(auto, "Macchina distrutta contro un edificio");
     } else {
-      auto.velocita = -v * 0.2;
+      auto.velocita = -v * 0.3;   // sotto i 40 km/h rimbalza e basta
     }
     nuovaX = auto.x;
     nuovaZ = auto.z;
