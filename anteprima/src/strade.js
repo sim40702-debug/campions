@@ -117,6 +117,17 @@ function sistemaQuote(lista) {
     }
     if (cambiati === 0) break;
   }
+  // ultima lisciata: toglie gli spigoli rimasti (dossi e avvallamenti corti), senza spostare le quote in media
+  for (let giro = 0; giro < 10; giro++) {
+    for (const c of variabili) {
+      const v = c.vicini;
+      if (v.length < 2) continue;
+      let somma = 0, peso = 0;
+      for (let k = 0; k < v.length; k++) { somma += c.forze[k] * v[k].y; peso += c.forze[k]; }
+      c.nuova = c.y + (somma / peso - c.y) * 0.5;
+    }
+    for (const c of variabili) if (c.vicini.length >= 2) c.y = c.nuova;
+  }
   for (const c of variabili) { delete c.vicini; delete c.forze; }
   // quote sulle strade; gallerie e ponti in linea retta tra i capi (i nodi lungo un ponte prendono la sua quota)
   for (let giro = 0; giro < 3; giro++) for (let s = 0; s < lista.length; s++) {   // 3 giri: un ponte puo' finire a meta' di un altro
@@ -966,18 +977,47 @@ function aggiungiRotonde(strade, scena) {
   const erba = new THREE.MeshStandardMaterial({ color: 0x5f8f3d, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
   const cordolo = new THREE.MeshStandardMaterial({ color: 0xd8d5cd, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
   let quante = 0;
-  for (const s of strade.lista) {
-    if (s.j !== "roundabout" || s.p.length < 12) continue;
-    const p = s.p;
-    const n = p.length / 3;
-    let cx = 0, cy = 0, cz = 0;
-    for (let i = 0; i < n; i++) { cx += p[i * 3]; cy += p[i * 3 + 1]; cz += p[i * 3 + 2]; }
+  // Una rotonda in OpenStreetMap e' spesso spezzata in piu' pezzi (archi): si ricompongono gli anelli unendo i pezzi
+  // che si toccano ai capi. L'isola si disegna SOLO per un anello chiuso e rotondo, al suo centro: un arco da solo
+  // non ha un centro (prima ogni arco aveva il suo "cerchio verde", che finiva in mezzo alla strada).
+  const pezzi = strade.lista.filter(function (s) { return s.j === "roundabout" && s.p.length >= 6; });
+  const capo = function (s, fine) { const i = fine ? s.p.length - 3 : 0; return chiaveNodo(s.p[i], s.p[i + 2]); };
+  const gruppo = pezzi.map(function (_, i) { return i; });
+  const radice = function (i) { while (gruppo[i] !== i) { gruppo[i] = gruppo[gruppo[i]]; i = gruppo[i]; } return i; };
+  const aiCapi = new Map();
+  pezzi.forEach(function (s, i) {
+    for (const k of [capo(s, false), capo(s, true)]) {
+      if (aiCapi.has(k)) gruppo[radice(i)] = radice(aiCapi.get(k)); else aiCapi.set(k, i);
+    }
+  });
+  const anelli = new Map();
+  pezzi.forEach(function (s, i) { const r = radice(i); if (!anelli.has(r)) anelli.set(r, []); anelli.get(r).push(s); });
+  for (const archi of anelli.values()) {
+    // chiuso: ogni capo e' condiviso da due capi di pezzo (o il pezzo unico torna su se stesso)
+    const conta = new Map();
+    for (const s of archi) for (const k of [capo(s, false), capo(s, true)]) conta.set(k, (conta.get(k) || 0) + 1);
+    let chiuso = true;
+    for (const v of conta.values()) if (v !== 2) chiuso = false;
+    if (!chiuso) continue;
+    let cx = 0, cy = 0, cz = 0, n = 0, larga = 0;
+    for (const s of archi) {
+      larga = Math.max(larga, s.w);
+      for (let i = 0; i < s.p.length; i += 3) { cx += s.p[i]; cy += s.p[i + 1]; cz += s.p[i + 2]; n++; }
+    }
     cx /= n; cy /= n; cz /= n;
-    let raggio = 0;
-    for (let i = 0; i < n; i++) raggio += Math.hypot(p[i * 3] - cx, p[i * 3 + 2] - cz);
+    let raggio = 0, minimo = Infinity, massimo = 0;
+    for (const s of archi) for (let i = 0; i < s.p.length; i += 3) {
+      const d = Math.hypot(s.p[i] - cx, s.p[i + 2] - cz);
+      raggio += d; minimo = Math.min(minimo, d); massimo = Math.max(massimo, d);
+    }
     raggio /= n;
-    const interno = raggio - s.w / 2 - 0.45;
-    if (interno < 1.5 || raggio > 70) continue;
+    if (massimo - minimo > raggio * 0.35) continue;   // non e' rotondo: niente isola
+    let interno = minimo - larga / 2 - 0.45;
+    // nessuna strada deve passare dentro l'isola
+    const dentro = stradaVicina(strade, cx, cz, interno + 12);
+    if (dentro !== null && !dentro.galleria) interno = Math.min(interno, dentro.distanza - dentro.larghezza / 2 - 0.45);
+    // le rotonde enormi (piazze) restano con il terreno vero al centro: un disco verde di 50 m sarebbe finto
+    if (interno < 1.5 || interno > 22) continue;
     const isola = new THREE.Mesh(new THREE.CircleGeometry(interno, 28).rotateX(-Math.PI / 2), erba);
     isola.position.set(cx, cy + 0.16, cz);
     isola.receiveShadow = true;
@@ -1001,17 +1041,22 @@ function aggiungiIncroci(strade, materiale, scena) {
     for (let i = 0; i < n; i++) {
       const k = Math.round(p[i * 3] * 2) + "," + Math.round(p[i * 3 + 2] * 2);
       let e = nodi.get(k);
-      if (!e) { e = { x: p[i * 3], y: p[i * 3 + 1], z: p[i * 3 + 2], w: 0, n: 0, meta: false, fine: false }; nodi.set(k, e); }
+      if (!e) { e = { x: p[i * 3], y: p[i * 3 + 1], z: p[i * 3 + 2], bracci: [], n: 0, meta: false, fine: false }; nodi.set(k, e); }
       e.n++;
-      e.w = Math.max(e.w, larghezzaIn(s, i));
-      if (i > 0 && i < n - 1) e.meta = true; else e.fine = true;
+      // i "bracci" che arrivano al nodo: una strada che passa conta due volte, una che finisce una
+      const w = larghezzaIn(s, i);
+      e.bracci.push(w);
+      if (i > 0 && i < n - 1) { e.meta = true; e.bracci.push(w); } else e.fine = true;
     }
   }
   const pos = [], uv = [];
   let quanti = 0;
   for (const e of nodi.values()) {
     if (!(e.n >= 3 || (e.n === 2 && e.meta && e.fine))) continue;
-    const r = e.w / 2 * 1.12;
+    // raggio = meta' della SECONDA larghezza piu' grande: il disco riempie l'incrocio ma non sporge mai dalla
+    // strada (prima usava la piu' larga, e dove una strada larga diventava stretta restava un "cerchio" in mezzo)
+    e.bracci.sort(function (a, b) { return b - a; });
+    const r = e.bracci[1] / 2 * 0.98;
     const y = e.y + 0.022;
     for (let k = 0; k < 14; k++) {
       const a0 = k / 14 * Math.PI * 2, a1 = (k + 1) / 14 * Math.PI * 2;

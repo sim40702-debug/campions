@@ -9,6 +9,9 @@ La versione principale del gioco resta quella in Unreal Engine 5.
 - **Il terreno non copre più le strade**: sotto ogni carreggiata il terreno sta sotto l'asfalto (controllato punto per punto); dove passano due strade a quote diverse (tornanti) vince la più bassa.
 - **Muri di sostegno**: dove il terreno a lato è più basso della strada (tornanti, mezza costa) un muro scende dal bordo fino a terra: la strada non resta sospesa nel vuoto.
 - Scarpate più dolci dove la strada è scavata o rialzata; sotto i ponti il terreno non viene riempito.
+- **Niente più cerchi verdi in mezzo alla strada**: l'isola della rotonda si disegna solo al centro di un anello completo e rotondo (prima ogni pezzo di rotonda aveva il suo cerchio). Le rotonde enormi restano con il terreno vero al centro.
+- **Niente più cerchi di asfalto che sporgono**: il disco che riempie l'incrocio non esce più dalla carreggiata dove una strada larga diventa stretta.
+- Spigoli residui delle quote lisciati (dossi e avvallamenti corti).
 
 ### Novità della 0.14.5 – strade sullo stesso piano, macchina guidabile, cartelli veri
 
