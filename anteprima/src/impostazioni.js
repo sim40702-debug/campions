@@ -172,6 +172,46 @@ export function preparaMenu(mondo, avviaTest, avviaBenchmark) {
     applicaQualita(qualitaSalvata(), mondo);
   });
 
+  // Menu in alto: meteo e ora del giorno (sempre a portata di mano)
+  const selMeteo = document.getElementById("menuMeteoAlto");
+  const selOra = document.getElementById("menuOraAlto");
+  for (const m of ELENCO_METEO) {
+    const o = document.createElement("option");
+    o.value = m.chiave;
+    o.textContent = m.nome;
+    selMeteo.appendChild(o);
+  }
+  const ORE = [["Alba", 6.5], ["Mattina", 9], ["Mezzogiorno", 12], ["Pomeriggio (14:00)", 14], ["Tramonto", 18.4], ["Notte", 22.5]];
+  for (const [nome, ora] of ORE) {
+    const o = document.createElement("option");
+    o.value = String(ora);
+    o.textContent = nome;
+    selOra.appendChild(o);
+  }
+  const personale = document.createElement("option");
+  personale.value = "x";
+  personale.textContent = "Ora libera";
+  selOra.appendChild(personale);
+  selMeteo.addEventListener("change", function () {
+    impostaMeteo(amb, selMeteo.value);
+    selMeteo.blur();
+    aggiornaMeteo();
+  });
+  selOra.addEventListener("change", function () {
+    if (selOra.value !== "x") impostaOra(amb, parseFloat(selOra.value));
+    selOra.blur();
+    mostraOra();
+  });
+  function sincronizzaAlto() {
+    if (document.activeElement !== selMeteo) selMeteo.value = amb.meteo;
+    if (document.activeElement !== selOra) {
+      const v = ORE.find(function (x) { return Math.abs(x[1] - amb.ora) < 0.06; });
+      selOra.value = v ? String(v[1]) : "x";
+    }
+  }
+  sincronizzaAlto();
+  setInterval(sincronizzaAlto, 500);
+
   function apriChiudi() {
     menu.style.display = menu.style.display === "block" ? "none" : "block";
     aggiornaPulsanti();

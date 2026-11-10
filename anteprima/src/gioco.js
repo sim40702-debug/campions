@@ -13,13 +13,13 @@ import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
-import { caricaEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
+import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
 import { creaLuoghi } from "./luoghi.js";
 import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.1";
+const VERSIONE = "0.14.2";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -281,6 +281,8 @@ async function avvia() {
 
     await mostraStato("Caricamento degli edifici (OpenStreetMap)...");
     const edifici = await caricaEdifici();
+    const tolti = pulisciEdifici(edifici, strade);   // niente edifici in mezzo alla strada
+    console.info("Edifici tolti perche' sull'asfalto: " + tolti);
     const dettagli = await caricaDettagli();
     const luoghi = creaLuoghi(dettagli.localita);
     await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");

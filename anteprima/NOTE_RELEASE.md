@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.1) – meteo completo, benchmark, mondo più curato
+### Novità di questa versione (0.14.2) – strade e edifici più chiari, meteo in alto
+
+- **Niente più edifici in mezzo alla strada**: all'avvio vengono tolti gli edifici che cadono sull'asfalto (strade ed edifici non vengono spostati).
+- **Strade più leggibili**: asfalto più chiaro, mezzeria e righe di bordo più larghe.
+- **Di default: sereno alle 14:00**. In alto a sinistra due menu: **meteo** (sereno, parzialmente nuvoloso, nuvoloso, nebbia, pioggia leggera/intensa, neve leggera/intensa, automatico) e **ora** (alba, mattina, mezzogiorno, pomeriggio, tramonto, notte).
+
+### Novità della 0.14.1 – meteo completo, benchmark, mondo più curato
 
 - **Meteo completo**: sereno, parzialmente nuvoloso, nuvoloso, nebbia, **pioggia leggera e intensa**, **neve leggera e intensa**, più la modalità **Automatico** (cambia da sola, in base al mese). Pioggia e neve sono particelle 3D; l'asfalto si **bagna** (più scuro, pozzanghere lucide, riflessi dei lampioni più forti) e la **neve si deposita** su tetti, prati, strade e alberi.
 - **Neve coerente con la geografia**: la quota della neve dipende dal mese; a Locarno (200 m) nevica solo in pieno inverno, in montagna molto prima, e con una perturbazione "da neve" sotto la quota piove. Nelle Impostazioni si può togliere "Meteo realistico" per vedere la neve ovunque. In galleria non piove.

@@ -169,7 +169,7 @@ function texturaAsfalto(anisotropia) {
   c.width = L;
   c.height = L;
   const g = c.getContext("2d");
-  g.fillStyle = "#6c6a66";
+  g.fillStyle = "#8d8b86";
   g.fillRect(0, 0, L, L);
   // toppe e variazioni di colore
   for (let i = 0; i < 38; i++) {
@@ -470,7 +470,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       nastroConUV(strada.p, lar, 0, gruppo.gallerie, bianco);
     } else {
       // leggera variazione di colore da strada a strada (asfalti piu' nuovi o piu' vecchi)
-      const v = 0.82 + ((indice * 2654435761) % 1000) / 1000 * 0.34;
+      const v = 0.9 + ((indice * 2654435761) % 1000) / 1000 * 0.2;
       nastroConUV(strada.p, lar, 0, gruppo.asfalto, new THREE.Color(v, v, v));
     }
     if (strada.w >= 5.5) {
@@ -547,7 +547,7 @@ function aggiungiLinee(indice, strada, strade, g) {
         continue;
       }
       if (precedente !== null) {
-        const mezza = lato === 0 ? 0.075 : 0.07;
+        const mezza = lato === 0 ? 0.11 : 0.1;
         const y0 = precedente.y + 0.03, y1 = c.y + 0.03;
         const base = g.posizioni.length / 3;
         g.posizioni.push(
@@ -619,6 +619,7 @@ export function stradaSotto(strade, x, z, quotaAttuale) {
             y: y,
             nome: strada.n,
             galleria: strada.g,
+            ponte: strada.b,
             differenza: differenza,
             direzioneX: bx - ax,
             direzioneZ: bz - az
@@ -678,7 +679,8 @@ export function stradaVicina(strade, x, z, raggio) {
           dirZ: (bz - az) / lunghezza,
           larghezza: Math.max(larghezzaIn(strada, i / 3), larghezzaIn(strada, i / 3 + 1)),
           distanza: distanza,
-          galleria: strada.g
+          galleria: strada.g,
+          ponte: strada.b
         };
       }
     }

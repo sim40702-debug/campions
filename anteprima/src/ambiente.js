@@ -181,11 +181,11 @@ export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
   scena.add(nuvole);
 
   const ambiente = {
-    ora: parseFloat(leggi(CHIAVE_ORA, "15.5")),
-    meteo: leggi(CHIAVE_METEO, "variabile"),
+    ora: parseFloat(leggi(CHIAVE_ORA, "14")),
+    meteo: leggi(CHIAVE_METEO, "sereno"),
     realistico: leggi(CHIAVE_REALISTICO, "1") === "1",   // la neve dipende da quota e stagione
     mese: new Date().getMonth(),
-    meteoAttivo: "variabile",
+    meteoAttivo: "sereno",
     pioggia: 0, neve: 0,                                 // intensita' attuale delle particelle (con transizione)
     sottoCopertura: 0,                                   // in galleria niente pioggia
     ciclo: leggi(CHIAVE_CICLO, "0") === "1",
@@ -212,7 +212,7 @@ export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
     osservatori: []           // funzioni chiamate ad ogni fotogramma (lampioni, ecc.)
   };
   if (!METEO[ambiente.meteo] && ambiente.meteo !== "auto") ambiente.meteo = "variabile";
-  if (!(ambiente.ora >= 0 && ambiente.ora < 24)) ambiente.ora = 15.5;
+  if (!(ambiente.ora >= 0 && ambiente.ora < 24)) ambiente.ora = 14;
   aggiornaAmbiente(ambiente, 0, new THREE.Vector3());
   return ambiente;
 }

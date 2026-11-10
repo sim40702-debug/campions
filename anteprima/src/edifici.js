@@ -29,17 +29,11 @@ export const NOMI_ZONE = ["Periferia", "Residenziale", "Centro storico", "Commer
 
 const FACCIATE = ["persiane", "finestre", "moderno", "storico", "pietra"];
 
-export async function caricaEdifici() {
-  const risposta = await fetch("dati/edifici.json");
-  if (!risposta.ok) {
-    return { lista: [], griglia: new Map() };   // senza edifici il gioco funziona lo stesso
-  }
-  const dati = await risposta.json();
-
+function costruisciGriglia(lista) {
   // Griglia per le collisioni: per ogni cella gli edifici che la toccano
   const griglia = new Map();
-  for (let i = 0; i < dati.edifici.length; i++) {
-    const p = dati.edifici[i].p;
+  for (let i = 0; i < lista.length; i++) {
+    const p = lista[i].p;
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (let k = 0; k < p.length; k += 2) {
       minX = Math.min(minX, p[k]);
@@ -55,6 +49,52 @@ export async function caricaEdifici() {
       }
     }
   }
+  return griglia;
+}
+
+// Toglie gli edifici che stanno IN MEZZO alla strada: i contorni OpenStreetMap e le strade (linee al centro con
+// larghezza stimata) a volte non combaciano. Un edificio si toglie se il suo centro, o almeno 2 punti del contorno
+// (vertici e meta' dei lati), cadono sull'asfalto di una strada (non in galleria; sui ponti solo se alla stessa quota).
+// Ritorna quanti ne ha tolti. Non sposta nulla: strade ed edifici restano dove sono nei dati.
+export function pulisciEdifici(edifici, strade) {
+  const dentroStrada = function (x, z, base) {
+    const s = stradaVicina(strade, x, z, 14);
+    if (s === null || s.galleria) return false;
+    if (s.ponte && Math.abs(s.y - base) > 4) return false;
+    return s.distanza < s.larghezza / 2 - 0.2;
+  };
+  const tenuti = [];
+  for (const e of edifici.lista) {
+    const p = e.p;
+    let cx = 0, cz = 0;
+    for (let k = 0; k < p.length; k += 2) { cx += p[k]; cz += p[k + 1]; }
+    cx /= p.length / 2;
+    cz /= p.length / 2;
+    let dentro = dentroStrada(cx, cz, e.b) ? 2 : 0;
+    const n = p.length / 2;
+    for (let k = 0; k < n && dentro < 2; k++) {
+      const j = (k + 1) % n;
+      if (dentroStrada(p[k * 2], p[k * 2 + 1], e.b)) dentro++;
+      if (dentro < 2 && dentroStrada((p[k * 2] + p[j * 2]) / 2, (p[k * 2 + 1] + p[j * 2 + 1]) / 2, e.b)) dentro++;
+    }
+    if (dentro < 2) tenuti.push(e);
+  }
+  const tolti = edifici.lista.length - tenuti.length;
+  if (tolti > 0) {
+    edifici.lista = tenuti;
+    edifici.griglia = costruisciGriglia(tenuti);
+  }
+  return tolti;
+}
+
+export async function caricaEdifici() {
+  const risposta = await fetch("dati/edifici.json");
+  if (!risposta.ok) {
+    return { lista: [], griglia: new Map() };   // senza edifici il gioco funziona lo stesso
+  }
+  const dati = await risposta.json();
+
+  const griglia = costruisciGriglia(dati.edifici);
   return { lista: dati.edifici, griglia: griglia, zone: null };
 }
 
