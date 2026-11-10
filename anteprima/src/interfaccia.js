@@ -124,10 +124,30 @@ export function immagineMinimappa() {
   return { canvas: sfondoMinimappa, scala: scala, mezzoX: mezzoX, mezzoZ: mezzoZ };
 }
 
+// Schermata di caricamento: testo, barra (passi fatti) e secondi passati.
+// Ritorna una promessa: con "await" si lascia al browser il tempo di disegnare il testo
+// prima di cominciare un lavoro pesante.
+const PASSI_CARICAMENTO = 15;   // 7 passi + 7 moto 3D + l'ultimo
+let passiFatti = 0;
+const inizioCaricamento = Date.now();
+const orologioCaricamento = setInterval(function () {
+  const secondi = Math.round((Date.now() - inizioCaricamento) / 1000);
+  document.getElementById("tempoCarica").textContent = secondi + " s";
+}, 500);
+
 export function mostraStato(testo) {
   document.getElementById("stato").textContent = testo;
+  passiFatti = passiFatti + 1;
+  const percento = Math.min(100, Math.round((passiFatti / PASSI_CARICAMENTO) * 100));
+  document.getElementById("riempimentoCarica").style.width = percento + "%";
+  return new Promise(function (fatto) {
+    requestAnimationFrame(function () {
+      setTimeout(fatto, 0);
+    });
+  });
 }
 
 export function nascondiCaricamento() {
+  clearInterval(orologioCaricamento);
   document.getElementById("caricamento").style.display = "none";
 }

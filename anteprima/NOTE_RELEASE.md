@@ -3,7 +3,11 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.12.0)
+### Novità di questa versione (0.12.1)
+
+- **Schermata di caricamento animata**: una ruota che gira e la strada che scorre, la barra dei passi fatti e i secondi passati. La ruota gira anche quando il programma lavora sodo: se resta ferma a lungo, il programma è bloccato.
+
+### Novità della 0.12.0
 
 - **Scegli dove partire** (pulsante Partenza o tasto P): clic su un punto della mappa (si parte dalla strada più vicina) oppure su uno dei 35 paesi della lista. La scelta viene ricordata: la volta dopo il gioco parte da lì.
 - **Aggiornamento pulito**: dalla prossima volta il pulsante Aggiorna toglie la versione vecchia, installa la nuova e la riapre, senza lasciare file in giro.

@@ -197,32 +197,32 @@ function mettiSullaStrada(moto, strade, x, z) {
 // --- Avvio ---------------------------------------------------------------------
 async function avvia() {
   try {
-    mostraStato("Caricamento del terreno (swisstopo)...");
+    await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
     const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore);
 
-    mostraStato("Caricamento delle strade (OpenStreetMap)...");
+    await mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
     aggiungiStrade(strade, scena, terreno);
     aggiungiOpere(strade, scena, terreno);
 
-    mostraStato("Fiumi e torrenti...");
+    await mostraStato("Fiumi e torrenti...");
     aggiungiAcqua(await caricaAcqua(), scena, terreno);
 
-    mostraStato("Caricamento degli edifici (OpenStreetMap)...");
+    await mostraStato("Caricamento degli edifici (OpenStreetMap)...");
     const edifici = await caricaEdifici();
     aggiungiEdifici(edifici, scena);
 
-    mostraStato("Treni, funicolari e teleferiche...");
+    await mostraStato("Treni, funicolari e teleferiche...");
     const trasporti = await caricaTrasporti();
     const mobili = aggiungiTrasporti(trasporti, scena);
 
-    mostraStato("Segnaletica e lampioni...");
+    await mostraStato("Segnaletica e lampioni...");
     const dettagli = await caricaDettagli();
     aggiungiDettagli(dettagli, scena, terreno, strade);
     preparaMinimappa(strade, terreno, dettagli.localita, trasporti);
 
-    mostraStato("Preparazione dei boschi...");
+    await mostraStato("Preparazione dei boschi...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
 
     await caricaModelli3D(function (nome) {

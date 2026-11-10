@@ -21,6 +21,72 @@ canvas {
   z-index: 10;
 }
 
+#ruotaCarica {
+  width: 90px;
+  height: 90px;
+  margin: 28px 0 10px;
+  border-radius: 50%;
+  border: 9px solid #111;
+  box-shadow: 0 0 0 3px #444 inset;
+  /* raggi della ruota */
+  background: repeating-conic-gradient(#9aa3ad 0deg 3deg, transparent 3deg 30deg), #2a3442;
+  animation: giraRuota 0.8s linear infinite;
+  will-change: transform;
+}
+
+#mozzoCarica {
+  width: 18px;
+  height: 18px;
+  margin: 27px auto;
+  border-radius: 50%;
+  background: #e8323c;
+}
+
+#stradaCarica {
+  width: 220px;
+  height: 8px;
+  overflow: hidden;
+  background: #3a3f46;
+  border-radius: 4px;
+}
+
+#righeCarica {
+  width: 440px;
+  height: 2px;
+  margin-top: 3px;
+  background: repeating-linear-gradient(90deg, #f2f2f2 0 20px, transparent 20px 40px);
+  animation: scorreStrada 0.5s linear infinite;
+  will-change: transform;
+}
+
+#barraCarica {
+  width: 260px;
+  height: 6px;
+  border-radius: 3px;
+  background: #2f3a48;
+  overflow: hidden;
+}
+
+#riempimentoCarica {
+  width: 0%;
+  height: 100%;
+  background: #e8323c;
+  transition: width 0.3s;
+}
+
+#tempoCarica {
+  font-size: 12px;
+  color: #8f9aa8;
+}
+
+@keyframes giraRuota {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scorreStrada {
+  to { transform: translateX(-40px); }
+}
+
 #caricamento h1 {
   margin: 0;
   letter-spacing: 3px;
