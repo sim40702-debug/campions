@@ -234,6 +234,15 @@ collega(PAESI[0], PAESI[4], "Via Gordola", "secondary", 7.5);
 collega(PAESI[6], PAESI[0], "Via Losone", "secondary", 7.5);
 collega(PAESI[6], PAESI[7], "Via Ponte Brolla", "tertiary", 6.5);
 collega(PAESI[4], PAESI[3], "Via Tenero", "tertiary", 6.5);
+// rotonde (anello chiuso con junction=roundabout) in mezzo a due paesi
+for (const [cx, cz] of [[PAESI[1].x + 40, PAESI[1].z + 40], [PAESI[0].x - 33, PAESI[0].z - 20]]) {
+  const pts = [];
+  for (let k = 0; k <= 24; k++) { const a = (k % 24) / 24 * Math.PI * 2; pts.push([cx + Math.cos(a) * 17, cz + Math.sin(a) * 17]); }
+  strada("secondary", "Rotonda", 7, pts, { j: "roundabout" });
+  strada("secondary", "Ingresso rotonda", 7, densifica([cx - 120, cz], [cx - 17, cz], 15));
+  strada("secondary", "Uscita rotonda", 7, densifica([cx + 17, cz], [cx + 120, cz], 15));
+  strada("secondary", "Ingresso nord", 7, densifica([cx, cz - 120], [cx, cz - 17], 15));
+}
 // strada di montagna
 {
   const pts = [];

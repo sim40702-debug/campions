@@ -31,24 +31,28 @@ export function aggiungiMeteo(materiale, ambiente, opzioni) {
     const blocco = `
       {
         vec3 nMondo = inverseTransformDirection(normal, viewMatrix);
-        float rm = hMeteo(floor(vMeteoPos.xz * 0.6));
-        float grana = nMeteo(vMeteoPos.xz * 0.9) * 0.6 + nMeteo(vMeteoPos.xz * 4.1) * 0.4;
-        ${o.bagnato > 0 ? `
-        float b = uBagnato * ${o.bagnato.toFixed(2)};
-        float su = smoothstep(0.5, 0.9, nMondo.y);
-        diffuseColor.rgb *= mix(1.0, ${o.pozzanghere ? "0.58" : "0.7"}, b);
-        ${o.pozzanghere ? `
-        float pozza = smoothstep(0.58, 0.7, nMeteo(vMeteoPos.xz * 0.23) * 0.65 + nMeteo(vMeteoPos.xz * 0.7) * 0.35) * su;
-        roughnessFactor = mix(roughnessFactor, mix(0.5, 0.09, pozza), b * su);
-        diffuseColor.rgb *= mix(1.0, 0.8, pozza * b);` : `
-        roughnessFactor = mix(roughnessFactor, max(0.18, roughnessFactor * 0.45), b);`}` : ""}
         ${o.neve > 0 ? `
         float fissa = smoothstep(uQNeveFissa - 160.0, uQNeveFissa + 160.0, vMeteoPos.y);
         float dinamica = smoothstep(uQNeveDin - 90.0, uQNeveDin + 150.0, vMeteoPos.y) * uNeveDin;
-        float coperta = max(fissa, dinamica) * smoothstep(0.42, 0.82, nMondo.y) * ${o.neve.toFixed(2)};
-        coperta = clamp((coperta - (grana - 0.5) * 0.45) * 1.25, 0.0, 1.0);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.93, 0.98) * (0.92 + rm * 0.08), coperta);
-        roughnessFactor = mix(roughnessFactor, 0.88, coperta);` : ""}
+        float base = max(fissa, dinamica) * smoothstep(0.42, 0.82, nMondo.y) * ${o.neve.toFixed(2)};` : "float base = 0.0;"}
+        ${o.bagnato > 0 ? `float b = uBagnato * ${o.bagnato.toFixed(2)};` : "float b = 0.0;"}
+        // il rumore (costoso) si calcola solo dove c'e' bagnato o neve: nel sereno questo blocco non costa quasi nulla
+        if (b > 0.002 || base > 0.002) {
+          float rm = hMeteo(floor(vMeteoPos.xz * 0.6));
+          float grana = nMeteo(vMeteoPos.xz * 0.9) * 0.6 + nMeteo(vMeteoPos.xz * 4.1) * 0.4;
+          ${o.bagnato > 0 ? `
+          float su = smoothstep(0.5, 0.9, nMondo.y);
+          diffuseColor.rgb *= mix(1.0, ${o.pozzanghere ? "0.58" : "0.7"}, b);
+          ${o.pozzanghere ? `
+          float pozza = smoothstep(0.58, 0.7, nMeteo(vMeteoPos.xz * 0.23) * 0.65 + nMeteo(vMeteoPos.xz * 0.7) * 0.35) * su;
+          roughnessFactor = mix(roughnessFactor, mix(0.5, 0.09, pozza), b * su);
+          diffuseColor.rgb *= mix(1.0, 0.8, pozza * b);` : `
+          roughnessFactor = mix(roughnessFactor, max(0.18, roughnessFactor * 0.45), b);`}` : ""}
+          ${o.neve > 0 ? `
+          float coperta = clamp((base - (grana - 0.5) * 0.45) * 1.25, 0.0, 1.0);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.93, 0.98) * (0.92 + rm * 0.08), coperta);
+          roughnessFactor = mix(roughnessFactor, 0.88, coperta);` : ""}
+        }
       }`;
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>

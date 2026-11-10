@@ -457,6 +457,8 @@ def main():
             "g": pezzo["galleria"],
             "p": locali_3d(pezzo, centro_est, centro_nord, SOPRA_TERRENO_M),
         }
+        if tag.get("junction") in ("roundabout", "circular"):
+            voce["j"] = "roundabout"   # rotonda: nel gioco ha l'isola centrale e il cordolo
         if min(pezzo["larghezze"]) < pezzo["larghezza"] - 0.05:
             voce["ww"] = pezzo["larghezze"]
             strette = strette + 1

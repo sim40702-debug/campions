@@ -411,6 +411,79 @@ function direzioneLocale(a, b) {
 
 let zonaQuiLocale = function () { return 1; };
 
+// Rotonde: isola centrale erbosa con cordolo (la strada ad anello e' gia' nei dati OSM con junction=roundabout)
+function aggiungiRotonde(strade, scena) {
+  const erba = new THREE.MeshStandardMaterial({ color: 0x5f8f3d, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+  const cordolo = new THREE.MeshStandardMaterial({ color: 0xd8d5cd, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
+  let quante = 0;
+  for (const s of strade.lista) {
+    if (s.j !== "roundabout" || s.p.length < 12) continue;
+    const p = s.p;
+    const n = p.length / 3;
+    let cx = 0, cy = 0, cz = 0;
+    for (let i = 0; i < n; i++) { cx += p[i * 3]; cy += p[i * 3 + 1]; cz += p[i * 3 + 2]; }
+    cx /= n; cy /= n; cz /= n;
+    let raggio = 0;
+    for (let i = 0; i < n; i++) raggio += Math.hypot(p[i * 3] - cx, p[i * 3 + 2] - cz);
+    raggio /= n;
+    const interno = raggio - s.w / 2 - 0.45;
+    if (interno < 1.5 || raggio > 70) continue;
+    const isola = new THREE.Mesh(new THREE.CircleGeometry(interno, 28).rotateX(-Math.PI / 2), erba);
+    isola.position.set(cx, cy + 0.16, cz);
+    isola.receiveShadow = true;
+    const anello = new THREE.Mesh(new THREE.RingGeometry(interno, interno + 0.45, 28).rotateX(-Math.PI / 2), cordolo);
+    anello.position.set(cx, cy + 0.17, cz);
+    anello.receiveShadow = true;
+    scena.add(isola, anello);
+    quante++;
+  }
+  return quante;
+}
+
+// Incroci: un disco di asfalto sul nodo dove si incontrano 3 o piu' strade (o dove una strada finisce su un'altra):
+// gli angoli diventano arrotondati come negli incroci veri e non restano "buchi" tra i nastri.
+function aggiungiIncroci(strade, materiale, scena) {
+  const nodi = new Map();
+  for (const s of strade.lista) {
+    if (s.g || s.b || s.w < 3.5) continue;
+    const p = s.p;
+    const n = p.length / 3;
+    for (let i = 0; i < n; i++) {
+      const k = Math.round(p[i * 3] * 2) + "," + Math.round(p[i * 3 + 2] * 2);
+      let e = nodi.get(k);
+      if (!e) { e = { x: p[i * 3], y: p[i * 3 + 1], z: p[i * 3 + 2], w: 0, n: 0, meta: false, fine: false }; nodi.set(k, e); }
+      e.n++;
+      e.w = Math.max(e.w, larghezzaIn(s, i));
+      if (i > 0 && i < n - 1) e.meta = true; else e.fine = true;
+    }
+  }
+  const pos = [], uv = [];
+  let quanti = 0;
+  for (const e of nodi.values()) {
+    if (!(e.n >= 3 || (e.n === 2 && e.meta && e.fine))) continue;
+    const r = e.w / 2 * 1.12;
+    const y = e.y + 0.008;
+    for (let k = 0; k < 14; k++) {
+      const a0 = k / 14 * Math.PI * 2, a1 = (k + 1) / 14 * Math.PI * 2;
+      pos.push(e.x, y, e.z, e.x + Math.cos(a0) * r, y, e.z + Math.sin(a0) * r, e.x + Math.cos(a1) * r, y, e.z + Math.sin(a1) * r);
+      uv.push(0.5, e.x / 8, 0.2, e.z / 8, 0.8, e.z / 8);
+    }
+    quanti++;
+  }
+  if (quanti === 0) return 0;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(pos.length).fill(1), 3));   // il materiale usa i colori dei vertici
+  g.computeVertexNormals();
+  g.computeBoundingSphere();
+  const m = new THREE.Mesh(g, materiale);
+  m.receiveShadow = true;
+  m.matrixAutoUpdate = false;
+  scena.add(m);
+  return quanti;
+}
+
 export function aggiungiStrade(strade, scena, terreno, contesto) {
   const ctx = contesto || {};
   const anisotropia = 8;
@@ -430,9 +503,9 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   });
 
   if (ctx.ambiente) {
-    aggiungiMeteo(asfaltoMateriale, ctx.ambiente, { neve: 0.85, bagnato: 1, pozzanghere: true });
-    aggiungiMeteo(marciapiedeMateriale, ctx.ambiente, { neve: 0.95, bagnato: 0.9 });
-    aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0.8, bagnato: 0.5 });
+    aggiungiMeteo(asfaltoMateriale, ctx.ambiente, { neve: 0.5, bagnato: 1, pozzanghere: true });   // la strada resta leggibile anche con la neve
+    aggiungiMeteo(marciapiedeMateriale, ctx.ambiente, { neve: 0.9, bagnato: 0.9 });
+    aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0, bagnato: 0.2 });   // le righe restano sempre bianche e visibili
   }
 
   // Marciapiedi: serve sapere dove la citta' e' fitta e dove ci sono muri
@@ -501,6 +574,9 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     }
     scena.add(istanze);
   }
+
+  aggiungiIncroci(strade, asfaltoMateriale, scena);
+  aggiungiRotonde(strade, scena);
 
   for (const g of gruppi.values()) {
     for (const [dati, materiale, ricevi] of [[g.asfalto, asfaltoMateriale, true], [g.gallerie, galleriaMateriale, true], [g.marciapiedi, marciapiedeMateriale, true], [g.righe, righeMateriale, true]]) {

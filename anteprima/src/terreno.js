@@ -160,14 +160,20 @@ function coloreTerreno(quota, pendenza, livelloLago, bosco, colore, x, z, uso) {
 }
 
 // Crea la geometria di un pezzo di terreno, prendendo un punto ogni "salto"
-function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, centroZ) {
+// Costruisce un pezzo di terreno A PASSI: ogni "yield" lascia respirare il gioco (un pezzo dettagliato ha 260 000 punti:
+// fatto tutto insieme bloccava il gioco per 100-300 ms ogni volta che ci si avvicinava a un pezzo nuovo).
+// Le normali (la luce) si calcolano dalle quote vicine, senza passare da computeVertexNormals (molto piu' lento).
+function* costruisciPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, centroZ) {
   const n = terreno.colonne;
   const lato = QUAD_PEZZO / salto + 1;
-  const posizioni = new Float32Array(lato * lato * 3);
-  const colori = new Float32Array(lato * lato * 3);
-  const uv = new Float32Array(lato * lato * 2);
+  const totale = lato * lato + (lato - 1) * 4 + 1;
+  const pos2 = new Float32Array(totale * 3);
+  const col2 = new Float32Array(totale * 3);
+  const nor2 = new Float32Array(totale * 3);
+  const uv2 = new Float32Array(totale * 2);
   const colore = new THREE.Color();
   const q = terreno.quote;
+  const passo = terreno.passo;
 
   for (let r = 0; r < lato; r++) {
     for (let c = 0; c < lato; c++) {
@@ -185,41 +191,35 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
         }
       }
       const indice = (r * lato + c) * 3;
-      posizioni[indice] = colonna * terreno.passo - terreno.metaX - centroX;
-      posizioni[indice + 1] = quota;
-      posizioni[indice + 2] = riga * terreno.passo - terreno.metaZ - centroZ;
-      uv[(r * lato + c) * 2] = c / (lato - 1);
-      uv[(r * lato + c) * 2 + 1] = r / (lato - 1);
+      const mx = colonna * passo - terreno.metaX;
+      const mz = riga * passo - terreno.metaZ;
+      pos2[indice] = mx - centroX;
+      pos2[indice + 1] = quota;
+      pos2[indice + 2] = mz - centroZ;
+      uv2[(r * lato + c) * 2] = c / (lato - 1);
+      uv2[(r * lato + c) * 2 + 1] = r / (lato - 1);
+
+      // normale dalle quote dei vicini
+      const cL = Math.max(colonna - salto, 0), cR = Math.min(colonna + salto, n - 1);
+      const rU = Math.max(riga - salto, 0), rD = Math.min(riga + salto, terreno.righe - 1);
+      const dx = (q[riga * n + cR] - q[riga * n + cL]) / ((cR - cL) * passo || 1);
+      const dz = (q[rD * n + colonna] - q[rU * n + colonna]) / ((rD - rU) * passo || 1);
+      const l = Math.sqrt(dx * dx + dz * dz + 1);
+      nor2[indice] = -dx / l;
+      nor2[indice + 1] = 1 / l;
+      nor2[indice + 2] = -dz / l;
 
       const destra = q[riga * n + Math.min(colonna + 1, n - 1)];
       const sotto = q[Math.min(riga + 1, terreno.righe - 1) * n + colonna];
-      const pendenza = Math.hypot(destra - quota, sotto - quota) / terreno.passo;
+      const pendenza = Math.hypot(destra - quota, sotto - quota) / passo;
       const bosco = terreno.bosco !== null && terreno.bosco[riga * n + colonna] === 1;
-      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ,
-        terreno.uso ? usoQui(terreno, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ) : 0);
-      colori[indice] = colore.r;
-      colori[indice + 1] = colore.g;
-      colori[indice + 2] = colore.b;
+      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore, mx, mz, terreno.uso ? usoQui(terreno, mx, mz) : 0);
+      col2[indice] = colore.r;
+      col2[indice + 1] = colore.g;
+      col2[indice + 2] = colore.b;
     }
+    if (r % 24 === 23) yield;
   }
-
-  const indici = [];
-  for (let r = 0; r < lato - 1; r++) {
-    for (let c = 0; c < lato - 1; c++) {
-      const a = r * lato + c;
-      const b = a + 1;
-      const d = a + lato;
-      const e = d + 1;
-      indici.push(a, d, b, b, d, e);
-    }
-  }
-
-  // Calcolo la luce (normali) solo sulla griglia vera
-  const griglia = new THREE.BufferGeometry();
-  griglia.setAttribute("position", new THREE.BufferAttribute(posizioni, 3));
-  griglia.setIndex(indici);
-  griglia.computeVertexNormals();
-  const normali = griglia.attributes.normal.array;
 
   // "Gonna": lungo i 4 bordi una striscia che scende di 40 m (copre le fessure tra pezzi)
   const bordo = [];
@@ -227,34 +227,38 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
   for (let i = 1; i < lato; i++) bordo.push(i * lato + lato - 1);
   for (let i = lato - 2; i >= 0; i--) bordo.push((lato - 1) * lato + i);
   for (let i = lato - 2; i >= 0; i--) bordo.push(i * lato);
+  yield;
 
-  const totale = lato * lato + bordo.length;
-  const pos2 = new Float32Array(totale * 3);
-  const col2 = new Float32Array(totale * 3);
-  const nor2 = new Float32Array(totale * 3);
-  const uv2 = new Float32Array(totale * 2);
-  pos2.set(posizioni);
-  col2.set(colori);
-  nor2.set(normali);
-  uv2.set(uv);
-  for (let k = 0; k < bordo.length; k++) {
-    const da = bordo[k];
-    const a = lato * lato + k;
-    for (let j = 0; j < 3; j++) {
-      pos2[a * 3 + j] = posizioni[da * 3 + j];
-      col2[a * 3 + j] = colori[da * 3 + j];
-      nor2[a * 3 + j] = normali[da * 3 + j];
+  const indici = new Uint32Array((lato - 1) * (lato - 1) * 6 + bordo.length * 12);
+  let k = 0;
+  for (let r = 0; r < lato - 1; r++) {
+    for (let c = 0; c < lato - 1; c++) {
+      const a = r * lato + c;
+      const b = a + 1;
+      const d = a + lato;
+      const e = d + 1;
+      indici[k++] = a; indici[k++] = d; indici[k++] = b; indici[k++] = b; indici[k++] = d; indici[k++] = e;
+    }
+    if (r % 96 === 95) yield;
+  }
+  for (let j = 0; j < bordo.length; j++) {
+    const da = bordo[j];
+    const a = lato * lato + j;
+    for (let m = 0; m < 3; m++) {
+      pos2[a * 3 + m] = pos2[da * 3 + m];
+      col2[a * 3 + m] = col2[da * 3 + m];
+      nor2[a * 3 + m] = nor2[da * 3 + m];
     }
     pos2[a * 3 + 1] -= 40;
-    uv2[a * 2] = uv[da * 2];
-    uv2[a * 2 + 1] = uv[da * 2 + 1];
-    if (k > 0) {
-      const sopra1 = bordo[k - 1];
-      const sopra2 = bordo[k];
-      const sotto1 = lato * lato + k - 1;
-      const sotto2 = lato * lato + k;
-      indici.push(sopra1, sotto1, sopra2, sopra2, sotto1, sotto2);
-      indici.push(sopra1, sopra2, sotto1, sopra2, sotto2, sotto1);
+    uv2[a * 2] = uv2[da * 2];
+    uv2[a * 2 + 1] = uv2[da * 2 + 1];
+    if (j > 0) {
+      const sopra1 = bordo[j - 1];
+      const sopra2 = bordo[j];
+      const sotto1 = lato * lato + j - 1;
+      const sotto2 = lato * lato + j;
+      indici[k++] = sopra1; indici[k++] = sotto1; indici[k++] = sopra2; indici[k++] = sopra2; indici[k++] = sotto1; indici[k++] = sotto2;
+      indici[k++] = sopra1; indici[k++] = sopra2; indici[k++] = sotto1; indici[k++] = sopra2; indici[k++] = sotto2; indici[k++] = sotto1;
     }
   }
 
@@ -263,9 +267,17 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
   geometria.setAttribute("color", new THREE.BufferAttribute(col2, 3));
   geometria.setAttribute("normal", new THREE.BufferAttribute(nor2, 3));
   geometria.setAttribute("uv", new THREE.BufferAttribute(uv2, 2));
-  geometria.setIndex(indici);
+  geometria.setIndex(new THREE.BufferAttribute(indici.subarray(0, k), 1));
   geometria.computeBoundingSphere();
   return liberaDopoCaricamento(geometria);
+}
+
+// Versione "tutto subito" (i pezzi lontani, leggeri, e la partenza)
+function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, centroZ) {
+  const g = costruisciPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, centroZ);
+  let r = g.next();
+  while (!r.done) r = g.next();
+  return r.value;
 }
 
 export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
@@ -314,12 +326,29 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
   lago.receiveShadow = false;
   scena.add(lago);
 
-  return { terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0 };
+  return { terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0, pieno: 1000, lavoro: null };
 }
 
 // Crea i pezzi dettagliati vicino a (x, z) e toglie quelli lontani.
 // Al massimo un pezzo nuovo alla volta, cosi' il gioco non si blocca.
-export function aggiornaTerreno(terrenoMesh, x, z, dt) {
+export function aggiornaTerreno(terrenoMesh, x, z, dt, sincrono) {
+  // un pezzo in costruzione: si avanza per qualche millisecondo per fotogramma (mai piu' di 3 ms)
+  const lavoro = terrenoMesh.lavoro;
+  if (lavoro) {
+    const fine = performance.now() + (sincrono ? 1e9 : 3);
+    let r = { done: false };
+    while (!r.done && performance.now() < fine) r = lavoro.gen.next();
+    if (!r.done) return;
+    terrenoMesh.lavoro = null;
+    const p = lavoro.pezzo;
+    p.vicino = new THREE.Mesh(r.value, p.materiale);
+    p.vicino.userData.salto = lavoro.salto;
+    p.vicino.receiveShadow = true;   // ombra della moto sul terreno
+    p.vicino.position.set(p.centroX, 0, p.centroZ);
+    terrenoMesh.scena.add(p.vicino);
+    p.lontano.visible = false;
+    return;
+  }
   terrenoMesh.attesa -= dt;
   if (terrenoMesh.attesa > 0) return;
   terrenoMesh.attesa = 0.25;
@@ -329,7 +358,7 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
   for (const pezzo of terrenoMesh.pezzi) {
     const distanza = Math.hypot(pezzo.centroX - x, pezzo.centroZ - z);
     // un pezzo vicino "a meta' dettaglio" (un punto ogni 8 m) torna a dettaglio pieno quando ci si avvicina
-    if (pezzo.vicino !== null && pezzo.vicino.userData.salto === 2 && distanza < 900) {
+    if (pezzo.vicino !== null && pezzo.vicino.userData.salto === 2 && distanza < terrenoMesh.pieno * 0.9) {
       terrenoMesh.scena.remove(pezzo.vicino);
       pezzo.vicino.geometry.dispose();
       pezzo.vicino = null;
@@ -348,15 +377,10 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
   }
   if (daCreare !== null) {
     const p = daCreare;
-    // vicino alla moto un punto ogni 4 m; piu' lontano (oltre 1 km) ne basta uno ogni 8 m: un quarto dei triangoli
-    const salto = Math.hypot(p.centroX - x, p.centroZ - z) < 1000 ? 1 : 2;
-    p.vicino = new THREE.Mesh(
-      creaGeometriaPezzo(terrenoMesh.terreno, p.px * QUAD_PEZZO, p.py * QUAD_PEZZO, salto, p.centroX, p.centroZ), p.materiale);
-    p.vicino.userData.salto = salto;
-    p.vicino.receiveShadow = true;   // ombra della moto sul terreno
-    p.vicino.position.set(p.centroX, 0, p.centroZ);
-    terrenoMesh.scena.add(p.vicino);
-    p.lontano.visible = false;
+    // vicino alla moto un punto ogni 4 m; piu' lontano un punto ogni 8 m: un quarto dei triangoli
+    const salto = Math.hypot(p.centroX - x, p.centroZ - z) < terrenoMesh.pieno ? 1 : 2;
+    terrenoMesh.lavoro = { gen: costruisciPezzo(terrenoMesh.terreno, p.px * QUAD_PEZZO, p.py * QUAD_PEZZO, salto, p.centroX, p.centroZ), pezzo: p, salto: salto };
+    if (sincrono) aggiornaTerreno(terrenoMesh, x, z, 0, true);
   }
 }
 
@@ -364,12 +388,13 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
 export function preparaTerrenoVicino(terrenoMesh, x, z) {
   for (let i = 0; i < 9; i++) {
     terrenoMesh.attesa = 0;
-    aggiornaTerreno(terrenoMesh, x, z, 0);
+    aggiornaTerreno(terrenoMesh, x, z, 0, true);
   }
 }
 
 // Fino a che distanza il terreno usa il dettaglio pieno (menu Impostazioni)
-export function impostaDettaglioTerreno(terrenoMesh, fattore) {
+export function impostaDettaglioTerreno(terrenoMesh, fattore, pieno) {
   terrenoMesh.fattore = fattore;
+  terrenoMesh.pieno = pieno || 1000;   // entro questa distanza (m) il terreno ha un punto ogni 4 m, oltre ogni 8 m
   terrenoMesh.attesa = 0;
 }

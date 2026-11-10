@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.2";
+const VERSIONE = "0.14.3";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -250,11 +250,35 @@ function mettiSullaStrada(moto, strade, x, z) {
   }
 }
 
+// Risoluzione adattiva: se il computer non regge (meno di ~26 FPS) la risoluzione scende a poco a poco fino al 50%,
+// se c'e' margine torna su. Vale per tutte le qualita' e rende il gioco fluido su qualsiasi dispositivo.
+let sommaTempi = 0, contaTempi = 0, ultimoAdeguamento = 0;
+function risoluzioneAdattiva(vero, mondo) {
+  if (vero > 0.5 || navigator.webdriver) return;   // pause (e prove automatiche), caricamenti, cambio finestra: non conta
+  sommaTempi += vero;
+  contaTempi++;
+  if (contaTempi < 45) return;
+  const media = sommaTempi / contaTempi;
+  sommaTempi = 0;
+  contaTempi = 0;
+  const adesso = performance.now();
+  if (adesso - ultimoAdeguamento < 1500 || !mondo.rapportoBase) return;
+  let scala = mondo.scalaRisoluzione || 1;
+  if (media > 0.038 && scala > 0.5) scala = Math.max(0.5, scala * 0.88);
+  else if (media < 0.019 && scala < 1) scala = Math.min(1, scala * 1.06);
+  else return;
+  ultimoAdeguamento = adesso;
+  mondo.scalaRisoluzione = scala;
+  disegnatore.setPixelRatio(mondo.rapportoBase * scala);
+  disegnatore.setSize(window.innerWidth, window.innerHeight);
+}
+
 // Faro: di notte la moto illumina la strada davanti
 function aggiornaFaro(moto) {
   const buio = ambiente.uniformi.notte.value;
   faro.intensity = buio * 260;
-  faro.visible = buio > 0.02;   // di giorno la luce non entra nei calcoli dei materiali
+  // (il faro resta sempre nella scena con intensita' 0: accenderlo/spegnerlo cambierebbe il numero di luci e farebbe
+  // ricompilare tutti i programmi grafici, con un blocco di mezzo secondo al tramonto)
   if (buio < 0.02) return;
   const dirX = -Math.sin(moto.angolo);
   const dirZ = -Math.cos(moto.angolo);
@@ -329,6 +353,7 @@ async function avvia() {
       riflessi: aggiornaRiflessi, alberi: alberi
     });
     window.__mrw = window.__mrw || {};
+    window.__mrw.tempi = { js: [], render: [] };
     bench.tempoCarico = performance.now();
     window.__mrw.eseguiBenchmark = function (opzioni) { return bench.esegui(opzioni); };
     window.__mrw.benchmarkMarkdown = inMarkdown;
@@ -366,11 +391,25 @@ async function avvia() {
 
     // per i test automatici (tools/anteprima_prova): contatori del disegnatore
     window.__mrw = Object.assign(window.__mrw || {}, { disegnatore: disegnatore, scena: scena, ambiente: ambiente, telecamera: telecamera });
+    // Preparazione della grafica: compila ora TUTTI i programmi della scheda video (anche pioggia, neve, ombre).
+    // Senza questo ogni materiale nuovo che compare durante la guida bloccava il gioco per decine o centinaia di ms.
+    await mostraStato("Preparazione della grafica...");
+    {
+      const pv = precipitazioni.pioggia.visible, nv = precipitazioni.neve.visible;
+      precipitazioni.pioggia.visible = true;
+      precipitazioni.neve.visible = true;
+      precipitazioni.uniformi.uInt.value = 1;
+      disegnatore.compile(scena, telecamera);
+      disegnatore.render(scena, telecamera);   // un fotogramma vero: compila anche i programmi delle ombre
+      precipitazioni.pioggia.visible = pv;
+      precipitazioni.neve.visible = nv;
+    }
     nascondiCaricamento();
     const orologio = new THREE.Clock();
     let tempoGioco = 0;
 
     function ciclo() {
+      const inizioFotogramma = performance.now();
       const vero = orologio.getDelta();          // tempo vero del fotogramma (per gli FPS)
       const dt = Math.min(vero, 0.05);           // tempo per la fisica (mai troppo grande)
       // R oppure fine di una caduta: si riparte dalla strada piu' vicina
@@ -432,9 +471,14 @@ async function avvia() {
         }
       }
       window.__mrw.fotogrammi = (window.__mrw.fotogrammi || 0) + 1;
+      risoluzioneAdattiva(vero, mondo);
       aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z), mappa, ambiente);
+      const prima = performance.now();
       disegnatore.render(scena, telecamera);
+      // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)
+      const tm = window.__mrw && window.__mrw.tempi;
+      if (tm && tm.js.length < 3000) { tm.js.push(prima - inizioFotogramma); tm.render.push(performance.now() - prima); }
       requestAnimationFrame(ciclo);
     }
     ciclo();

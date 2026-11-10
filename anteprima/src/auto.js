@@ -46,7 +46,7 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   let sterzo = 0;
   if (tasti.sinistra) sterzo = sterzo + 1;
   if (tasti.destra) sterzo = sterzo - 1;
-  auto.sterzoDolce += Math.max(-dt * 3, Math.min(dt * 3, sterzo - auto.sterzoDolce));
+  auto.sterzoDolce += Math.max(-dt * 4.5, Math.min(dt * 4.5, sterzo - auto.sterzoDolce));
   auto.gas += ((tasti.su ? 1 : 0) - auto.gas) * Math.min(1, dt * 6);
 
   const sotto = quotaSuolo(auto, terreno, strade, auto.x, auto.z);
@@ -66,12 +66,12 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   v -= G * Math.sin(auto.beccheggio) * dt;
 
   // --- sterzo e derapata
-  const angoloRuote = auto.sterzoDolce * 0.6 / (1 + Math.abs(v) * 0.02);
+  const angoloRuote = auto.sterzoDolce * 0.6 / (1 + Math.abs(v) * 0.035);   // piu' si va forte, meno si sterza: stabile in rettilineo
   const giroVoluto = v * Math.tan(angoloRuote) / dati.passo;
   // quanta presa hanno le gomme dietro
   let presaDietro = 1;
   if (tasti.frenoDietro && Math.abs(v) > 3) presaDietro = 0.2;                                // freno a mano
-  else if (tasti.su && Math.abs(auto.sterzoDolce) > 0.25 && v > 7) presaDietro = 0.55;           // troppo gas in curva
+  else if (tasti.su && Math.abs(auto.sterzoDolce) > 0.6 && v > 14) presaDietro = 0.7;           // troppo gas in curva
   if (!auto.suStrada) presaDietro *= 0.7;
   // con poca presa dietro la macchina gira piu' di quanto vorrebbe lo sterzo (sovrasterzo)
   const giroDerapata = giroVoluto * (1 + (1 - presaDietro) * 1.3);
@@ -99,9 +99,9 @@ export function aggiornaAuto(auto, tasti, dt, terreno, strade, edifici) {
   const limiteZ = terreno.metaZ - 5;
   nuovaX = Math.min(Math.max(nuovaX, -limiteX), limiteX);
   nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
-  if (edifici && !auto.suStrada && dentroEdificio(edifici, nuovaX, nuovaZ, auto.y + 0.5)) {
-    if (Math.abs(v) > 9) {
-      urto(auto, "Sei finito contro un edificio");
+  if (edifici && !auto.inGalleria && dentroEdificio(edifici, nuovaX, nuovaZ, auto.y + 0.5)) {
+    if (Math.abs(v) > 5) {
+      urto(auto, "Macchina distrutta contro un edificio");
     } else {
       auto.velocita = -v * 0.2;
     }

@@ -180,6 +180,38 @@ if (vuole("mappa")) {
   await pagina.close();
 }
 
+// 5b) Collisioni: negli edifici non si entra, ci si schianta
+if (vuole("collisioni")) {
+  const { pagina, errori } = await apri({ "mrw-qualita": "bassa" });
+  const r = await pagina.evaluate(async () => {
+    const m = window.__mrw, moto = m.moto, lista = m.edifici.lista;
+    const dentro = (p, x, z) => { let d = false; const n = p.length / 2; for (let i = 0, j = n - 1; i < n; j = i++) { const xi = p[i * 2], zi = p[i * 2 + 1], xj = p[j * 2], zj = p[j * 2 + 1]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) d = !d; } return d; };
+    const libero = (x, z) => !lista.some((e) => Math.abs(e.cx - x) < 60 && Math.abs(e.cz - z) < 60 && dentro(e.p, x, z));
+    const attendi = (n) => new Promise((ok) => { const f0 = m.fotogrammi; const t = setInterval(() => { if (m.fotogrammi >= f0 + n) { clearInterval(t); ok(); } }, 50); });
+    const esiti = [];
+    let provati = 0;
+    for (const e of lista) {
+      if (provati >= 4) break;
+      if (e.area < 80 || e.cx < 200 || e.cx > 1500) continue;
+      // dal lato sud del palazzo verso nord: la moto va verso -z (angolo 0)
+      const sx = e.cx, sz = e.cz + 14 + Math.sqrt(e.area) / 2;
+      let ok = libero(sx, sz) && libero(sx, sz - 6);
+      for (let t = 0; t < 20 && ok; t++) if (!libero(sx, sz - t * 1.5)) { if (t < 8) ok = false; }
+      if (!ok || !dentro(e.p, e.cx, e.cz)) continue;
+      m.vaiA(sx, sz);
+      moto.angolo = 0; moto.velocita = 14; moto.caduta = 0; moto.x = sx; moto.z = sz;
+      const prima = { x: moto.x, z: moto.z };
+      await attendi(25);
+      esiti.push({ dentro: dentro(e.p, moto.x, moto.z), caduta: moto.caduta > 0 || moto.riparti === true, corsa: Math.hypot(moto.x - prima.x, moto.z - prima.z) });
+      provati++;
+    }
+    return { provati, esiti };
+  });
+  prova("collisioni: la moto lanciata contro un edificio non entra e cade", r.provati >= 1 && r.esiti.every((x) => !x.dentro), JSON.stringify(r));
+  prova("collisioni: nessun errore", errori.length === 0, errori.slice(0, 2).join(" | "));
+  await pagina.close();
+}
+
 // 6) Persistenza delle impostazioni dopo il ricaricamento
 if (vuole("persistenza")) {
   const { pagina } = await apri({ "mrw-qualita": "media" });

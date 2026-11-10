@@ -616,7 +616,7 @@ function modificaFacciata(materiale, atlante, notte, probabilitaLuce) {
       .replace("#include <roughnessmap_fragment>", `
         float roughnessFactor = roughness * textureGrad(tRuvido, uvBay, gradX, gradY).g * (255.0 / 235.0);`)
       .replace("#include <emissivemap_fragment>", `
-        {
+        if (uNotte > 0.01) {
           float sI = floor(vSeme * 10.0 + 0.5);
           float soglia = 1.0 - uProb * (0.5 + 0.9 * fract(sI * 0.0371));
           float acceso = step(soglia, h21(bayId * 1.7 + vec2(sI * 0.31, 7.7)));

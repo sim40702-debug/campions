@@ -224,7 +224,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   if (tasti.sinistra) sterzo = sterzo + 1;
   if (tasti.destra) sterzo = sterzo - 1;
   // Con la tastiera lo sterzo non e' tutto o niente: arriva al massimo in mezzo secondo
-  moto.sterzoDolce += Math.max(-dt * 2.5, Math.min(dt * 2.5, sterzo - moto.sterzoDolce));
+  moto.sterzoDolce += Math.max(-dt * 3.5, Math.min(dt * 3.5, sterzo - moto.sterzoDolce));
   moto.gas += ((avanti ? 1 : 0) - moto.gas) * Math.min(1, dt * 6);
 
   // Dove sono? Strada, prato o lago
@@ -368,9 +368,8 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     nuovaZ = Math.min(Math.max(nuovaZ, -limiteZ), limiteZ);
     moto.velocita = 0;
   }
-  // Contro un edificio: piano si rimbalza, forte si cade
-  // (sulla strada no: a volte la strada passa sotto un edificio, come un portico)
-  if (edifici && !moto.suStrada && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
+  // Contro un edificio non si entra mai (neanche sulla strada): piano si rimbalza, forte ci si schianta e si cade
+  if (edifici && !moto.inGalleria && dentroEdificio(edifici, nuovaX, nuovaZ, moto.y + 0.5)) {
     if (v > 8) {
       cadi(moto, "Sei finito contro un edificio", moto.velocita);
       moto.velocita = 0;

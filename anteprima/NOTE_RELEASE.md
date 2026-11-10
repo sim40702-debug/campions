@@ -3,7 +3,16 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.2) – strade e edifici più chiari, meteo in alto
+### Novità di questa versione (0.14.3) – fluidità, incroci, rotonde, urti
+
+- **Molto più fluido su tutti i computer**: risoluzione adattiva (scende da sola se il computer non regge, torna su se c'è margine), in qualità Bassa niente ombre e terreno più leggero, tutti i programmi grafici preparati all'avvio (niente più blocchi quando compare qualcosa di nuovo), terreno costruito a pezzetti mentre si guida, calcoli del meteo solo dove servono.
+- **Strade leggibili anche con neve e pioggia**: la neve copre la strada solo in parte e le righe restano bianche e visibili.
+- **Incroci arrotondati** e **rotonde** con isola centrale erbosa e cordolo (dai dati OpenStreetMap: serve rigenerare i dati con il passo 7).
+- **Negli edifici non si entra**: ci si schianta. La moto cade sopra i 29 km/h; la macchina si distrugge sopra i 18 km/h. Vale anche sulla strada.
+- **Guida più facile**: sterzo più pronto, la macchina sterza meno a velocità alta e va di traverso solo col freno a mano o con tanto gas in curva stretta.
+- Tolta la scritta delle fonti dallo schermo di gioco.
+
+### Novità della 0.14.2 – strade e edifici più chiari, meteo in alto
 
 - **Niente più edifici in mezzo alla strada**: all'avvio vengono tolti gli edifici che cadono sull'asfalto (strade ed edifici non vengono spostati).
 - **Strade più leggibili**: asfalto più chiaro, mezzeria e righe di bordo più larghe.
