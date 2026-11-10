@@ -3,6 +3,7 @@
 
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
+import { creaMaterialeAcqua } from "./onde.js";
 
 const SOPRA = 0.25;   // l'acqua sta 25 cm sopra il terreno, cosi' si vede
 
@@ -20,7 +21,7 @@ function vettori(lista) {
   return punti;
 }
 
-export function aggiungiAcqua(acqua, scena, terreno) {
+export function aggiungiAcqua(acqua, scena, terreno, ambiente) {
   const posizioni = [];
 
   // 1) Superfici (fiumi larghi, stagni): il contorno diviso in triangoli
@@ -68,11 +69,8 @@ export function aggiungiAcqua(acqua, scena, terreno) {
   const geometria = new THREE.BufferGeometry();
   geometria.setAttribute("position", new THREE.Float32BufferAttribute(posizioni, 3));
   geometria.computeVertexNormals();
-  scena.add(new THREE.Mesh(geometria, new THREE.MeshLambertMaterial({
-    color: 0x3a7aa3,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1
-  })));
+  // fiumi e stagni: onde piu' piccole e piu' veloci del lago
+  const mesh = new THREE.Mesh(geometria, creaMaterialeAcqua(ambiente, { colore: 0x2f7396, opacita: 0.92, scala: 7, velocita: 0.05 }));
+  mesh.receiveShadow = true;
+  scena.add(mesh);
 }

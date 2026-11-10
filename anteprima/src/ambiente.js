@@ -1,0 +1,343 @@
+// Ambiente: ora del giorno, sole e luna, cielo, nuvole, stelle, nebbia e meteo.
+// Tutto il resto del gioco legge da qui "quanto e' notte" (ambiente.uniformi.notte) per accendere
+// finestre, lampioni e fari: cosi' una sola variabile cambia l'intera atmosfera.
+
+import * as THREE from "three";
+import { Sky } from "three/addons/objects/Sky.js";
+
+const LATITUDINE = 46.17 * Math.PI / 180;   // Locarno
+const DECLINAZIONE = 14 * Math.PI / 180;    // sole di fine estate / inizio autunno
+
+// Quanto e' "notte" e valori per ogni altezza del sole (gradi sull'orizzonte)
+// el = altezza, poi: colore del sole, intensita', cielo emisfero, terra emisfero, intensita' emisfero,
+// nebbia, esposizione, riflessi
+const PUNTI = [
+  { el: -18, sole: 0x7f98d8, ints: 0.28, cielo: 0x1b2a4a, terra: 0x0c1018, hemi: 0.55, nebbia: 0x0a1222, espo: 1.55, env: 0.22 },
+  { el: -6, sole: 0x8aa2e0, ints: 0.3, cielo: 0x2c3a62, terra: 0x151a22, hemi: 0.6, nebbia: 0x25304e, espo: 1.5, env: 0.25 },
+  { el: -1, sole: 0xff8a50, ints: 0.9, cielo: 0x6b6a8a, terra: 0x3a3030, hemi: 0.75, nebbia: 0xc58a78, espo: 1.3, env: 0.3 },
+  { el: 5, sole: 0xffb070, ints: 1.7, cielo: 0xa6b4d0, terra: 0x55503a, hemi: 0.95, nebbia: 0xe2b494, espo: 1.2, env: 0.34 },
+  { el: 15, sole: 0xffdcb0, ints: 2.3, cielo: 0xcfe0f6, terra: 0x586338, hemi: 1.1, nebbia: 0xb9d0e8, espo: 1.15, env: 0.36 },
+  { el: 40, sole: 0xfff4e4, ints: 2.6, cielo: 0xdfefff, terra: 0x4a5a3a, hemi: 1.2, nebbia: 0xa9c8e8, espo: 1.1, env: 0.38 },
+  { el: 70, sole: 0xfffaf0, ints: 2.7, cielo: 0xe3f0ff, terra: 0x4a5a3a, hemi: 1.22, nebbia: 0xa4c4e6, espo: 1.08, env: 0.38 }
+];
+
+const METEO = {
+  sereno: { nome: "Sereno", nuvole: 0.28, nebbia: 1.0, sole: 1.0, grigio: 0.0 },
+  variabile: { nome: "Variabile", nuvole: 0.55, nebbia: 0.9, sole: 0.85, grigio: 0.15 },
+  nuvoloso: { nome: "Nuvoloso", nuvole: 0.9, nebbia: 0.65, sole: 0.4, grigio: 0.55 },
+  nebbia: { nome: "Nebbia", nuvole: 0.7, nebbia: 0.22, sole: 0.3, grigio: 0.45 }
+};
+export const ELENCO_METEO = Object.keys(METEO).map(function (k) { return { chiave: k, nome: METEO[k].nome }; });
+
+const CHIAVE_ORA = "mrw-ora";
+const CHIAVE_METEO = "mrw-meteo";
+const CHIAVE_CICLO = "mrw-ciclo";
+
+function leggi(chiave, difetto) {
+  try {
+    const v = localStorage.getItem(chiave);
+    if (v !== null && v !== "") return v;
+  } catch (errore) {
+    // memoria non disponibile
+  }
+  return difetto;
+}
+function scrivi(chiave, valore) {
+  try {
+    localStorage.setItem(chiave, String(valore));
+  } catch (errore) {
+    // non importa
+  }
+}
+
+function mescola(a, b, t, ris) {
+  ris.copy(a).lerp(b, t);
+  return ris;
+}
+
+// --- Nuvole: un grande piano sopra la telecamera con rumore frattale calcolato dalla scheda video ---
+const VERTICE_NUVOLE = `
+  varying vec3 vMondo;
+  void main() {
+    vec4 m = modelMatrix * vec4(position, 1.0);
+    vMondo = m.xyz;
+    gl_Position = projectionMatrix * viewMatrix * m;
+  }`;
+const FRAMMENTO_NUVOLE = `
+  uniform float uTempo;
+  uniform float uCopertura;
+  uniform vec3 uColoreChiaro;
+  uniform vec3 uColoreScuro;
+  uniform vec3 uCentro;
+  uniform vec3 uSole;
+  varying vec3 vMondo;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float rum(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+  }
+  float fbm(vec2 p) {
+    float s = 0.0; float a = 0.5;
+    for (int i = 0; i < 5; i++) { s += a * rum(p); p = p * 2.03 + 17.1; a *= 0.5; }
+    return s;
+  }
+  void main() {
+    vec2 p = vMondo.xz * 0.00045 + vec2(uTempo * 0.004, uTempo * 0.0016);
+    float d = fbm(p);
+    float soglia = 1.0 - uCopertura * 0.62;
+    float nuvola = smoothstep(soglia - 0.1, soglia + 0.17, d);
+    // lato verso il sole piu' chiaro, centro piu' denso e scuro
+    float d2 = fbm(p + uSole.xz * 0.05);
+    float luce = clamp(0.5 + (d - d2) * 3.2, 0.0, 1.0);
+    vec3 colore = mix(uColoreScuro, uColoreChiaro, luce);
+    // sfuma verso l'orizzonte (e dove il piano finisce)
+    vec2 rel = vMondo.xz - uCentro.xz;
+    float dist = length(rel);
+    float sfuma = 1.0 - smoothstep(2200.0, 5200.0, dist);
+    gl_FragColor = vec4(colore, nuvola * sfuma * 0.92);
+  }`;
+
+export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
+  const cielo = new Sky();
+  cielo.scale.setScalar(6000);
+  cielo.material.uniforms.turbidity.value = 4;
+  cielo.material.uniforms.rayleigh.value = 1.2;
+  cielo.material.uniforms.mieCoefficient.value = 0.004;
+  cielo.material.uniforms.mieDirectionalG.value = 0.8;
+  scena.add(cielo);
+
+  // Stelle: 1400 punti su una sfera, visibili solo di notte
+  const posStelle = [];
+  const colStelle = [];
+  let s = 4242;
+  const casuale = function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 1400; i++) {
+    const u = casuale() * 2 - 1;
+    const f = casuale() * Math.PI * 2;
+    const r = Math.sqrt(1 - u * u);
+    if (u < -0.05) continue;
+    posStelle.push(r * Math.cos(f) * 4800, u * 4800, r * Math.sin(f) * 4800);
+    const k = 0.55 + casuale() * 0.45;
+    colStelle.push(k, k * (0.9 + casuale() * 0.1), k);
+  }
+  const geoStelle = new THREE.BufferGeometry();
+  geoStelle.setAttribute("position", new THREE.Float32BufferAttribute(posStelle, 3));
+  geoStelle.setAttribute("color", new THREE.Float32BufferAttribute(colStelle, 3));
+  const matStelle = new THREE.PointsMaterial({
+    size: 2.2, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0, fog: false, depthWrite: false
+  });
+  const stelle = new THREE.Points(geoStelle, matStelle);
+  stelle.frustumCulled = false;
+  stelle.renderOrder = -1;
+  scena.add(stelle);
+
+  // Luna: un disco morbido nel cielo
+  const telaLuna = document.createElement("canvas");
+  telaLuna.width = telaLuna.height = 128;
+  const cl = telaLuna.getContext("2d");
+  const gl = cl.createRadialGradient(64, 64, 4, 64, 64, 64);
+  gl.addColorStop(0, "rgba(255,255,245,1)");
+  gl.addColorStop(0.28, "rgba(240,244,255,0.95)");
+  gl.addColorStop(0.34, "rgba(200,215,255,0.35)");
+  gl.addColorStop(1, "rgba(150,180,255,0)");
+  cl.fillStyle = gl;
+  cl.fillRect(0, 0, 128, 128);
+  const matLuna = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(telaLuna), transparent: true, fog: false, depthWrite: false, opacity: 0 });
+  const luna = new THREE.Sprite(matLuna);
+  luna.scale.setScalar(520);
+  luna.renderOrder = -1;
+  scena.add(luna);
+
+  // Nuvole
+  const uniformiNuvole = {
+    uTempo: { value: 0 }, uCopertura: { value: 0.3 },
+    uColoreChiaro: { value: new THREE.Color(1, 1, 1) }, uColoreScuro: { value: new THREE.Color(0.6, 0.65, 0.75) },
+    uCentro: { value: new THREE.Vector3() }, uSole: { value: new THREE.Vector3(0, 1, 0) }
+  };
+  const nuvole = new THREE.Mesh(
+    new THREE.PlaneGeometry(12000, 12000, 1, 1).rotateX(Math.PI / 2),
+    new THREE.ShaderMaterial({
+      uniforms: uniformiNuvole, vertexShader: VERTICE_NUVOLE, fragmentShader: FRAMMENTO_NUVOLE,
+      transparent: true, depthWrite: false, fog: false, side: THREE.DoubleSide
+    })
+  );
+  nuvole.frustumCulled = false;
+  nuvole.renderOrder = -1;
+  scena.add(nuvole);
+
+  const ambiente = {
+    ora: parseFloat(leggi(CHIAVE_ORA, "15.5")),
+    meteo: leggi(CHIAVE_METEO, "variabile"),
+    ciclo: leggi(CHIAVE_CICLO, "0") === "1",
+    cielo: cielo, stelle: stelle, luna: luna, nuvole: nuvole,
+    sole: sole, hemi: hemi, scena: scena, disegnatore: disegnatore, telecamera: telecamera,
+    uniformi: { notte: { value: 0 }, tempo: { value: 0 } },   // condiviso dai materiali (finestre, lampioni, vento)
+    direzioneSole: new THREE.Vector3(-0.5, 1, 0.3).normalize(),
+    direzioneLuce: new THREE.Vector3(-0.5, 1, 0.3).normalize(),
+    qualitaNuvole: true,
+    quota: 1.0,
+    visibilita: 7000,
+    tempo: 0,
+    sporco: true,
+    // valori calcolati (altri moduli li leggono)
+    colore: { nebbia: new THREE.Color(), sole: new THREE.Color() },
+    elevazione: 30,
+    uniformiNuvole: uniformiNuvole,
+    osservatori: []           // funzioni chiamate ad ogni fotogramma (lampioni, ecc.)
+  };
+  if (!METEO[ambiente.meteo]) ambiente.meteo = "variabile";
+  if (!(ambiente.ora >= 0 && ambiente.ora < 24)) ambiente.ora = 15.5;
+  aggiornaAmbiente(ambiente, 0, new THREE.Vector3());
+  return ambiente;
+}
+
+// Altezza e direzione del sole per l'ora data (0-24)
+export function posizioneSole(ora, ris) {
+  const h = (ora - 12) * 15 * Math.PI / 180;
+  const sinEl = Math.sin(LATITUDINE) * Math.sin(DECLINAZIONE) + Math.cos(LATITUDINE) * Math.cos(DECLINAZIONE) * Math.cos(h);
+  const el = Math.asin(Math.max(-1, Math.min(1, sinEl)));
+  // azimut dal nord in senso orario
+  const cosAz = (Math.sin(DECLINAZIONE) - Math.sin(el) * Math.sin(LATITUDINE)) / (Math.cos(el) * Math.cos(LATITUDINE) || 1e-6);
+  let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
+  if (h > 0) az = Math.PI * 2 - az;
+  // x = est, y = su, z = sud
+  ris.set(Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az));
+  return el * 180 / Math.PI;
+}
+
+const _a = new THREE.Color();
+const _b = new THREE.Color();
+const _c = new THREE.Color();
+const _v = new THREE.Vector3();
+
+function punto(elevazione, chiave) {
+  // interpolazione tra i punti chiave in base all'altezza del sole
+  let i = 0;
+  while (i < PUNTI.length - 2 && elevazione > PUNTI[i + 1].el) i++;
+  const p0 = PUNTI[i];
+  const p1 = PUNTI[i + 1];
+  const t = Math.min(1, Math.max(0, (elevazione - p0.el) / (p1.el - p0.el)));
+  if (typeof p0[chiave] === "number" && chiave !== "sole" && chiave !== "cielo" && chiave !== "terra" && chiave !== "nebbia") {
+    return p0[chiave] + (p1[chiave] - p0[chiave]) * t;
+  }
+  _a.setHex(p0[chiave]);
+  _b.setHex(p1[chiave]);
+  return _c.copy(_a).lerp(_b, t);
+}
+
+// Da chiamare ad ogni fotogramma (dt = secondi veri)
+export function aggiornaAmbiente(amb, dt, posizioneCamera) {
+  if (amb.ciclo) {
+    amb.ora = (amb.ora + dt / 20) % 24;   // un giorno intero in 8 minuti
+  }
+  amb.tempo += dt;
+  amb.uniformi.tempo.value = amb.tempo;
+  const meteo = METEO[amb.meteo];
+
+  const elevazione = posizioneSole(amb.ora, amb.direzioneSole);
+  amb.elevazione = elevazione;
+  // Notte: 0 di giorno, 1 quando il sole e' sotto -4 gradi (sfuma nel crepuscolo)
+  const notte = Math.min(1, Math.max(0, (4 - elevazione) / 9));
+  amb.uniformi.notte.value = notte;
+
+  // luce principale: sole di giorno, luna di notte
+  let intensita = punto(elevazione, "ints") * (0.35 + 0.65 * meteo.sole);
+  amb.colore.sole.copy(punto(elevazione, "sole"));
+  const direzione = amb.direzioneLuce;
+  if (elevazione > -3) {
+    direzione.copy(amb.direzioneSole);
+    if (direzione.y < 0.12) direzione.y = 0.12;   // il sole basso non va sotto l'orizzonte per le ombre
+    direzione.normalize();
+  } else {
+    // luna: opposta al sole
+    direzione.set(-amb.direzioneSole.x * 0.6 + 0.2, Math.max(0.45, -amb.direzioneSole.y), -amb.direzioneSole.z * 0.6 + 0.2).normalize();
+  }
+  amb.sole.color.copy(amb.colore.sole);
+  amb.sole.intensity = intensita;
+
+  // grigio del meteo: toglie colore al cielo
+  const grigio = meteo.grigio;
+  amb.hemi.color.copy(punto(elevazione, "cielo")).lerp(_a.setHex(0x9aa3ad), grigio * 0.6);
+  amb.hemi.groundColor.copy(punto(elevazione, "terra"));
+  amb.hemi.intensity = punto(elevazione, "hemi") * (1 + grigio * 0.15);
+  amb.colore.nebbia.copy(punto(elevazione, "nebbia")).lerp(_a.setHex(0xa8b0b8).multiplyScalar(1 - notte * 0.85), grigio * 0.7);
+  amb.disegnatore.toneMappingExposure = punto(elevazione, "espo");
+  amb.scena.environmentIntensity = punto(elevazione, "env") * (1 - notte * 0.4);
+
+  // nebbia: colore e distanza
+  const dist = amb.visibilita * meteo.nebbia;
+  amb.scena.fog.color.copy(amb.colore.nebbia);
+  amb.scena.fog.near = dist * 0.18;
+  amb.scena.fog.far = dist;
+  amb.scena.background = amb.colore.nebbia;
+
+  // cielo (scattering): torbido con meteo cattivo
+  const u = amb.cielo.material.uniforms;
+  u.sunPosition.value.copy(amb.direzioneSole);
+  u.turbidity.value = 3 + grigio * 14;
+  u.rayleigh.value = 1.1 + grigio * 0.9 + (1 - notte) * 0.2;
+  u.mieCoefficient.value = 0.004 + grigio * 0.02;
+  u.mieDirectionalG.value = 0.8;
+
+  // posizioni dipendenti dalla telecamera
+  amb.cielo.position.copy(posizioneCamera);
+  amb.stelle.position.copy(posizioneCamera);
+  amb.stelle.material.opacity = Math.max(0, notte - 0.35) / 0.65 * (1 - meteo.nuvole * 0.55 * (amb.meteo === "sereno" ? 0 : 1));
+  // luna: nel cielo opposta al sole (solo quando il sole e' basso)
+  const lunaDir = _v.set(-amb.direzioneSole.x, Math.max(0.25, -amb.direzioneSole.y + 0.15), -amb.direzioneSole.z).normalize();
+  amb.luna.position.copy(posizioneCamera).addScaledVector(lunaDir, 4500);
+  amb.luna.material.opacity = Math.max(0, notte - 0.25) / 0.75 * (amb.meteo === "nebbia" ? 0.3 : 1);
+
+  // nuvole
+  amb.nuvole.visible = amb.qualitaNuvole;
+  if (amb.qualitaNuvole) {
+    amb.nuvole.position.set(posizioneCamera.x, 1500, posizioneCamera.z);
+    const un = amb.uniformiNuvole;
+    un.uTempo.value = amb.tempo;
+    un.uCopertura.value = meteo.nuvole;
+    un.uCentro.value.copy(amb.nuvole.position);
+    un.uSole.value.copy(amb.direzioneSole);
+    // chiare al tramonto (rosa), scure di notte
+    un.uColoreChiaro.value.copy(amb.colore.nebbia).lerp(_a.setHex(0xffffff), 0.55 * (1 - notte)).multiplyScalar(1 - notte * 0.8);
+    un.uColoreScuro.value.copy(un.uColoreChiaro.value).multiplyScalar(0.62 - grigio * 0.18).lerp(amb.colore.nebbia, 0.15);
+  }
+  for (const f of amb.osservatori) f(amb);
+}
+
+// Ombre che seguono la moto (il sole sta sulla direzione della luce)
+export function posizionaLuce(amb, x, y, z) {
+  const d = amb.direzioneLuce;
+  amb.sole.target.position.set(x, y, z);
+  amb.sole.position.set(x + d.x * 120, y + d.y * 120, z + d.z * 120);
+}
+
+export function impostaOra(amb, ora) {
+  amb.ora = ((ora % 24) + 24) % 24;
+  scrivi(CHIAVE_ORA, amb.ora.toFixed(2));
+}
+export function impostaMeteo(amb, chiave) {
+  if (!METEO[chiave]) return;
+  amb.meteo = chiave;
+  scrivi(CHIAVE_METEO, chiave);
+}
+export function impostaCiclo(amb, attivo) {
+  amb.ciclo = attivo;
+  scrivi(CHIAVE_CICLO, attivo ? "1" : "0");
+  scrivi(CHIAVE_ORA, amb.ora.toFixed(2));
+}
+export function oraSalvata(amb) {
+  scrivi(CHIAVE_ORA, amb.ora.toFixed(2));
+}
+export function testoOra(ora) {
+  const h = Math.floor(ora);
+  const m = Math.floor((ora - h) * 60);
+  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+}
+export function descrizioneMomento(amb) {
+  const e = amb.elevazione;
+  if (e < -6) return "Notte";
+  if (e < 4) return amb.ora < 12 ? "Alba" : "Tramonto";
+  if (e < 20) return amb.ora < 12 ? "Mattino" : "Sera";
+  return "Giorno";
+}

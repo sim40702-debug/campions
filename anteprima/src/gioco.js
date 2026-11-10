@@ -13,7 +13,10 @@ import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
-import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
+import { caricaEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
+import { creaLuoghi } from "./luoghi.js";
+import { caricaUsoSuolo } from "./uso_suolo.js";
+import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
@@ -21,7 +24,8 @@ import { aggiungiOpere } from "./opere.js";
 import { caricaTrasporti, aggiungiTrasporti, aggiornaTrasporti } from "./trasporti.js";
 import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
 import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
-import { preparaMinimappa, aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
+import { aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
+import { preparaMinimappa } from "./mappa.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
 const PARTENZA_EST = 2704700;
@@ -34,48 +38,73 @@ scena.fog = new THREE.Fog(0x9cc3e6, 1500, 7000);
 
 const telecamera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.3, 9000);
 
-const disegnatore = new THREE.WebGLRenderer({ antialias: true });
+const disegnatore = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 disegnatore.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 disegnatore.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(disegnatore.domElement);
 
-// Colori come al cinema (tone mapping) e riflessi sui metalli della moto (ambiente)
+// Colori come al cinema (tone mapping); i riflessi vengono dal cielo vero (vedi aggiornaRiflessi)
 disegnatore.toneMapping = THREE.ACESFilmicToneMapping;
 disegnatore.toneMappingExposure = 1.15;
 const generatore = new THREE.PMREMGenerator(disegnatore);
 scena.environment = generatore.fromScene(new RoomEnvironment(), 0.04).texture;
 scena.environmentIntensity = 0.35;
 
-scena.add(new THREE.HemisphereLight(0xdfefff, 0x4a5a3a, 1.2));
-const DIREZIONE_SOLE = new THREE.Vector3(-0.5, 1, 0.3).normalize();
+const emisfero = new THREE.HemisphereLight(0xdfefff, 0x4a5a3a, 1.2);
+scena.add(emisfero);
 const sole = new THREE.DirectionalLight(0xfff4e0, 2.2);
-sole.position.copy(DIREZIONE_SOLE);
+sole.position.set(-0.5, 1, 0.3);
 scena.add(sole);
 scena.add(sole.target);
 
-// Ombre: solo vicino alla moto (40 x 40 m), cosi' costano poco
+// Ombre: seguono la moto. Quanto sono estese dipende dalla qualita' (impostazioni.js)
 disegnatore.shadowMap.enabled = true;
 disegnatore.shadowMap.type = THREE.PCFSoftShadowMap;
 sole.castShadow = true;
 sole.shadow.mapSize.set(2048, 2048);
-sole.shadow.camera.left = -20;
-sole.shadow.camera.right = 20;
-sole.shadow.camera.top = 20;
-sole.shadow.camera.bottom = -20;
+sole.shadow.camera.left = -40;
+sole.shadow.camera.right = 40;
+sole.shadow.camera.top = 40;
+sole.shadow.camera.bottom = -40;
 sole.shadow.camera.near = 1;
-sole.shadow.camera.far = 150;
-sole.shadow.bias = -0.0005;
-sole.shadow.normalBias = 0.03;
+sole.shadow.camera.far = 300;
+sole.shadow.bias = -0.0004;
+sole.shadow.normalBias = 0.05;
 
-// Cielo vero (scattering dell'atmosfera) con il sole nella stessa direzione della luce
-const cielo = new Sky();
-cielo.scale.setScalar(6000);
-cielo.material.uniforms.turbidity.value = 4;
-cielo.material.uniforms.rayleigh.value = 1.2;
-cielo.material.uniforms.mieCoefficient.value = 0.004;
-cielo.material.uniforms.mieDirectionalG.value = 0.8;
-cielo.material.uniforms.sunPosition.value.copy(DIREZIONE_SOLE);
-scena.add(cielo);
+// Ora del giorno, cielo con stelle e luna, nuvole, nebbia e meteo
+const ambiente = creaAmbiente(scena, disegnatore, sole, emisfero, telecamera);
+
+// Fari della moto (di notte): un faro che illumina la strada davanti
+const faro = new THREE.SpotLight(0xfff0d0, 0, 90, 0.5, 0.95, 1.4);
+faro.castShadow = false;
+scena.add(faro);
+scena.add(faro.target);
+
+// Riflessi: la scena (metalli della moto, vetri) riflette il cielo vero. Si rifa' quando cambia l'ora.
+let ultimaOraRiflessi = -99;
+let ultimoMeteoRiflessi = "";
+function aggiornaRiflessi(forza) {
+  const cambio = Math.abs(ambiente.ora - ultimaOraRiflessi) > 0.6 && Math.abs(ambiente.ora - ultimaOraRiflessi) < 23.4;
+  if (!forza && !cambio && ultimoMeteoRiflessi === ambiente.meteo) return;
+  ultimaOraRiflessi = ambiente.ora;
+  ultimoMeteoRiflessi = ambiente.meteo;
+  const piccola = new THREE.Scene();
+  const cieloPiccolo = new Sky();
+  cieloPiccolo.scale.setScalar(900);
+  const u = cieloPiccolo.material.uniforms;
+  const o = ambiente.cielo.material.uniforms;
+  u.sunPosition.value.copy(o.sunPosition.value);
+  u.turbidity.value = o.turbidity.value;
+  u.rayleigh.value = o.rayleigh.value;
+  u.mieCoefficient.value = o.mieCoefficient.value;
+  u.mieDirectionalG.value = o.mieDirectionalG.value;
+  piccola.add(cieloPiccolo);
+  const vecchio = scena.environment;
+  scena.environment = generatore.fromScene(piccola, 0.02, 1, 5000).texture;
+  if (vecchio && vecchio !== scena.environment) vecchio.dispose();
+  cieloPiccolo.geometry.dispose();
+  cieloPiccolo.material.dispose();
+}
 
 window.addEventListener("resize", function () {
   telecamera.aspect = window.innerWidth / window.innerHeight;
@@ -108,15 +137,25 @@ function cambiaTasto(evento, premuto) {
 }
 
 window.addEventListener("keydown", function (evento) {
+  // mentre si scrive nella ricerca della mappa i tasti non guidano la moto
+  if (evento.target && evento.target.tagName === "INPUT") return;
   cambiaTasto(evento, true);
   if (evento.code === "KeyC") modoTelecamera = (modoTelecamera + 1) % 3;
   if (evento.code === "KeyR") richiestaReset = true;
+  if (evento.code === "KeyT") {
+    // T: ora del giorno (mattino, mezzogiorno, tramonto, notte)
+    const tappe = [7.5, 12.5, 18.4, 22.5];
+    let prossima = tappe.find(function (t) { return t > ambiente.ora + 0.05; });
+    if (prossima === undefined) prossima = tappe[0];
+    impostaOra(ambiente, prossima);
+  }
   if (evento.code === "KeyH") {
     const aiuto = document.getElementById("aiuto");
     aiuto.style.display = aiuto.style.display === "none" ? "block" : "none";
   }
 });
 window.addEventListener("keyup", function (evento) {
+  if (evento.target && evento.target.tagName === "INPUT") return;
   cambiaTasto(evento, false);
 });
 
@@ -204,36 +243,51 @@ function mettiSullaStrada(moto, strade, x, z) {
   }
 }
 
+// Faro: di notte la moto illumina la strada davanti
+function aggiornaFaro(moto) {
+  const buio = ambiente.uniformi.notte.value;
+  faro.intensity = buio * 260;
+  if (buio < 0.02) return;
+  const dirX = -Math.sin(moto.angolo);
+  const dirZ = -Math.cos(moto.angolo);
+  faro.position.set(moto.x + dirX * 0.9, moto.y + 1.0, moto.z + dirZ * 0.9);
+  faro.target.position.set(moto.x + dirX * 25, moto.y - 0.2, moto.z + dirZ * 25);
+}
+
 // --- Avvio ---------------------------------------------------------------------
 async function avvia() {
   try {
     await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
-    const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore);
+    const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
 
     await mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
-    aggiungiStrade(strade, scena, terreno);
-    aggiungiOpere(strade, scena, terreno);
 
     await mostraStato("Fiumi e torrenti...");
-    aggiungiAcqua(await caricaAcqua(), scena, terreno);
+    const acquaDati = await caricaAcqua();
+    aggiungiAcqua(acquaDati, scena, terreno, ambiente);
 
     await mostraStato("Caricamento degli edifici (OpenStreetMap)...");
     const edifici = await caricaEdifici();
-    aggiungiEdifici(edifici, scena);
+    const dettagli = await caricaDettagli();
+    const luoghi = creaLuoghi(dettagli.localita);
+    await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");
+    aggiungiEdifici(edifici, scena, { luoghi: luoghi, strade: strade, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
+    aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
+    aggiungiOpere(strade, scena, terreno);
 
     await mostraStato("Treni, funicolari e teleferiche...");
     const trasporti = await caricaTrasporti();
     const mobili = aggiungiTrasporti(trasporti, scena);
 
-    await mostraStato("Segnaletica e lampioni...");
-    const dettagli = await caricaDettagli();
-    aggiungiDettagli(dettagli, scena, terreno, strade);
-    preparaMinimappa(strade, terreno, dettagli.localita, trasporti);
+    await mostraStato("Segnaletica, lampioni e arredo urbano...");
+    aggiungiDettagli(dettagli, scena, terreno, strade, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
+    const usoSuolo = await caricaUsoSuolo();
+    const mappa = preparaMinimappa({ usoSuolo: usoSuolo, strade: strade, terreno: terreno, localita: dettagli.localita, trasporti: trasporti, edifici: edifici, luoghi: luoghi, acqua: acquaDati, ambiente: ambiente });
 
-    await mostraStato("Preparazione dei boschi...");
-    const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli());
+    await mostraStato("Preparazione dei boschi e del verde urbano...");
+    const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli(), { luoghi: luoghi, ambiente: ambiente });
 
     await caricaModelli3D(function (nome) {
       mostraStato("Moto 3D: " + nome + "...");
@@ -252,7 +306,7 @@ async function avvia() {
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole };
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     preparaMenu(mondo, function () {
@@ -260,14 +314,17 @@ async function avvia() {
     });
     preparaRisultato();
     preparaGarage(moto);
-    preparaPartenza(moto, dettagli.localita, function (m, x, z) {
+    preparaPartenza(moto, mappa, function (m, x, z) {
       mettiSullaStrada(m, strade, x, z);
       preparaTerrenoVicino(terrenoMesh, m.x, m.z);
     });
+    aggiornaRiflessi(true);
 
     const danni = creaDanni();
     const segni = creaSegni(scena);
 
+    // per i test automatici (tools/anteprima_prova): contatori del disegnatore
+    window.__mrw = { disegnatore: disegnatore, scena: scena, ambiente: ambiente };
     nascondiCaricamento();
     const orologio = new THREE.Clock();
     let tempoGioco = 0;
@@ -291,10 +348,12 @@ async function avvia() {
         aggiornaTerreno(terrenoMesh, moto.x, moto.z, vero);
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
-      // il sole (e le sue ombre) segue la moto; il cielo segue la telecamera
-      sole.target.position.set(moto.x, moto.y, moto.z);
-      sole.position.set(moto.x + DIREZIONE_SOLE.x * 80, moto.y + DIREZIONE_SOLE.y * 80, moto.z + DIREZIONE_SOLE.z * 80);
-      cielo.position.copy(telecamera.position);
+      // ora del giorno, cielo, nuvole; il sole (e le sue ombre) segue la moto
+      aggiornaAmbiente(ambiente, vero, telecamera.position);
+      posizionaLuce(ambiente, moto.x, moto.y, moto.z);
+      aggiornaRiflessi(false);
+      aggiornaEdifici(edifici, moto.x, moto.z, vero);
+      aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);
       aggiornaSuono(moto, test.attivo);
@@ -322,8 +381,9 @@ async function avvia() {
           staccaSegno(segni, chiave);
         }
       }
+      window.__mrw.fotogrammi = (window.__mrw.fotogrammi || 0) + 1;
       aggiornaFps(vero, disegnatore);
-      aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
+      aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z), mappa, ambiente);
       disegnatore.render(scena, telecamera);
       requestAnimationFrame(ciclo);
     }

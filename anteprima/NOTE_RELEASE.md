@@ -3,7 +3,24 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.13.1)
+### Novità di questa versione (0.14.0) – grande upgrade grafico
+
+- **Città tutte diverse**: ogni città e paese ha un'identità sua (colori dei muri e dei tetti, tipo di facciata, balconi, palme, alberi di strada), ricavata dal nome: Locarno ocra e terracotta, Ascona mediterranea con palme, Muralto pastello, Tenero moderno, Losone alpino, Ponte Brolla di granito… e lo stesso vale per qualsiasi altro paese dei dati.
+- **Quartieri riconosciuti da soli** (centro storico, commerciale, industriale, residenziale, periferia): palazzi con negozi al piano terra, cornicioni, capannoni di lamiera con lucernari, uffici a vetri, case con gronda, comignoli e pannelli solari, balconi, impianti sui tetti, tetti di pietra in quota.
+- **Facciate che non si ripetono**: 8 tipi di facciata e per ogni finestra una variante diversa (persiane aperte o chiuse, tende, fioriere, avvolgibili, vetri riflettenti).
+- **Ora del giorno e notte**: tasto **T** o cursore nelle Impostazioni (alba, giorno, tramonto, notte; anche "il tempo scorre"). Sole e luna veri per Locarno, cielo con stelle, nuvole, **meteo** (sereno, variabile, nuvoloso, nebbia). Di notte si accendono **finestre, vetrine, lampioni (con alone e macchia di luce) e il faro della moto**.
+- **Strade**: asfalto con grana, rattoppi e carreggiate consumate, righe di bordo e mezzeria che si interrompono agli incroci, **marciapiedi con cordolo** nei quartieri abitati.
+- **Arredo urbano**: panchine, cestini, pensiline dell'autobus, cartelli "attenzione pedoni", cartello con il nome del paese e limite 50 all'ingresso.
+- **Verde**: 7 specie (latifoglie, abeti, cipressi, **palme**, cespugli), tinte e grandezze diverse, chiome che ondeggiano al vento, viali e giardini nei paesi.
+- **Acqua**: lago, fiumi e stagni con onde che si muovono e riflessi del cielo; terreno con grana, neve in alta quota, ghiaia sulle rive, fondale del lago.
+- **Ombre molto più estese** (fino a 75 m) e anche gli edifici fanno ombra; riflessi dal cielo vero su metalli e vetri.
+- **Minimappa nuova**: rotonda, disegnata dai dati veri (rilievo, lago, boschi, edifici, strade con bordo e gerarchia, ponti, gallerie, ferrovie, nomi), che ruota con la moto o resta con il nord in alto (clic), zoom con + / − o rotellina, colori scuri di notte.
+- **Mappa grande** (tasto **P** o **N**, pulsante Mappa): trascina e ingrandisci, **cerca** paesi, strade e luoghi, **livelli** (rilievo, quartieri, edifici, boschi, acque, strade, nomi, ferrovie, luoghi, punti di interesse), segnaposto con nome della strada, quota e coordinate, "Parti da qui" o doppio clic.
+- **Prestazioni**: edifici in pezzi da 500 m con culling per distanza, dettagli dei tetti e dei balconi solo vicino (LOD), tutto "instanced"; Impostazioni con distanze e ombre diverse per Bassa / Media / Alta / Ultra, e nuvole e ombre degli edifici attivabili.
+- **Dati** (per chi crea la release): il passo 7 esporta anche parchi, giardini e prati (`uso_suolo.json`) che compaiono sulla mappa.
+
+### Novità della 0.13.1
+
 
 - **Si cade molto meno facilmente**:
   - sterzo al massimo = tutta l'aderenza delle gomme, non di più: tenendo lo sterzo in curva non si scivola più (provato a 120 km/h);

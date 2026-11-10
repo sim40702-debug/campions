@@ -81,6 +81,17 @@ def query_acqua():
             + ");\nout geom;\n")
 
 
+def query_uso_suolo():
+    # Parchi, giardini, prati, cimiteri, campi sportivi e zone residenziali/commerciali/industriali (per la mappa)
+    f = filtro_pilota()
+    return ("[out:json][timeout:900];\n(\n"
+            + '  way["leisure"~"^(park|garden|pitch|playground|golf_course|stadium)$"]' + f + ";\n"
+            + '  way["landuse"~"^(grass|meadow|recreation_ground|village_green|cemetery|allotments|orchard|vineyard|residential|commercial|retail|industrial)$"]' + f + ";\n"
+            + '  relation["leisure"~"^(park|garden)$"]' + f + ";\n"
+            + '  relation["landuse"~"^(residential|commercial|industrial|retail|cemetery)$"]' + f + ";\n"
+            + ");\nout geom;\n")
+
+
 def query_trasporti():
     f = filtro_pilota()
     return ("[out:json][timeout:900];\n(\n"
@@ -128,6 +139,10 @@ def main():
         print("7) Teleferiche, funicolari e ferrovie del pilota...")
         trasporti = utilita.chiedi_overpass(query_trasporti(), cartella / ("trasporti_" + utilita.nome_area(True) + ".json"))
         print("   Elementi scaricati: " + str(len(trasporti.get("elements", []))))
+
+        print("8) Parchi, giardini, prati e zone d'uso del suolo del pilota (per la mappa)...")
+        uso = utilita.chiedi_overpass(query_uso_suolo(), cartella / ("uso_suolo_" + utilita.nome_area(True) + ".json"))
+        print("   Elementi scaricati: " + str(len(uso.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))
 

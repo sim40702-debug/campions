@@ -12,6 +12,7 @@ let fotogrammi = 0;
 let tempo = 0;
 
 window.addEventListener("keydown", function (evento) {
+  if (evento.target && evento.target.tagName === "INPUT") return;
   if (evento.code === "KeyF") {
     mostraFps = !mostraFps;
     elFps.style.display = mostraFps ? "block" : "none";

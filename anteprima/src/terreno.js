@@ -7,8 +7,40 @@
 // Se c'e' la foto aerea SWISSIMAGE del pezzo (passo 8), il terreno la usa come colore.
 
 import * as THREE from "three";
+import { creaMaterialeAcqua } from "./onde.js";
 
 const QUAD_PEZZO = 508;   // 508 x 3.94 m = 2000 m
+
+// Materiale del terreno: i colori vengono dai vertici (o dalla foto aerea); un programma della scheda video
+// aggiunge una grana fine e macchie di colore a due scale, cosi' il prato non e' una superficie liscia.
+function materialeTerreno() {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0 });
+  m.onBeforeCompile = function (shader) {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vTerrenoXZ;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvTerrenoXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>
+        varying vec2 vTerrenoXZ;
+        float hT(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float nT(vec2 p) {
+          vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hT(i), hT(i + vec2(1.0, 0.0)), f.x), mix(hT(i + vec2(0.0, 1.0)), hT(i + vec2(1.0, 1.0)), f.x), f.y);
+        }`)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        {
+          // distanza dalla camera: vicino grana fine, lontano solo macchie grandi (niente "sfarfallio")
+          float d = length(vViewPosition);
+          float vicino = 1.0 - smoothstep(60.0, 380.0, d);
+          float macro = nT(vTerrenoXZ * 0.045) * 0.6 + nT(vTerrenoXZ * 0.13) * 0.4;
+          float micro = nT(vTerrenoXZ * 1.7) * 0.5 + nT(vTerrenoXZ * 5.3) * 0.5;
+          float k = 0.84 + macro * 0.32 + (micro - 0.5) * 0.26 * vicino;
+          diffuseColor.rgb *= k;
+        }`);
+  };
+  m.customProgramCacheKey = function () { return "terreno-grana"; };
+  return m;
+}
 
 export async function caricaTerreno() {
   const rispostaInfo = await fetch("dati/terreno.json");
@@ -84,20 +116,37 @@ export function quotaTerreno(terreno, x, z) {
   return sopra * (1 - fy) + sotto * fy;
 }
 
-// Colore di un punto (solo se manca la foto aerea)
-function coloreTerreno(quota, pendenza, livelloLago, bosco, colore) {
-  if (quota < livelloLago + 0.6) {
-    colore.setRGB(0.62, 0.57, 0.45);
-  } else if (bosco && pendenza < 1.4) {
-    const variazione = (Math.sin(quota * 0.11) + 1) * 0.02;
-    colore.setRGB(0.15 + variazione, 0.27 + variazione, 0.12);
-  } else if (pendenza > 0.9) {
-    colore.setRGB(0.45, 0.43, 0.40);
+// Colore di un punto (solo se manca la foto aerea): prati, bosco, roccia, ghiaia, riva, neve
+function rumore2(a, b) {
+  const v = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+  return v - Math.floor(v);
+}
+function coloreTerreno(quota, pendenza, livelloLago, bosco, colore, x, z) {
+  const grana = rumore2(Math.floor(x / 9), Math.floor(z / 9));          // macchie da 9 m
+  const macchia = Math.sin(x * 0.011 + Math.cos(z * 0.009) * 2) * Math.cos(z * 0.013 - x * 0.004);   // zone grandi
+  if (quota < livelloLago - 0.3) {
+    // sotto il livello del lago: dal fondo sabbioso (riva) al blu-verde scuro (fondale)
+    const fondo = Math.min(1, (livelloLago - quota) / 18);
+    colore.setRGB(0.56 - fondo * 0.46, 0.52 - fondo * 0.36, 0.38 - fondo * 0.22);
+  } else if (quota < livelloLago + 0.7) {
+    colore.setRGB(0.66 + grana * 0.06, 0.6 + grana * 0.05, 0.47);   // spiaggia e riva di ghiaia
+  } else if (bosco && pendenza < 1.5) {
+    const v = (Math.sin(quota * 0.11) + 1) * 0.02 + grana * 0.03;
+    colore.setRGB(0.14 + v, 0.26 + v, 0.11 + v * 0.5);
+  } else if (quota > 2150 + macchia * 120 && pendenza < 1.1) {
+    colore.setRGB(0.92, 0.94, 0.97);     // neve sulle cime
+  } else if (pendenza > 1.0) {
+    const v = grana * 0.08;
+    colore.setRGB(0.44 + v, 0.42 + v, 0.39 + v);   // roccia
+  } else if (pendenza > 0.72) {
+    colore.setRGB(0.4 + grana * 0.06, 0.38 + grana * 0.05, 0.31);   // detriti e prati sassosi
   } else if (quota > 1700) {
-    colore.setRGB(0.55, 0.58, 0.45);
+    const v = grana * 0.05;
+    colore.setRGB(0.5 + v, 0.54 + v, 0.4);     // pascoli d'alta quota
   } else {
-    const variazione = (Math.sin(quota * 0.05) + 1) * 0.03;
-    colore.setRGB(0.26 + variazione, 0.42 + variazione, 0.20);
+    // prato: varia da verde fresco a prato secco con la zona e le macchie
+    const secco = Math.max(0, macchia) * 0.18 + grana * 0.05;
+    colore.setRGB(0.19 + secco + (Math.sin(quota * 0.05) + 1) * 0.02, 0.33 + secco * 0.5 + grana * 0.03, 0.12);
   }
 }
 
@@ -137,7 +186,7 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
       const sotto = q[Math.min(riga + 1, terreno.righe - 1) * n + colonna];
       const pendenza = Math.hypot(destra - quota, sotto - quota) / terreno.passo;
       const bosco = terreno.bosco !== null && terreno.bosco[riga * n + colonna] === 1;
-      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore);
+      coloreTerreno(quota, pendenza, terreno.info.livello_lago, bosco, colore, colonna * terreno.passo - terreno.metaX, riga * terreno.passo - terreno.metaZ);
       colori[indice] = colore.r;
       colori[indice + 1] = colore.g;
       colori[indice + 2] = colore.b;
@@ -208,7 +257,7 @@ function creaGeometriaPezzo(terreno, inizioColonna, inizioRiga, salto, centroX, 
   return geometria;
 }
 
-export function aggiungiTerreno(terreno, scena, disegnatore) {
+export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
   const colonnePezzi = Math.floor((terreno.colonne - 1) / QUAD_PEZZO);
   const righePezzi = Math.floor((terreno.righe - 1) / QUAD_PEZZO);
   const latoPezzo = QUAD_PEZZO * terreno.passo;
@@ -221,7 +270,7 @@ export function aggiungiTerreno(terreno, scena, disegnatore) {
       const centroX = (px + 0.5) * latoPezzo - terreno.metaX;
       const centroZ = (py + 0.5) * latoPezzo - terreno.metaZ;
       // Il terreno si vede solo da sopra: cosi' dentro le gallerie non copre il tubo
-      const materiale = new THREE.MeshLambertMaterial({ vertexColors: true });
+      const materiale = materialeTerreno();
       const lontano = new THREE.Mesh(
         creaGeometriaPezzo(terreno, px * QUAD_PEZZO, py * QUAD_PEZZO, 4, centroX, centroZ), materiale);
       lontano.position.set(centroX, 0, centroZ);
@@ -243,13 +292,15 @@ export function aggiungiTerreno(terreno, scena, disegnatore) {
     }
   }
 
-  // Lago Maggiore: una superficie d'acqua alla quota del lago
+  // Lago Maggiore: una superficie d'acqua alla quota del lago, con onde e riflessi del cielo.
+  // E' un po' trasparente: vicino a riva si vede il fondo sabbioso.
   const lago = new THREE.Mesh(
     new THREE.PlaneGeometry(terreno.metaX * 2, terreno.metaZ * 2),
-    new THREE.MeshLambertMaterial({ color: 0x2e6a92 })
+    creaMaterialeAcqua(ambiente, { colore: 0x2b6f95, opacita: 0.86, scala: 22, velocita: 0.018, polygonOffset: 0 })
   );
   lago.rotation.x = -Math.PI / 2;
   lago.position.y = terreno.info.livello_lago;
+  lago.receiveShadow = false;
   scena.add(lago);
 
   return { terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0 };
@@ -266,6 +317,13 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
   let distanzaMinima = Infinity;
   for (const pezzo of terrenoMesh.pezzi) {
     const distanza = Math.hypot(pezzo.centroX - x, pezzo.centroZ - z);
+    // un pezzo vicino "a meta' dettaglio" (un punto ogni 8 m) torna a dettaglio pieno quando ci si avvicina
+    if (pezzo.vicino !== null && pezzo.vicino.userData.salto === 2 && distanza < 900) {
+      terrenoMesh.scena.remove(pezzo.vicino);
+      pezzo.vicino.geometry.dispose();
+      pezzo.vicino = null;
+      pezzo.lontano.visible = true;
+    }
     if (pezzo.vicino === null && distanza < raggio && distanza < distanzaMinima) {
       daCreare = pezzo;
       distanzaMinima = distanza;
@@ -279,8 +337,11 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt) {
   }
   if (daCreare !== null) {
     const p = daCreare;
+    // vicino alla moto un punto ogni 4 m; piu' lontano (oltre 1 km) ne basta uno ogni 8 m: un quarto dei triangoli
+    const salto = Math.hypot(p.centroX - x, p.centroZ - z) < 1000 ? 1 : 2;
     p.vicino = new THREE.Mesh(
-      creaGeometriaPezzo(terrenoMesh.terreno, p.px * QUAD_PEZZO, p.py * QUAD_PEZZO, 1, p.centroX, p.centroZ), p.materiale);
+      creaGeometriaPezzo(terrenoMesh.terreno, p.px * QUAD_PEZZO, p.py * QUAD_PEZZO, salto, p.centroX, p.centroZ), p.materiale);
+    p.vicino.userData.salto = salto;
     p.vicino.receiveShadow = true;   // ombra della moto sul terreno
     p.vicino.position.set(p.centroX, 0, p.centroZ);
     terrenoMesh.scena.add(p.vicino);

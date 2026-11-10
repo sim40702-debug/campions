@@ -43,7 +43,15 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/terreno.js` | Terreno e lago |
 | `src/strade.js` | Strade e ricerca della strada sotto la moto |
 | `src/moto.js` | Modello e guida della moto |
-| `src/interfaccia.js` | Velocità, quota, coordinate, minimappa |
+| `src/interfaccia.js` | Velocità, quota, coordinate, ora |
+| `src/mappa.js` | Motore di disegno di minimappa e mappa grande (rilievo, acque, boschi, edifici, strade, nomi, POI) |
+| `src/partenza.js` | Mappa grande (P / N): ricerca, filtri, zoom, partenza |
+| `src/ambiente.js` | Ora del giorno, sole e luna, cielo, stelle, nuvole, meteo |
+| `src/luoghi.js` | Identità di ogni città/paese (colori, facciate, palme, alberi) |
+| `src/facciate.js` | Facciate e tetti disegnati dal codice, finestre che si accendono di notte |
+| `src/arredo.js` | Lampioni accesi, panchine, pensiline, cartelli di località |
+| `src/onde.js` | Acqua con onde e riflessi |
+| `src/uso_suolo.js` | Parchi e giardini (facoltativo) |
 | `src/edifici.js` | Edifici e collisioni |
 | `src/alberi.js` | Boschi e alberi vicino alla moto |
 | `src/aggiorna.js` | Pulsante e pannello "Aggiorna" |
@@ -57,3 +65,13 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/audio.js` | Suono del motore |
 | `src/trasporti.js` | Ferrovie, funicolari, teleferiche con cabine in movimento |
 | `NOTE_RELEASE.md` | Testo della pagina della release |
+
+## Prova senza scaricare i dati veri (test grafici)
+
+`tools/anteprima_prova/genera_dati_prova.mjs` crea in `anteprima/dati` dati **finti** nello stesso formato (8 paesi di carattere
+diverso, lago, fiume, boschi, ferrovia). Con `tools/anteprima_prova/prova.mjs` (Playwright) si fanno gli screenshot automatici:
+
+```
+node tools/anteprima_prova/genera_dati_prova.mjs
+node tools/anteprima_prova/prova.mjs cartella_screenshot "x,z,qualita,ora,telecamera,nome,tasto"
+```

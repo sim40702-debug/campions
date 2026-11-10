@@ -71,6 +71,7 @@ export function preparaGarage(moto) {
     finestra.style.display = "none";
   });
   window.addEventListener("keydown", function (evento) {
+    if (evento.target && evento.target.tagName === "INPUT") return;
     if (evento.code === "KeyG") apriChiudi();
   });
 }

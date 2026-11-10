@@ -84,6 +84,7 @@ function colpo(quando, forza) {
 
 // Il browser permette il suono solo dopo un tasto premuto
 window.addEventListener("keydown", function (evento) {
+  if (evento.target && evento.target.tagName === "INPUT") return;
   if (evento.code === "KeyM") {
     acceso = !acceso;
     try {

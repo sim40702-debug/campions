@@ -11,6 +11,7 @@
 #   bosco.bin     dove c'e' bosco (1) o no (0), stessa griglia del terreno
 #   alberi.json   alberi singoli mappati in OSM
 #   dettagli.json semafori, stop, precedenze, lampioni, strisce, localita' (Sprint D2)
+#   uso_suolo.json parchi, giardini, prati, cimiteri e zone residenziali/commerciali/industriali (per la mappa)
 #   acqua.json    fiumi, torrenti, stagni (Sprint C1)
 #   ferrovie.json binari e funicolari; funivie.json teleferiche e seggiovie (Sprint F1)
 #
@@ -276,6 +277,58 @@ def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord):
     return {"poligoni": poligoni, "fiumi": linee}
 
 
+# Uso del suolo per la mappa: tipo breve -> (tag OSM che lo identificano)
+TIPI_USO_SUOLO = {
+    "parco": [("leisure", ("park", "garden", "playground", "golf_course")), ("landuse", ("recreation_ground", "village_green"))],
+    "prato": [("landuse", ("grass", "meadow", "orchard", "vineyard", "allotments"))],
+    "sport": [("leisure", ("pitch", "stadium"))],
+    "cimitero": [("landuse", ("cemetery",))],
+    "residenziale": [("landuse", ("residential",))],
+    "commerciale": [("landuse", ("commercial", "retail"))],
+    "industriale": [("landuse", ("industrial",))],
+}
+
+
+def esporta_uso_suolo(percorso, zona, centro_est, centro_nord):
+    # Poligoni di parchi, prati e zone d'uso del suolo (coordinate locali), semplificati
+    aree = []
+
+    def locali(coordinate):
+        piatta = []
+        for e, n in coordinate:
+            piatta.append(round(e - centro_est, 1))
+            piatta.append(round(-(n - centro_nord), 1))
+        return piatta
+
+    for elemento in utilita.leggi_json(percorso).get("elements", []):
+        tag = elemento.get("tags", {})
+        tipo = None
+        for nome, regole in TIPI_USO_SUOLO.items():
+            for chiave, valori in regole:
+                if tag.get(chiave) in valori:
+                    tipo = nome
+        if tipo is None:
+            continue
+        poligono = poligono_osm(elemento)
+        if poligono is None or poligono.is_empty:
+            continue
+        poligono = poligono.intersection(zona)
+        parti = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
+        for parte in parti:
+            if parte.geom_type != "Polygon" or parte.area < 60:
+                continue
+            parte = parte.simplify(1.0)
+            if parte.is_empty or parte.geom_type != "Polygon":
+                continue
+            aree.append({
+                "t": tipo,
+                "n": tag.get("name", ""),
+                "o": locali(list(parte.exterior.coords)[:-1]),
+                "f": [locali(list(buco.coords)[:-1]) for buco in parte.interiors],
+            })
+    return {"aree": aree}
+
+
 def esporta_funivie(percorso, zona, suolo, centro_est, centro_nord):
     # Teleferiche e seggiovie: punti della fune (stazioni e piloni) con la quota del terreno
     elementi = utilita.leggi_json(percorso).get("elements", [])
@@ -486,6 +539,15 @@ def main():
         scrivi("funivie.json", {"funivie": funivie})
         for funivia in funivie:
             print("   " + funivia["t"] + ": " + (funivia["n"] or "senza nome") + " (" + str(len(funivia["p"]) // 4) + " punti)")
+
+    print("10) Parchi, giardini e zone d'uso del suolo...")
+    percorso_uso = osm / ("uso_suolo_" + nome + ".json")
+    if percorso_uso.exists():
+        uso = esporta_uso_suolo(percorso_uso, zona, centro_est, centro_nord)
+        scrivi("uso_suolo.json", uso)
+        print("   aree: " + str(len(uso["aree"])))
+    else:
+        print("   (non scaricato: rilancia il passo 2 per avere parchi e zone sulla mappa)")
 
     print("Fatto. File in: " + str(CARTELLA_ANTEPRIMA))
 

@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { stradaVicina } from "./strade.js";
+import { aggiungiArredoUrbano } from "./arredo.js";
 
 export async function caricaDettagli() {
   const risposta = await fetch("dati/dettagli.json");
@@ -14,7 +15,7 @@ export async function caricaDettagli() {
 }
 
 // Unisce piu' pezzi (geometria + colore) in una sola geometria con i colori
-function unisci(parti) {
+export function unisci(parti) {
   const posizioni = [];
   const colori = [];
   for (const [geometria, coloreHex] of parti) {
@@ -41,11 +42,25 @@ function palo(altezza) {
 
 // --- Forme dei vari oggetti (tutte guardano verso -z) ----------------------------
 function formaLampione() {
-  const braccio = new THREE.BoxGeometry(0.08, 0.08, 1.2);
-  braccio.translate(0, 6, -0.6);
-  const lampada = new THREE.BoxGeometry(0.35, 0.12, 0.5);
-  lampada.translate(0, 5.95, -1.2);
-  return unisci([[palo(6.1), 0x5d6168], [braccio, 0x5d6168], [lampada, 0xfff3c4]]);
+  // palo affusolato con base, braccio curvo e la "testa" che si accende di notte (forma separata)
+  const base = new THREE.CylinderGeometry(0.11, 0.14, 0.5, 8);
+  base.translate(0, 0.25, 0);
+  const braccio = new THREE.BoxGeometry(0.07, 0.07, 1.3);
+  braccio.translate(0, 6.08, -0.6);
+  const curva = new THREE.BoxGeometry(0.07, 0.07, 0.4);
+  curva.rotateX(0.5);
+  curva.translate(0, 6.0, -1.15);
+  const cappello = new THREE.BoxGeometry(0.46, 0.09, 0.8);
+  cappello.translate(0, 6.08, -1.35);
+  const palo6 = new THREE.CylinderGeometry(0.045, 0.075, 6.1, 8);
+  palo6.translate(0, 3.05, 0);
+  return unisci([[palo6, 0x5d6168], [base, 0x4a4d52], [braccio, 0x5d6168], [curva, 0x5d6168], [cappello, 0x40444a]]);
+}
+
+function testaLampione() {
+  const lampada = new THREE.BoxGeometry(0.34, 0.07, 0.62);
+  lampada.translate(0, 6.0, -1.35);
+  return lampada;
 }
 
 function formaSemaforo() {
@@ -84,29 +99,45 @@ function formaPrecedenza() {
   return unisci([[palo(2.2), 0x8d9096], [bordo, 0xc8171e], [interno, 0xffffff]]);
 }
 
-const MATERIALE = new THREE.MeshLambertMaterial({ vertexColors: true });
+const MATERIALE = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.35 });
 
 // Mette tante copie di una forma (posizione + rotazione) in una sola InstancedMesh
-function istanze(forma, oggetti, scena) {
-  if (oggetti.length === 0) return;
-  const mesh = new THREE.InstancedMesh(forma, MATERIALE, oggetti.length);
-  const matrice = new THREE.Matrix4();
+function istanze(forma, oggetti, scena, materiale, ombra) {
+  if (oggetti.length === 0) return null;
+  // divisi in celle da 400 m: cosi' la scheda video scarta quelle fuori dallo schermo (e fuori dalle ombre)
+  const celle = new Map();
+  for (const o of oggetti) {
+    const k = Math.floor(o.x / 400) + "," + Math.floor(o.z / 400);
+    let l = celle.get(k);
+    if (!l) { l = []; celle.set(k, l); }
+    l.push(o);
+  }
   const rotazione = new THREE.Quaternion();
   const asse = new THREE.Vector3(0, 1, 0);
   const uno = new THREE.Vector3(1, 1, 1);
-  for (let i = 0; i < oggetti.length; i++) {
-    const o = oggetti[i];
-    rotazione.setFromAxisAngle(asse, o.angolo);
-    matrice.compose(new THREE.Vector3(o.x, o.y, o.z), rotazione, uno);
-    mesh.setMatrixAt(i, matrice);
+  const matrice = new THREE.Matrix4();
+  const pos = new THREE.Vector3();
+  let ultimo = null;
+  for (const lista of celle.values()) {
+    const mesh = new THREE.InstancedMesh(forma, materiale || MATERIALE, lista.length);
+    mesh.castShadow = ombra !== false;
+    mesh.receiveShadow = true;
+    for (let i = 0; i < lista.length; i++) {
+      const o = lista[i];
+      rotazione.setFromAxisAngle(asse, o.angolo);
+      matrice.compose(pos.set(o.x, o.y, o.z), rotazione, uno);
+      mesh.setMatrixAt(i, matrice);
+    }
+    mesh.computeBoundingSphere();
+    scena.add(mesh);
+    ultimo = mesh;
   }
-  mesh.computeBoundingSphere();
-  scena.add(mesh);
+  return ultimo;
 }
 
 // Il punto OSM di un cartello e' spesso SULLA strada: lo sposto sul bordo destro,
 // girato verso chi arriva
-function aBordoStrada(strade, terreno, x, z, spostamento) {
+export function aBordoStrada(strade, terreno, x, z, spostamento) {
   const strada = stradaVicina(strade, x, z, 25);
   if (strada === null || strada.galleria) {
     return { x: x, y: quotaTerreno(terreno, x, z), z: z, angolo: 0 };
@@ -126,7 +157,7 @@ function coppie(lista) {
   return risultato;
 }
 
-export function aggiungiDettagli(dettagli, scena, terreno, strade) {
+export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   const lampioni = coppie(dettagli.lampioni).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.6));
   const semafori = coppie(dettagli.semafori).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.8));
   const stop = coppie(dettagli.stop).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7));
@@ -136,6 +167,7 @@ export function aggiungiDettagli(dettagli, scena, terreno, strade) {
   for (const l of lampioni) l.angolo = l.angolo - Math.PI / 2;
 
   istanze(formaLampione(), lampioni, scena);
+  if (contesto) aggiungiArredoUrbano(scena, terreno, strade, contesto, lampioni, dettagli, testaLampione());
   istanze(formaSemaforo(), semafori, scena);
   istanze(formaStop(), stop, scena);
   istanze(formaPrecedenza(), precedenze, scena);

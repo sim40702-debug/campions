@@ -30,16 +30,25 @@
     <div id="strada"></div>
     <div id="quota"></div>
     <div id="coordinate"></div>
+    <div id="oraGioco"></div>
   </div>
 
-  <canvas id="minimappa" width="220" height="220"></canvas>
+  <div id="contenitoreMini">
+    <canvas id="minimappa" width="240" height="240" title="Clic: mappa ruotante / nord in alto. Rotellina: zoom."></canvas>
+    <div id="controlliMini">
+      <button id="miniPiu" title="Ingrandisci">+</button>
+      <button id="miniMeno" title="Riduci">&minus;</button>
+      <button id="miniRuota" title="Mappa che ruota con la moto / nord in alto">&#10227;</button>
+      <button id="miniMappa" title="Mappa grande (P)">&#9974;</button>
+    </div>
+  </div>
 
   <div id="aiuto">
-    Frecce/WASD: guida (S freno davanti) &nbsp;|&nbsp; Spazio: freno dietro / derapata (in macchina: freno a mano) &nbsp;|&nbsp; Shift: peso dietro (impennata) &nbsp;|&nbsp; E: peso avanti (stoppie) &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; P: partenza &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; F11: schermo intero &nbsp;|&nbsp; H: nascondi aiuto
+    Frecce/WASD: guida (S freno davanti) &nbsp;|&nbsp; Spazio: freno dietro / derapata (in macchina: freno a mano) &nbsp;|&nbsp; Shift: peso dietro (impennata) &nbsp;|&nbsp; E: peso avanti (stoppie) &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; P / N: mappa e partenza &nbsp;|&nbsp; T: ora del giorno &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; F11: schermo intero &nbsp;|&nbsp; H: nascondi aiuto
   </div>
 
   <div id="aggiorna">
-    <button id="pulsantePartenza">Partenza</button>
+    <button id="pulsantePartenza">Mappa</button>
     <button id="pulsanteGarage">Garage</button>
     <button id="pulsanteMenu">Impostazioni</button>
     <button id="pulsanteAggiorna">Aggiorna</button>
@@ -54,7 +63,14 @@
     <h2>Impostazioni</h2>
     <p>Qualità grafica</p>
     <div id="sceltaQualita"></div>
-    <p class="piccolo">Bassa: più veloce, alberi solo vicino. Alta: più alberi e si vede più lontano.</p>
+    <p class="piccolo">Bassa: più veloce, alberi solo vicino. Alta: più alberi e si vede più lontano. Ultra: ombre lunghe, dettagli delle città a grande distanza.</p>
+    <p>Ora del giorno <span id="testoOra"></span></p>
+    <input id="cursoreOra" type="range" min="0" max="24" step="0.25" value="15">
+    <label class="spunta"><input id="cicloGiorno" type="checkbox"> Il tempo scorre (un giorno in 8 minuti)</label>
+    <p>Meteo</p>
+    <div id="sceltaMeteo"></div>
+    <label class="spunta"><input id="sceltaNuvole" type="checkbox" checked> Nuvole</label>
+    <label class="spunta"><input id="sceltaOmbreCitta" type="checkbox" checked> Ombre degli edifici</label>
     <button id="avviaTest">Test prestazioni (45 s)</button>
     <button id="chiudiMenu">Chiudi</button>
     <p class="piccolo">Tasti: F = FPS · Esc = questo menu</p>
@@ -67,13 +83,29 @@
     <p class="piccolo">Clicca su una moto per sceglierla. Tasti: G = garage · M = suono sì/no</p>
   </div>
 
-  <div id="partenza" class="finestra">
-    <h2>Da dove parti?</h2>
-    <canvas id="mappaPartenza"></canvas>
-    <p class="piccolo">Clicca un punto sulla mappa (si parte dalla strada più vicina) oppure un paese:</p>
-    <div id="listaLuoghi"></div>
-    <button id="chiudiPartenza">Chiudi</button>
-    <p class="piccolo">Tasto P = partenza. La scelta viene ricordata per la prossima volta.</p>
+  <div id="mappaGrande">
+    <canvas id="telaMappa"></canvas>
+    <div id="pannelloMappa">
+      <h2>Mappa</h2>
+      <input id="cercaMappa" type="search" placeholder="Cerca paese, strada, luogo..." autocomplete="off" spellcheck="false">
+      <div id="risultatiMappa"></div>
+      <div id="infoMappa">Clicca sulla mappa o cerca un luogo.</div>
+      <button id="partiQui" disabled>Parti da qui</button>
+      <details open>
+        <summary>Livelli della mappa</summary>
+        <div id="filtriMappa"></div>
+      </details>
+      <div class="riga">
+        <button id="centraMoto">Dove sono</button>
+        <button id="chiudiMappa">Chiudi (P)</button>
+      </div>
+      <p class="piccolo">Trascina per spostare, rotellina per ingrandire, doppio clic per partire da quel punto. La partenza viene ricordata.</p>
+    </div>
+    <div id="comandiMappa">
+      <button id="zoomPiu">+</button>
+      <button id="zoomMeno">&minus;</button>
+    </div>
+    <div id="scalaMappa"></div>
   </div>
 
   <div id="risultatoTest" class="finestra">

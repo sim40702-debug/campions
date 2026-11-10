@@ -5,15 +5,37 @@
 
 import { impostaAlberi } from "./alberi.js";
 import { impostaDettaglioTerreno } from "./terreno.js";
+import { impostaEdifici } from "./edifici.js";
+import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, testoOra, descrizioneMomento } from "./ambiente.js";
 
+// pixel = rapporto di pixel; raggioAlberi/densitaAlberi = boschi; visibilita = fino a dove si vede (m);
+// terreno = distanza del terreno dettagliato; ombre = risoluzione delle ombre; areaOmbre = quanti metri attorno
+// alla moto hanno le ombre; dettagli = distanza (m) dei dettagli delle case (balconi, comignoli, impianti);
+// vistaCitta' = distanza (m) degli edifici; nuvole/ombreCitta = nuvole e ombre degli edifici
 export const QUALITA = {
-  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024 },
-  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048 },
-  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096 },
-  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096 }
+  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024, areaOmbre: 26, dettagli: 150, vistaCitta: 3500, nuvole: false, ombreCitta: false },
+  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048, areaOmbre: 40, dettagli: 320, vistaCitta: 6500, nuvole: true, ombreCitta: true },
+  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096, areaOmbre: 55, dettagli: 520, vistaCitta: 8500, nuvole: true, ombreCitta: true },
+  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096, areaOmbre: 75, dettagli: 800, vistaCitta: 10500, nuvole: true, ombreCitta: true }
 };
 
 const CHIAVE = "mrw-qualita";
+const CHIAVE_PREF = "mrw-preferenze";
+
+// Preferenze che si possono togliere anche con qualita' alta
+const preferenze = { nuvole: true, ombreCitta: true };
+try {
+  Object.assign(preferenze, JSON.parse(localStorage.getItem(CHIAVE_PREF) || "{}"));
+} catch (errore) {
+  // memoria non disponibile
+}
+function salvaPreferenze() {
+  try {
+    localStorage.setItem(CHIAVE_PREF, JSON.stringify(preferenze));
+  } catch (errore) {
+    // non importa
+  }
+}
 
 export function qualitaSalvata() {
   try {
@@ -51,11 +73,23 @@ export function applicaQualita(chiave, mondo) {
       mondo.sole.shadow.map = null;
     }
   }
+  // area delle ombre attorno alla moto
+  const a = q.areaOmbre;
+  const cam = mondo.sole.shadow.camera;
+  if (cam.right !== a) {
+    cam.left = -a;
+    cam.right = a;
+    cam.top = a;
+    cam.bottom = -a;
+    cam.updateProjectionMatrix();
+  }
   mondo.disegnatore.setSize(window.innerWidth, window.innerHeight);
   mondo.telecamera.far = q.visibilita + 2000;
   mondo.telecamera.updateProjectionMatrix();
-  mondo.scena.fog.near = q.visibilita * 0.2;
-  mondo.scena.fog.far = q.visibilita;
+  // la nebbia (colore e distanza) la gestisce l'ambiente: gli dico la visibilita' della qualita'
+  mondo.ambiente.visibilita = q.visibilita;
+  mondo.ambiente.qualitaNuvole = q.nuvole && preferenze.nuvole;
+  impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta);
   impostaAlberi(mondo.alberi, q.raggioAlberi, q.densitaAlberi);
   impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno);
   salvaQualita(chiave);
@@ -85,16 +119,69 @@ export function preparaMenu(mondo, avviaTest) {
     scelte.appendChild(bottone);
   }
 
+  // Ora del giorno, meteo, nuvole, ombre degli edifici
+  const amb = mondo.ambiente;
+  const cursore = document.getElementById("cursoreOra");
+  const testoOraEl = document.getElementById("testoOra");
+  const ciclo = document.getElementById("cicloGiorno");
+  const meteo = document.getElementById("sceltaMeteo");
+  function mostraOra() {
+    testoOraEl.textContent = testoOra(amb.ora) + " (" + descrizioneMomento(amb) + ")";
+    if (document.activeElement !== cursore) cursore.value = amb.ora;
+  }
+  cursore.addEventListener("input", function () {
+    impostaOra(amb, parseFloat(cursore.value));
+    mostraOra();
+  });
+  ciclo.checked = amb.ciclo;
+  ciclo.addEventListener("change", function () {
+    impostaCiclo(amb, ciclo.checked);
+  });
+  for (const m of ELENCO_METEO) {
+    const b = document.createElement("button");
+    b.textContent = m.nome;
+    b.dataset.meteo = m.chiave;
+    b.addEventListener("click", function (evento) {
+      evento.currentTarget.blur();
+      impostaMeteo(amb, m.chiave);
+      aggiornaMeteo();
+    });
+    meteo.appendChild(b);
+  }
+  function aggiornaMeteo() {
+    for (const b of meteo.querySelectorAll("button")) b.classList.toggle("scelto", b.dataset.meteo === amb.meteo);
+  }
+  const nuvole = document.getElementById("sceltaNuvole");
+  nuvole.checked = preferenze.nuvole;
+  nuvole.addEventListener("change", function () {
+    preferenze.nuvole = nuvole.checked;
+    salvaPreferenze();
+    applicaQualita(qualitaSalvata(), mondo);
+  });
+  const ombreCitta = document.getElementById("sceltaOmbreCitta");
+  ombreCitta.checked = preferenze.ombreCitta;
+  ombreCitta.addEventListener("change", function () {
+    preferenze.ombreCitta = ombreCitta.checked;
+    salvaPreferenze();
+    applicaQualita(qualitaSalvata(), mondo);
+  });
+
   function apriChiudi() {
     menu.style.display = menu.style.display === "block" ? "none" : "block";
     aggiornaPulsanti();
+    aggiornaMeteo();
+    ciclo.checked = amb.ciclo;
+    mostraOra();
   }
+  setInterval(function () {
+    if (menu.style.display === "block" && amb.ciclo) mostraOra();
+  }, 500);
   pulsante.addEventListener("click", function (evento) {
     evento.currentTarget.blur();
     apriChiudi();
   });
   window.addEventListener("keydown", function (evento) {
-    if (evento.code === "Escape") apriChiudi();
+    if (evento.code === "Escape" && document.getElementById("mappaGrande").style.display !== "block") apriChiudi();
   });
   document.getElementById("avviaTest").addEventListener("click", function (evento) {
     evento.currentTarget.blur();
