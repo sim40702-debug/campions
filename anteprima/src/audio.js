@@ -11,7 +11,8 @@ let filtro = null;
 let volume = null;
 let acceso = true;
 let rumore = null;       // un secondo di rumore bianco: la base dei colpi
-let gasAperto = false;   // il gas era aperto quasi tutto?
+let gasAperto = false;
+let stridio = null;      // volume del rumore delle gomme che strisciano (derapata)   // il gas era aperto quasi tutto?
 
 try {
   acceso = localStorage.getItem("mrw-suono") !== "no";
@@ -46,6 +47,21 @@ function avvia() {
   rumore = contesto.createBuffer(1, contesto.sampleRate, contesto.sampleRate);
   const campioni = rumore.getChannelData(0);
   for (let i = 0; i < campioni.length; i++) campioni[i] = Math.random() * 2 - 1;
+
+  // Gomme che strisciano: rumore continuo filtrato sugli acuti, di solito a volume zero
+  const gomme = contesto.createBufferSource();
+  gomme.buffer = rumore;
+  gomme.loop = true;
+  const filtroGomme = contesto.createBiquadFilter();
+  filtroGomme.type = "bandpass";
+  filtroGomme.frequency.value = 1400;
+  filtroGomme.Q.value = 3;
+  stridio = contesto.createGain();
+  stridio.gain.value = 0;
+  gomme.connect(filtroGomme);
+  filtroGomme.connect(stridio);
+  stridio.connect(contesto.destination);
+  gomme.start();
 }
 
 // Un colpo dallo scarico all'istante "quando" (secondi del contesto audio)
@@ -91,6 +107,11 @@ export function aggiornaSuono(moto, inPausa) {
   filtro.frequency.setTargetAtTime(500 + moto.gas * 1500 + s.cilindri * 200, ora, 0.05);
   const forte = acceso && !inPausa ? 0.05 + moto.gas * 0.09 : 0;
   volume.gain.setTargetAtTime(forte, ora, 0.05);
+
+  // Gomme che strisciano in derapata
+  const striscia = acceso && !inPausa && moto.suStrada && Math.abs(moto.velocita) > 3
+    ? Math.min(1, Math.abs(moto.derapata || 0) * 2.5) * 0.25 : 0;
+  stridio.gain.setTargetAtTime(striscia, ora, 0.05);
 
   // Gas chiuso di colpo a giri alti: da 3 a 7 colpi nel mezzo secondo dopo
   if (moto.gas > 0.85) gasAperto = true;

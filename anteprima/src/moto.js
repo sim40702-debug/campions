@@ -6,6 +6,7 @@ import { quotaTerreno } from "./terreno.js";
 import { stradaSotto } from "./strade.js";
 import { dentroEdificio } from "./edifici.js";
 import { MOTO, costruisciMoto, accelerazioneMax } from "./moto_modelli.js";
+import { aggiornaAuto } from "./auto.js";
 
 export function creaMoto(scena, idMoto) {
   const moto = {
@@ -38,6 +39,7 @@ export function creaMoto(scena, idMoto) {
     nuovaCaduta: false,
     latoCaduta: 1,
     riparti: false,
+    derapata: 0,        // di quanto il dietro della moto e' "girato" fuori (radianti): derapata in entrata di curva
     impennata: 0,       // angolo della ruota davanti in alto (+) o della ruota dietro in alto (-), radianti
     velImpennata: 0
   };
@@ -77,10 +79,13 @@ export function posizionaMoto(moto, x, y, z, dx, dz) {
   moto.riparti = false;
   moto.impennata = 0;
   moto.velImpennata = 0;
+  moto.derapata = 0;
+  moto.direzione = moto.angolo;   // macchina: va dove punta
+  moto.giroAuto = 0;
   rimettiPilota(moto);
 }
 
-function quotaSuolo(moto, terreno, strade, x, z) {
+export function quotaSuolo(moto, terreno, strade, x, z) {
   const strada = stradaSotto(strade, x, z, moto.y);
   if (strada !== null && strada.differenza < 6) {
     return { y: strada.y, strada: strada };
@@ -89,7 +94,7 @@ function quotaSuolo(moto, terreno, strade, x, z) {
 }
 
 // Marcia e giri del motore dalla velocita' (cambio automatico)
-function calcolaMarcia(moto) {
+export function calcolaMarcia(moto) {
   const s = moto.scheda;
   const v = Math.abs(moto.velocita) * 3.6;   // km/h
   let marcia = 1;
@@ -186,6 +191,11 @@ function rimettiPilota(moto) {
 
 export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   if (dt <= 0) return;   // fotogramma senza tempo (succede al primo): niente da calcolare
+  // La macchina da drift ha la sua fisica (auto.js)
+  if (moto.scheda.tipo === "auto") {
+    aggiornaAuto(moto, tasti, dt, terreno, strade, edifici);
+    return;
+  }
   const s = moto.scheda;
   const dati = moto.modello.userData;
 
@@ -302,6 +312,15 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     if (moto.impennata < -0.95) cadi(moto, "Stoppie troppo forte: sei volato in avanti", Math.max(moto.velocita, 9));
   }
 
+  // --- Derapata (come i piloti di supermotard in entrata di curva) ---------------
+  // Freno dietro (Spazio) tirato forte + sterzo, in velocita': la ruota dietro si blocca e scivola fuori.
+  // La moto entra di traverso e gira piu' stretta. Lasciando il freno torna dritta.
+  const derapataVoluta = (tasti.frenoDietro && v > 6 && !moto.inAria && moto.impennata < 0.05)
+    ? moto.sterzoDolce * 0.6 * Math.min(1, v / 15)
+    : 0;
+  const rapidita = derapataVoluta !== 0 ? 2.5 : 3.5;
+  moto.derapata += Math.max(-rapidita * dt, Math.min(rapidita * dt, derapataVoluta - moto.derapata));
+
   // --- Curva: le gomme hanno un limite -----------------------------------------
   // Da piano si gira con il manubrio; in velocita' si piega, e la piega dipende da quanta curva chiedi.
   // Sterzo al massimo = chiedere un po' PIU' di quello che le gomme danno: se lo tieni, la moto scivola.
@@ -315,7 +334,13 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const frenata = accFreni;
   const disponibile = Math.sqrt(Math.max(0.5, limite * limite - frenata * frenata));
   const laterale = v * Math.abs(giro);
-  if (laterale > disponibile && v > 1) {
+  if (Math.abs(moto.derapata) > 0.08) {
+    // in derapata la gomma dietro scivola di proposito: la moto gira di piu' (fino al 60% in piu')
+    // e non si accumula "slittamento"; ma oltre i 100 km/h di traverso si va per terra (highside)
+    giro = giro * (1 + Math.min(0.6, Math.abs(moto.derapata)));
+    moto.slittamento = 0;
+    if (v > 28 && Math.abs(moto.derapata) > 0.3) cadi(moto, "Derapata troppo veloce: highside", moto.velocita);
+  } else if (laterale > disponibile && v > 1) {
     // si chiede troppo: la moto allarga la curva e le gomme cominciano a scivolare
     giro = giro * disponibile / laterale;
     moto.slittamento += dt * (laterale / disponibile - 1) * 5;
@@ -415,7 +440,8 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
   const verso = moto.impennata >= 0 ? 1 : -1;   // 1 = verso la ruota dietro
   const indietroM = mezzoPasso * (1 - Math.cos(moto.impennata)) * verso;
   moto.modello.position.set(moto.x - dirX * indietroM, moto.y - moto.molla + su, moto.z - dirZ * indietroM);
-  moto.modello.rotation.set(moto.beccheggio + moto.impennata, moto.angolo, moto.piega);
+  // in derapata il dietro esce: la moto e' girata verso l'interno della curva rispetto a dove va
+  moto.modello.rotation.set(moto.beccheggio + moto.impennata, moto.angolo + moto.derapata, moto.piega);
   dati.ruotaDavanti.rotation.x -= (moto.velocita * dt) / dati.rDav;
   dati.ruotaDietro.rotation.x -= (moto.velocita * dt) / dati.rDie;
   dati.sterzo.rotation.y = moto.sterzoVisto;

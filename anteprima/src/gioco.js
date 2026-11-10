@@ -12,6 +12,7 @@ import { motoSalvata, preparaGarage } from "./garage.js";
 import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
+import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
 import { caricaEdifici, aggiungiEdifici, dentroEdificio } from "./edifici.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -97,6 +98,12 @@ function cambiaTasto(evento, premuto) {
   if (codice === "ShiftLeft" || codice === "ShiftRight") tasti.pesoDietro = premuto;   // impennata
   if (codice === "KeyE") tasti.pesoAvanti = premuto;                                   // stoppie
   if (codice === "Space") evento.preventDefault();
+  // F11: schermo intero (con Ultra 4K si vede al meglio)
+  if (codice === "F11" && premuto) {
+    evento.preventDefault();
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }
   if (codice.startsWith("Arrow")) evento.preventDefault();
 }
 
@@ -152,8 +159,11 @@ function aggiornaTelecamera(moto, terreno, edifici, dt) {
     const posto = modello.userData.postoPilota;
     // occhi nel casco, circa mezzo metro dietro il manubrio; si guarda 20 gradi in basso:
     // in fondo allo schermo ci sono manubrio, tabella e serbatoio
-    const occhi = modello.localToWorld(new THREE.Vector3(0, posto.y + 0.42, posto.z + 0.1));
-    const davanti = modello.localToWorld(new THREE.Vector3(0, posto.y + 0.42 - 2.3, posto.z - 6.2));
+    // (in macchina gli occhi sono piu' in alto rispetto al bacino e si guarda piu' dritto)
+    const alzaOcchi = modello.userData.altezzaOcchi || 0.42;
+    const giu = modello.userData.altezzaOcchi ? 0.6 : 2.3;
+    const occhi = modello.localToWorld(new THREE.Vector3(posto.x, posto.y + alzaOcchi, posto.z + 0.1));
+    const davanti = modello.localToWorld(new THREE.Vector3(posto.x, posto.y + alzaOcchi - giu, posto.z - 6.2));
     telecamera.position.copy(occhi);
     telecamera.lookAt(davanti);
     return;
@@ -242,7 +252,7 @@ async function avvia() {
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh };
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     preparaMenu(mondo, function () {
@@ -256,6 +266,7 @@ async function avvia() {
     });
 
     const danni = creaDanni();
+    const segni = creaSegni(scena);
 
     nascondiCaricamento();
     const orologio = new THREE.Clock();
@@ -288,6 +299,29 @@ async function avvia() {
       aggiornaTrasporti(mobili, tempoGioco);
       aggiornaSuono(moto, test.attivo);
       aggiornaDanni(danni, moto, dt, disegnatore.domElement);
+
+      // Segni neri delle gomme: ruota dietro in derapata o frenata forte sull'asfalto
+      const dirX = -Math.sin(moto.angolo + moto.derapata);
+      const dirZ = -Math.cos(moto.angolo + moto.derapata);
+      const passoMezzo = moto.modello.userData.passo / 2;
+      const sgomma = moto.suStrada && !moto.inAria && moto.caduta <= 0 && Math.abs(moto.velocita) > 3 &&
+        (Math.abs(moto.derapata) > 0.1 || moto.sgommata === true);
+      // moto: una ruota dietro; macchina: due ruote dietro (a destra e a sinistra)
+      const carreggiata = moto.modello.userData.carreggiata || 0;
+      const latiRuote = carreggiata > 0 ? [-carreggiata / 2, carreggiata / 2] : [0];
+      const avantiX = -Math.sin(moto.angolo);
+      const avantiZ = -Math.cos(moto.angolo);
+      for (let i = 0; i < latiRuote.length; i++) {
+        const chiave = "dietro" + i;
+        if (sgomma) {
+          const indietro = carreggiata > 0 ? passoMezzo : passoMezzo;
+          const px = moto.x - (carreggiata > 0 ? avantiX : dirX) * indietro + avantiZ * latiRuote[i];
+          const pz = moto.z - (carreggiata > 0 ? avantiZ : dirZ) * indietro - avantiX * latiRuote[i];
+          lasciaSegno(segni, chiave, px, moto.y, pz, carreggiata > 0 ? moto.angolo : moto.angolo + moto.derapata);
+        } else {
+          staccaSegno(segni, chiave);
+        }
+      }
       aggiornaFps(vero, disegnatore);
       aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z));
       disegnatore.render(scena, telecamera);

@@ -6,7 +6,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const PEZZI = ["Telaio", "Forcellone", "Sterzo", "RuotaPosteriore", "RuotaAnteriore", "Pilota"];
-const MODELLI = ["SM450", "SM690", "STRADA700", "NAKED890", "SPORT1000", "ENDURO450", "SCOOTER125"];
+const MODELLI = ["SM450", "SM690", "STRADA700", "NAKED890", "SPORT1000", "ENDURO450", "SCOOTER125", "DRIFTGT"];
+const PEZZI_AUTO = ["Carrozzeria", "Ruota", "Pilota"];
 const pronti = {};   // nome moto -> { pezzi: {...}, misure: {...} }
 
 // La SM 450 non ha il file delle misure: sono queste
@@ -24,7 +25,7 @@ export async function caricaModelli3D(avanzamento) {
         misure = await risposta.json();
       }
       const pezzi = {};
-      for (const pezzo of PEZZI) {
+      for (const pezzo of (misure.tipo === "auto" ? PEZZI_AUTO : PEZZI)) {
         const file = await caricatore.loadAsync("modelli/" + nome + "_" + pezzo + ".glb");
         pezzi[pezzo] = file.scene;
       }
@@ -50,10 +51,51 @@ function pezzo(modello, nome) {
   return copia;
 }
 
+// Macchina: carrozzeria, 4 ruote (2 che sterzano), pilota
+function costruisciAuto3D(modello) {
+  const m = modello.misure;
+  const auto = new THREE.Group();
+  const carrozzeria = pezzo(modello, "Carrozzeria");
+  carrozzeria.position.set(0, m.raggio, m.passo / 2);
+  auto.add(carrozzeria);
+
+  const ruote = [];
+  const sterzi = [];
+  for (const z of [m.passo / 2, -m.passo / 2]) {
+    for (const x of [-m.carreggiata / 2, m.carreggiata / 2]) {
+      const perno = new THREE.Group();   // gira per sterzare (solo davanti)
+      perno.position.set(x, m.raggio, z);
+      const ruota = new THREE.Group();   // gira per rotolare
+      const copia = pezzo(modello, "Ruota");
+      if (x > 0) copia.rotation.y = -Math.PI / 2;   // a destra il cerchio guarda fuori
+      ruota.add(copia);
+      perno.add(ruota);
+      auto.add(perno);
+      ruote.push(ruota);
+      if (z < 0) sterzi.push(perno);
+    }
+  }
+  // pilota seduto a sinistra
+  const bacino = new THREE.Vector3(-m.bacino[2], m.raggio + m.bacino[1], m.passo / 2 - m.bacino[0]);
+  const pilota = new THREE.Group();
+  pilota.position.copy(bacino);
+  pilota.add(pezzo(modello, "Pilota"));
+  auto.add(pilota);
+
+  const vuoto = new THREE.Group();   // per le parti delle moto che la macchina non ha
+  auto.userData = {
+    ruote: ruote, sterzi: sterzi, carreggiata: m.carreggiata, altezzaOcchi: 0.68,
+    ruotaDavanti: vuoto, ruotaDietro: vuoto, sterzo: vuoto,
+    rDav: m.raggio, rDie: m.raggio, passo: m.passo, pilota: pilota, postoPilota: bacino.clone()
+  };
+  return auto;
+}
+
 // Costruisce la moto con le stesse parti mobili delle moto semplici (ruote, sterzo, pilota)
 export function costruisciModello3D(nome) {
   const modello = pronti[nome];
   const m = modello.misure;
+  if (m.tipo === "auto") return costruisciAuto3D(modello);
   const moto = new THREE.Group();
   const pernoDietro = new THREE.Vector3(0, m.rDie, m.passo / 2);
   const pernoDavanti = new THREE.Vector3(0, m.rDav, -m.passo / 2);

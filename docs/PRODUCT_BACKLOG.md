@@ -78,6 +78,10 @@ Le aree chieste nel documento sono raggruppate negli 8 distretti ufficiali, cos�
 | TI-54 | Tutte le moto del garage e i loro piloti in 3D | H3 | 1 | Fatto (0.11.0) |
 | TI-55 | Case con finestre, persiane, capannoni, tetti di coppi | H3 | 1 | Fatto (0.11.0) |
 | TI-56 | Alberi più realistici | H3 | 2 | Fatto (0.11.0) |
+| TI-57 | Scelta della partenza, aggiornamento pulito, caricamento animato | H4 | 1 | Fatto (0.12.x) |
+| TI-58 | Derapata in moto (freno dietro + sterzo), segni neri, rumore gomme | H4 | 1 | Fatto (0.13.0) |
+| TI-59 | Macchina da drift MRW Drift GT (modello 3D e fisica) | H4 | 1 | Fatto (0.13.0) |
+| TI-60 | Qualità Ultra 4K, ombre per qualità, schermo intero | H4 | 1 | Fatto (0.13.0) |
 | TI-38 | Piano tecnico Unreal Engine 5 | U1 | 1 | Fatto |
 | TI-39 | Progetto UE 5.8 Windows + Mac (Lumen, Nanite, VSM, TSR) | U1 | 1 | Scritto, da compilare |
 | TI-40 | Giorno/notte e meteo con strade bagnate | U1 | 1 | Scritto, da compilare |

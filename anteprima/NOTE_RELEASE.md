@@ -3,7 +3,14 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.12.2)
+### Novità di questa versione (0.13.0)
+
+- **Derapate in moto** (come in supermotard): in velocità tieni **Spazio** (freno dietro) e sterza: la ruota dietro scivola fuori, la moto entra di traverso e chiude la curva. Lasci Spazio e torna dritta. Sopra i 100 km/h di traverso si cade (highside).
+- **Segni neri delle gomme** sull'asfalto e **rumore delle gomme** che strisciano.
+- **Nuova macchina da drift: MRW Drift GT** (nel garage, ultima): coupé a trazione dietro con 340 CV. **Spazio** = freno a mano per iniziare la derapata, tanto gas in curva la tiene di traverso, controsterzo per tenerla. In prima persona si vedono cruscotto, volante e cofano.
+- **Grafica Ultra 4K** (Impostazioni): disegna a circa 3840 x 2160 punti anche su uno schermo normale (bordi lisci e dettagli nitidi), ombre più fini, alberi e vista più lontani. **F11** = schermo intero.
+
+### Novità della 0.12.2
 
 - **Corretto: il gioco si fermava su "Caricamento del territorio..."** (dalla 0.10.0). Nell'app installata mancavano tre file di three.js (caricamento dei modelli 3D, cielo, riflessi). Ora sono dentro l'app, e prima di pubblicare una versione viene controllato che ci siano.
 

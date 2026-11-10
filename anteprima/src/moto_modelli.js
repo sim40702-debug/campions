@@ -65,6 +65,16 @@ export const MOTO = {
     colori: { telaio: 0x3a3d42, carena: 0x1b2f5c, grafica: 0xe8e8e8, sella: 0x111111 },
     forma: "enduro", modello3d: "ENDURO450"
   },
+  driftgt: {
+    nome: "MRW Drift GT",
+    categoria: "Macchina da drift (trazione dietro)",
+    motore: "Sei cilindri 3.0 turbo",
+    cv: 340, kg: 1280, vmax: 250,
+    frenata: 10, agilita: 1.5, pieghaMax: 0.0, fuoristrada: 60,
+    marce: [0.22, 0.36, 0.5, 0.66, 0.82, 1.0], minimo: 900, limitatore: 7800, cilindri: 6,
+    colori: { telaio: 0x222222, carena: 0xdddddd, grafica: 0xb01020, sella: 0x111111 },
+    forma: "auto", tipo: "auto", modello3d: "DRIFTGT"
+  },
   scooter125: {
     nome: "MRW Scooter 125",
     categoria: "Scooter",
@@ -77,7 +87,7 @@ export const MOTO = {
   }
 };
 
-export const ORDINE = ["sm450", "sm690", "strada700", "naked890", "sport1000", "enduro450", "scooter125"];
+export const ORDINE = ["sm450", "sm690", "strada700", "naked890", "sport1000", "enduro450", "scooter125", "driftgt"];
 
 // Accelerazione massima (m/s2): potenza / peso, ma al massimo 11 (la ruota davanti si alzerebbe)
 export function accelerazioneMax(scheda) {
@@ -147,6 +157,16 @@ export function costruisciMoto(scheda) {
   // Moto con il modello 3D vero (se i file ci sono)
   if (scheda.modello3d && modelloPronto(scheda.modello3d)) {
     return costruisciModello3D(scheda.modello3d);
+  }
+  if (scheda.tipo === "auto") {
+    // senza il file 3D: una scatola (non dovrebbe succedere)
+    const auto = new THREE.Group();
+    auto.add(scatola(1.76, 1.2, 4.3, materiale(scheda.colori.carena, true), 0, 0.7, 0));
+    const vuoto = new THREE.Group();
+    auto.userData = { ruote: [], sterzi: [], carreggiata: 1.52, ruotaDavanti: vuoto, ruotaDietro: vuoto, sterzo: vuoto,
+      rDav: 0.32, rDie: 0.32, passo: 2.55, pilota: new THREE.Group(), postoPilota: new THREE.Vector3(-0.38, 0.8, 0.2) };
+    auto.add(auto.userData.pilota);
+    return auto;
   }
   const c = scheda.colori;
   const telaio = materiale(c.telaio, true);
