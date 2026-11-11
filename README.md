@@ -15,7 +15,7 @@ Scarica l'ultima versione dalla pagina [**Releases**](https://github.com/sim4070
 |---|---|
 | Mac con chip Apple (M1, M2, M3, …) | `...-Mac-arm64.dmg` |
 | Mac con Intel | `...-Mac-x64.dmg` |
-| Windows (installazione) | `...-Windows-Installazione.exe` |
+| Windows (installazione, consigliato) | `...-Windows-Installazione.exe` |
 | Windows (senza installare) | `...-Windows-Portatile.exe` |
 
 Dopo la prima installazione basta il pulsante **Aggiorna** dentro il gioco: controlla se c'è una versione nuova, la scarica e la installa.

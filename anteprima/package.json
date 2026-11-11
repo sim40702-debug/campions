@@ -64,15 +64,35 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "installerLanguages": [
+        "it_IT"
+      ],
+      "language": "1040",
+      "license": "build/license.txt",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/installerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp",
+      "include": "build/installer.nsh",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MRW Anteprima Ticino",
+      "uninstallDisplayName": "MOTO RACING WORLD - Anteprima Ticino ${version}",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
       "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Installazione.${ext}"
     },
     "portable": {
       "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Portatile.${ext}"
-    }
+    },
+    "copyright": "© 2026 Simone - Dati: swisstopo, © OpenStreetMap contributors"
   }
 }

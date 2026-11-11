@@ -1,0 +1,24 @@
+﻿MOTO RACING WORLD - Anteprima Ticino
+Condizioni d'uso e fonti dei dati
+
+1. Che cos'è
+Questa è un'anteprima giocabile del Locarnese (Canton Ticino), ancora in sviluppo. Può contenere errori e può cambiare da una versione all'altra.
+
+2. Uso
+Il programma è gratuito e si può usare per provare il gioco. Non si può vendere né distribuire modificato senza il permesso dell'autore.
+
+3. Nessuna garanzia
+Il programma è fornito "così com'è", senza garanzie di alcun tipo. L'autore non risponde di danni che derivano dal suo uso. Il mondo del gioco è una ricostruzione: non va usato per orientarsi o per guidare nella realtà.
+
+4. Dati geografici
+Il territorio è ricostruito da dati geografici aperti:
+- Fonte: Ufficio federale di topografia swisstopo (swissALTI3D, SWISSIMAGE).
+- © OpenStreetMap contributors, dati disponibili sotto licenza ODbL (openstreetmap.org/copyright).
+
+5. Aggiornamenti e Internet
+Il gioco si collega a github.com solo per controllare se c'è una versione nuova e, se lo chiedi con il pulsante "Aggiorna", per scaricarla. Non raccoglie dati personali.
+
+6. Dati salvati sul computer
+Le impostazioni (qualità grafica, moto scelta, punto di partenza) restano sul tuo computer. Con la disinstallazione puoi scegliere se cancellarle.
+
+Premendo "Accetto" confermi di aver letto queste condizioni.

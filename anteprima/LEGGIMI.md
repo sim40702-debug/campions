@@ -37,6 +37,10 @@ Su Windows scrivi `python` al posto di `python3`.
 |---|---|
 | `main.js` | Finestra Electron |
 | `aggiornamenti.js` | Pulsante Aggiorna: controlla, scarica e installa la nuova release |
+| `build/icon.ico` | Icona del gioco su Windows (app, installazione, disinstallazione) |
+| `build/installerSidebar.bmp`, `build/installerHeader.bmp` | Immagini della procedura di installazione di Windows |
+| `build/license.txt` | Condizioni d'uso e fonti dei dati mostrate durante l'installazione |
+| `build/installer.nsh` | Aggiunte all'installazione: pagina di benvenuto, domanda sulle impostazioni quando si disinstalla |
 | `preload.js` | Collega il pulsante della pagina con Electron |
 | `index.html`, `stile.css` | Pagina e scritte sullo schermo |
 | `src/gioco.js` | Scena, telecamera, tastiera, ciclo del gioco |
@@ -65,6 +69,13 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/audio.js` | Suono del motore |
 | `src/trasporti.js` | Ferrovie, funicolari, teleferiche con cabine in movimento |
 | `NOTE_RELEASE.md` | Testo della pagina della release |
+
+## Programma di installazione per Windows
+
+È configurato in `package.json` (parte `build` → `nsis`): procedura guidata in italiano, collegamenti su desktop e menu Start,
+disinstallazione da Impostazioni → App. Icona e immagini si rifanno con `node tools/installer/crea_grafica.mjs`
+(i disegni sono dentro lo script). Il testo delle condizioni è `build/license.txt`: va salvato in UTF-8 **con BOM**,
+altrimenti le lettere accentate escono sbagliate.
 
 ## Prova senza scaricare i dati veri (test grafici)
 

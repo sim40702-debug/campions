@@ -240,7 +240,7 @@ La versione principale del gioco resta quella in Unreal Engine 5.
 |---|---|
 | Mac con chip Apple (M1, M2, M3, …) | `...-Mac-arm64.dmg` |
 | Mac con Intel | `...-Mac-x64.dmg` |
-| Windows (installazione) | `...-Windows-Installazione.exe` |
+| Windows (installazione, consigliato) | `...-Windows-Installazione.exe` |
 | Windows (senza installare) | `...-Windows-Portatile.exe` |
 
 ### Primo avvio su Mac
@@ -252,9 +252,15 @@ L'app non è firmata da Apple, quindi il Mac la blocca la prima volta:
 3. Se dice che l'app è "danneggiata", apri il Terminale e scrivi:
    `xattr -cr "/Applications/MRW Anteprima Ticino.app"`, poi riprova.
 
-### Primo avvio su Windows
+### Installazione su Windows
 
-Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comunque**.
+Il file `...-Windows-Installazione.exe` apre una procedura guidata in italiano: benvenuto, condizioni d'uso e fonti dei dati,
+scelta "solo per me / per tutti gli utenti", cartella di installazione. Alla fine trovi il gioco sul **desktop** e nel **menu Start**,
+con la sua icona, e in **Impostazioni → App** per disinstallarlo. La disinstallazione chiede se cancellare anche le impostazioni salvate.
+
+Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comunque** (il programma non è firmato).
+
+Il file `...-Windows-Portatile.exe` non installa niente: si avvia e basta (più lento a partire, niente collegamenti).
 
 ### Comandi
 

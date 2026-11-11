@@ -155,6 +155,15 @@ jobs:
         run: |
           echo "::warning::cartelle in dist (${{ matrix.nome }}): $(find dist -maxdepth 5 -type d -name app -o -maxdepth 5 -type d -name '*.app' | tr '\n' ' ')"
           echo "::warning::contenuto app (${{ matrix.nome }}): $(find dist -maxdepth 6 -path '*app/*' -maxdepth 6 | grep -v node_modules | head -20 | tr '\n' ' ')"
+          # Windows: devono esserci tutti e due i file (installazione e portatile)
+          if [ "${{ matrix.nome }}" = "windows" ]; then
+            for fine in Windows-Installazione.exe Windows-Portatile.exe; do
+              if [ "$(find dist -maxdepth 1 -name "*-$fine" | wc -l)" -eq 0 ]; then
+                echo "::error::In dist manca il file ...-$fine"
+                exit 1
+              fi
+            done
+          fi
           trovati=$(find dist -name terreno.bin -path "*app/dati/*" | wc -l)
           if [ "$trovati" -eq 0 ]; then
             echo "ERRORE: nell'app mancano i dati (dati/terreno.bin)"
