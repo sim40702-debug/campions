@@ -1391,7 +1391,7 @@ function copertoDaAltra(strade, x, z, escludi, margine, perRighe) {
         const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
         let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
         const traVeloci = veloceIo && stradaVeloce(altra);
-        if (traVeloci && (t < 0 || t > 1)) continue;
+        if (traVeloci && (t < 0 || t > 1 || s > escludi)) continue;   // dove due strade veloci si sovrappongono le righe le disegna una sola (la prima)
         t = Math.min(Math.max(t, 0), 1);
         const d = Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t));
         if (d < larghezzaIn(altra, i / 3) / 2 + (traVeloci ? -0.05 : margine)) return true;
@@ -1665,7 +1665,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       // leggera variazione di colore da strada a strada (asfalti piu' nuovi o piu' vecchi)
       // (poca: dove due strade si toccano non si deve vedere lo stacco). Le strade piu' larghe stanno qualche
       // millimetro sopra: dove due nastri si sovrappongono sullo stesso piano non "sfarfallano".
-      const v = 0.96 + ((indice * 2654435761) % 1000) / 1000 * 0.08;
+      const v = stradaVeloce(strada) ? 1 : 0.96 + ((indice * 2654435761) % 1000) / 1000 * 0.08;   // l'autostrada ha un asfalto solo
       const alzata = (strada.w >= 7 ? 0.014 : (strada.w >= 5.5 ? 0.008 : 0.002)) + ((indice * 7) % 5) * 0.0012;
       const bordo = strada.b ? null : function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); };
       nastroConUV(strada.p, lar, alzata, gruppo.asfalto, new THREE.Color(v, v, v), 0, bordo);

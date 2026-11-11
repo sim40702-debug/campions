@@ -93,6 +93,8 @@ function aggiungiPortale(posizioni, cornice, s, verso, terreno) {
     const x0 = s.x - s.dirZ * lato * largo, z0 = s.z + s.dirX * lato * largo;
     const lungo = 12;
     const x1 = x0 - s.dirX * verso * lungo, z1 = z0 - s.dirZ * verso * lungo;
+    // il muro d'ala serve solo dove dietro c'e' davvero la montagna: in piano restava una "vela" di cemento sul prato
+    if (quotaTerreno(terreno, x1, z1) < s.y + 2.5) continue;
     const suolo1 = Math.min(s.y + 0.5, quotaTerreno(terreno, x1, z1));
     const alto0 = [x0 + s.dirX * fuori, yTetto, z0 + s.dirZ * fuori];
     const basso0 = [x0 + s.dirX * fuori, s.y - 0.08, z0 + s.dirZ * fuori];
