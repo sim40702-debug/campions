@@ -3,7 +3,18 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.7) – schermo più libero
+### Novità di questa versione (0.14.8) – A13 rifatta
+
+- **Le due carreggiate dell'A13 sono alla stessa quota**: prima tra Tenero e la Verzasca una stava fino a 2,6 m più in alto dell'altra, con conche e dossi vicino ai ponti. Ora il profilo è unico e dolce (pendenza massima 7 %), anche sui ponti.
+- **Corsie affiancate agli svincoli**: dove una rampa entra o esce, e dove la strada a due sensi si divide in due carreggiate, le corsie corrono una accanto all'altra. Prima l'asfalto si stringeva a cuneo fino a una corsia e poi si riallargava di colpo.
+- **Larghezze che cambiano piano**: da 2 a 3 corsie (e ritorno) la strada si allarga in 45 m, non più con uno scalino. Le rampe a una corsia non raddoppiano più a metà.
+- **Spartitraffico asfaltato con barriera centrale**: tra le due carreggiate non c'è più la striscia d'erba larga un metro. Anche le zone tra rampa e carreggiata sono asfaltate.
+- **Righe da autostrada**: tratti lunghi tra le corsie, due righe dove le corsie sono tre, linee di bordo anche sulle rampe, una riga sola tra due corsie affiancate. Le righe non si interrompono più dove un pezzo di strada continua nel successivo.
+- **Ponti**: fianco dell'impalcato visibile (il ponte non sembra più un foglio), niente parapetto in mezzo alla strada tra due corsie affiancate.
+- **Cavalcavia**: sotto ogni ponte che scavalca una strada restano almeno 5 m liberi (prima un cavalcavia passava a meno di 2 m dall'asfalto dell'A13).
+- Gli aggiornamenti si cercano al nuovo indirizzo della repository (`swissgass`).
+
+### Novità della 0.14.7 – schermo più libero
 
 - **La lista dei comandi non occupa più la parte alta dello schermo**: ora è un bottone **Comandi** dentro le Impostazioni (Esc). Si apre anche con il tasto **H**.
 
@@ -248,7 +259,7 @@ Se compare "Windows ha protetto il PC": **Ulteriori informazioni → Esegui comu
 - **M**: suono sì/no
 - **F**: mostra gli FPS
 - **Esc**: impostazioni
-- **H**: nasconde l'aiuto
+- **H**: lista dei comandi
 
 ### Cosa c'è
 

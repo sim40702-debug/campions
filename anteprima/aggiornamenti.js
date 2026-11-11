@@ -13,7 +13,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const URL_ULTIMA_RELEASE = "https://api.github.com/repos/sim40702-debug/campions/releases/latest";
+const URL_ULTIMA_RELEASE = "https://api.github.com/repos/sim40702-debug/swissgass/releases/latest";
 const PREFISSO_TAG = "anteprima-v";
 
 // "0.2.10" -> [0, 2, 10]  (per confrontare le versioni numero per numero)

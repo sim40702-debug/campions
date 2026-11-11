@@ -254,6 +254,7 @@ export function preparaMinimappa(o) {
   const ponti = [];
   const nomiVie = new Map();
   for (const s of strade.lista) {
+    if (s.riemp) continue;   // lo spartitraffico asfaltato non e' una strada
     const p = s.p;
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (let i = 0; i < p.length; i += 3) {

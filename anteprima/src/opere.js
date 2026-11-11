@@ -56,7 +56,11 @@ function aggiungiPortale(posizioni, cornice, s, verso, terreno) {
   const anello = s.anello;
   // contorno esterno: sale in verticale dai due lati fino a un rettangolo largo meta + 3 m e alto 8.2 m sopra la strada
   const largo = s.meta + 3.2;
-  const yTetto = s.y + ALTEZZA_GALLERIA + 3.2;
+  // la facciata arriva poco sopra il terreno che ha dietro: in un sottopasso basso (sotto l'A13) non resta piu'
+  // un muro alto 8 m che spunta dal prato; in montagna resta alta come prima
+  let sopra = -Infinity;
+  for (const t of [1.5, 4, 7]) sopra = Math.max(sopra, quotaTerreno(terreno, s.x - s.dirX * verso * t, s.z - s.dirZ * verso * t));
+  const yTetto = Math.min(s.y + ALTEZZA_GALLERIA + 3.2, Math.max(s.y + ALTEZZA_GALLERIA + 0.6, sopra + 0.9));
   const esterno = function (lato, y) { return [s.x - fz * 0 + (-s.dirZ) * lato * 1, y, s.z + s.dirX * lato]; };
   const pt = function (lato, y) { return sposta([s.x - s.dirZ * lato, y, s.z + s.dirX * lato], 0); };
   // facciata: fascia tra l'arco (apertura) e il bordo alto, divisa nei tratti dell'arco
@@ -130,7 +134,7 @@ export function aggiungiOpere(strade, scena, terreno) {
       }
     }
 
-    if (strada.b) {
+    if (strada.b && !strada.riemp) {
       for (let i = OGNI_QUANTI_PUNTI_PILONE; i < punti - 2; i += OGNI_QUANTI_PUNTI_PILONE) {
         const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
         const sotto = quotaTerreno(terreno, x, z);

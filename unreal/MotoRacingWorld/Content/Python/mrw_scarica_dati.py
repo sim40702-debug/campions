@@ -7,7 +7,7 @@
 # e lo estrae in MotoRacingWorld/Dati. Il gioco legge da li' (AMRWTerreno).
 #
 # Se non funziona (rete, certificati): scarica dati-anteprima.zip a mano da
-# https://github.com/sim40702-debug/campions/releases e scompattalo nella cartella Dati del progetto.
+# https://github.com/sim40702-debug/swissgass/releases e scompattalo nella cartella Dati del progetto.
 
 import io
 import json
@@ -17,7 +17,7 @@ import zipfile
 
 import unreal
 
-RELEASE = "https://api.github.com/repos/sim40702-debug/campions/releases"
+RELEASE = "https://api.github.com/repos/sim40702-debug/swissgass/releases"
 NOME_FILE = "dati-anteprima.zip"
 
 
@@ -72,5 +72,5 @@ try:
     scarica()
 except Exception as errore:
     scrivi("Errore: " + str(errore))
-    scrivi("Scarica dati-anteprima.zip a mano da https://github.com/sim40702-debug/campions/releases "
+    scrivi("Scarica dati-anteprima.zip a mano da https://github.com/sim40702-debug/swissgass/releases "
            "e scompattalo nella cartella Dati del progetto.")

@@ -19,6 +19,17 @@ function chiaveNodo(x, z) {
   return Math.round(x * 2) + "," + Math.round(z * 2);
 }
 
+// Strade a scorrimento veloce (A13 e svincoli): carreggiate separate a senso unico, profilo dolce, niente strappi.
+const TIPI_VELOCI = new Set(["motorway", "trunk", "motorway_link", "trunk_link"]);
+export function stradaVeloce(strada) {
+  return TIPI_VELOCI.has(strada.t);
+}
+// "Rigida" = la quota va in linea retta tra i due capi: gallerie e ponti. I ponti delle strade veloci no: seguono il
+// profilo calcolato (che tra i capi e' comunque quasi dritto) e restano alla stessa quota della carreggiata accanto.
+function rigida(strada) {
+  return strada.g || (strada.b && !stradaVeloce(strada));
+}
+
 function sistemaQuote(lista) {
   // nodi: per ogni posizione, i gruppi di punti alla stessa quota (un ponte che passa sopra resta un gruppo a parte)
   const nodi = new Map();
@@ -66,43 +77,186 @@ function sistemaQuote(lista) {
   // strade. Ponti e gallerie sono un unico tratto dritto tra i due capi, e i loro capi seguono la strada (non il
   // fondo del burrone).
   const LAMBDA = 1 / (22 * 22);   // quanto conta la quota dei dati: le quote si ammorbidiscono su circa 22 m
+  // Strade veloci: molle 9 volte piu' rigide (le quote si ammorbidiscono su circa 65 m: un'autostrada non fa
+  // saliscendi), e proporzionali a 1/lunghezza, cosi' un tratto senza dati (un ponte) resta esattamente dritto.
+  const RIGIDO_VELOCE = 9;
   const variabili = [];
-  for (const gruppi of nodi.values()) for (const c of gruppi) { c.y0 = c.y; c.vicini = []; c.forze = []; c.opera = 0; c.normale = 0; variabili.push(c); }
-  const collega = function (a, b, lung) {
+  for (const gruppi of nodi.values()) for (const c of gruppi) { c.y0 = c.y; c.vicini = []; c.forze = []; c.opera = 0; c.normale = 0; c.veloce = false; c.sulPonte = false; variabili.push(c); }
+  const collegaK = function (a, b, k) {
     if (a === b) return;
-    const k = 1 / Math.max(lung * lung, 1);
     a.vicini.push(b); a.forze.push(k);
     b.vicini.push(a); b.forze.push(k);
+  };
+  const collega = function (a, b, lung) {
+    collegaK(a, b, 1 / Math.max(lung * lung, 1));
   };
   for (let s = 0; s < lista.length; s++) {
     const strada = lista[s], p = strada.p, n = p.length / 3, g = gruppoDi[s];
     if (n < 2) continue;
-    if (strada.g || strada.b) {
+    if (rigida(strada)) {
       const d = distanze(p);
       collega(g[0], g[n - 1], Math.max(d[n - 1], 4));
       g[0].opera++; g[n - 1].opera++;
       continue;
     }
+    if (stradaVeloce(strada)) {
+      for (let i = 0; i < n; i++) {
+        g[i].veloce = true;
+        if (!strada.b) g[i].normale++;
+        else if (i === 0 || i === n - 1) g[i].opera++;
+        else g[i].sulPonte = true;
+      }
+      for (let i = 0; i + 1 < n; i++) {
+        const lung = Math.max(Math.hypot(p[i * 3 + 3] - p[i * 3], p[i * 3 + 5] - p[i * 3 + 2]), 0.5);
+        collegaK(g[i], g[i + 1], RIGIDO_VELOCE / (lung * 4.5));
+      }
+      continue;
+    }
     for (let i = 0; i < n; i++) g[i].normale++;
     for (let i = 0; i + 1 < n; i++) collega(g[i], g[i + 1], Math.hypot(p[i * 3 + 3] - p[i * 3], p[i * 3 + 5] - p[i * 3 + 2]));
   }
-  for (const c of variabili) c.peso = c.opera === 0 ? LAMBDA : (c.normale === 0 ? LAMBDA * 0.02 : LAMBDA * 0.05);
-  for (let giro = 0; giro < 260; giro++) {
-    for (const c of variabili) {
-      const v = c.vicini;
-      if (v.length === 0) continue;
-      let somma = c.peso * c.y0, peso = c.peso;
-      for (let k = 0; k < v.length; k++) { somma += c.forze[k] * v[k].y; peso += c.forze[k]; }
-      c.y += (somma / peso - c.y) * 1.6;   // sovra-rilassamento: converge prima
+  for (const c of variabili) {
+    c.peso = c.opera === 0 ? LAMBDA : (c.normale === 0 ? LAMBDA * 0.02 : LAMBDA * 0.05);
+    if (c.sulPonte && c.normale === 0) c.peso = 0;   // in mezzo a un ponte la quota del terreno (il fondo del fiume) non conta
+  }
+  // vicino ai capi di un ponte il terreno dei dati e' quello SOTTO il ponte (la riva): li' i dati contano poco,
+  // cosi' la strada veloce arriva al ponte in piano invece di fare una conca
+  for (let s = 0; s < lista.length; s++) {
+    const strada = lista[s];
+    if (!stradaVeloce(strada) || strada.g || strada.b) continue;
+    const p = strada.p, n = p.length / 3, g = gruppoDi[s];
+    if (n < 2) continue;
+    const d = distanze(p);
+    for (const capo of [0, n - 1]) {
+      if (g[capo].opera === 0) continue;
+      for (let i = 0; i < n; i++) {
+        const dist = Math.abs(d[i] - d[capo]);
+        if (dist >= 60) continue;
+        if (g[i].opera === 0) g[i].peso = Math.min(g[i].peso, LAMBDA * Math.max(0.05, (dist / 60) * (dist / 60)));
+      }
     }
   }
-  // pendenza massima 22 %: dove i dati chiedono di piu' (pendii ripidissimi) si spalma il dislivello
-  const PENDENZA = 0.22;
+  const veloci = variabili.filter(function (c) { return c.veloce; });
+  const giri = function (quanti, elenco, omega) {
+    for (let giro = 0; giro < quanti; giro++) {
+      for (const c of elenco) {
+        const v = c.vicini;
+        if (v.length === 0) continue;
+        let somma = c.peso * c.y0, peso = c.peso;
+        for (let k = 0; k < v.length; k++) { somma += c.forze[k] * v[k].y; peso += c.forze[k]; }
+        c.y += (somma / peso - c.y) * omega;   // sovra-rilassamento: converge prima
+      }
+    }
+  };
+  giri(260, variabili, 1.6);
+  if (veloci.length > 0) {
+    // Carreggiate affiancate (le due direzioni dell'A13, una rampa accanto alla carreggiata): stessa quota.
+    // Ogni punto di una strada veloce e' legato al punto di fronte dell'altra, tanto piu' forte quanto sono vicine.
+    const griglia = costruisciGriglia(lista);
+    for (let s = 0; s < lista.length; s++) {
+      const strada = lista[s];
+      if (!stradaVeloce(strada) || strada.g) continue;
+      const p = strada.p, n = p.length / 3, g = gruppoDi[s];
+      for (let i = 0; i < n; i++) {
+        const x = p[i * 3], z = p[i * 3 + 2];
+        const a = Math.max(i - 1, 0) * 3, b = Math.min(i + 1, n - 1) * 3;
+        let dx = p[b] - p[a], dz = p[b + 2] - p[a + 2];
+        const l = Math.hypot(dx, dz) || 1;
+        dx /= l; dz /= l;
+        const meta = larghezzaIn(strada, i) / 2;
+        const cx = Math.floor(x / CELLA), cz = Math.floor(z / CELLA);
+        let migliore = null, distMigliore = Infinity, spazio = 0;
+        for (let ix = cx - 1; ix <= cx + 1; ix++) for (let iz = cz - 1; iz <= cz + 1; iz++) {
+          const pezzi = griglia.get(ix + "," + iz);
+          if (!pezzi) continue;
+          for (const [o, j] of pezzi) {
+            if (o === s) continue;
+            const altra = lista[o];
+            if (!stradaVeloce(altra) || altra.g) continue;
+            const q = altra.p;
+            const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+            const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+            if (lungo < 0.01) continue;
+            const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+            if (t < 0 || t > 1) continue;
+            const dist = Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t));
+            const metaAltra = larghezzaIn(altra, j / 3) / 2;
+            if (dist >= distMigliore || dist > meta + metaAltra + 8) continue;
+            const lung = Math.sqrt(lungo);
+            if (Math.abs(dx * (bx - ax) + dz * (bz - az)) / lung < 0.94) continue;   // non parallele (un cavalcavia)
+            const go = gruppoDi[o];
+            const vertice = t < 0.5 ? j / 3 : j / 3 + 1;
+            if (Math.abs(go[j / 3].y + (go[j / 3 + 1].y - go[j / 3].y) * t - g[i].y) > 3.5) continue;   // una passa sopra l'altra
+            migliore = go[vertice]; distMigliore = dist; spazio = dist - meta - metaAltra;
+          }
+        }
+        if (migliore && migliore !== g[i]) collegaK(g[i], migliore, 1.2 * Math.min(Math.max((8 - spazio) / 4, 0), 1));
+      }
+    }
+    giri(1500, veloci, 1.8);
+    giri(80, variabili, 1.6);
+  }
+  // Cavalcavia: sotto un ponte che scavalca un'altra strada devono restare almeno 5 m liberi. Nei dati i capi del
+  // ponte sono agganciati al terreno e spesso il ponte passava a 2 m dall'asfalto di sotto (ci si sbatteva la
+  // testa). Dove manca spazio si ALZA il ponte (i suoi capi, o il punto sopra l'incrocio per le strade veloci) e le
+  // strade che ci arrivano salgono con lui.
+  {
+    const LUCE = 5.5;
+    const griglia = costruisciGriglia(lista);
+    const quotaIn = function (o, j, t) {   // quota della strada "o" nel pezzo che parte dal punto j
+      const strada = lista[o], go = gruppoDi[o];
+      if (!rigida(strada)) return go[j].y + (go[j + 1].y - go[j].y) * t;
+      const d = distanze(strada.p), n = go.length;
+      const fatta = d[j] + (d[j + 1] - d[j]) * t;
+      return go[0].y + (go[n - 1].y - go[0].y) * (fatta / (d[n - 1] || 1));
+    };
+    for (let volta = 0; volta < 3; volta++) {
+      let alzati = 0;
+      for (let s = 0; s < lista.length; s++) {
+        const ponte = lista[s];
+        if (!ponte.b || ponte.g) continue;
+        const p = ponte.p, n = p.length / 3, g = gruppoDi[s];
+        if (n < 2) continue;
+        const d = distanze(p);
+        let manca = 0;
+        for (let i = 0; i < n; i++) {
+          const x = p[i * 3], z = p[i * 3 + 2];
+          const y = rigida(ponte) ? g[0].y + (g[n - 1].y - g[0].y) * (d[i] / (d[n - 1] || 1)) : g[i].y;
+          let mancaQui = 0;
+          const pezzi = griglia.get(Math.floor(x / CELLA) + "," + Math.floor(z / CELLA));
+          if (!pezzi) continue;
+          for (const [o, j] of pezzi) {
+            if (o === s || lista[o].g) continue;
+            const q = lista[o].p;
+            const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+            const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+            if (lungo < 0.01) continue;
+            const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+            if (t < 0 || t > 1) continue;
+            if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) > larghezzaIn(lista[o], j / 3) / 2 + 0.5) continue;
+            const luce = y - quotaIn(o, j / 3, t);
+            if (luce > 1.2 && luce < LUCE) mancaQui = Math.max(mancaQui, LUCE - luce);   // sotto 1.2 m e' un incrocio a raso
+          }
+          if (mancaQui > 0 && !rigida(ponte)) { g[i].y0 = g[i].y + mancaQui; g[i].y = g[i].y0; g[i].peso = 1; alzati++; }
+          manca = Math.max(manca, mancaQui);
+        }
+        if (manca > 0 && rigida(ponte)) {
+          for (const c of [g[0], g[n - 1]]) { c.y0 = c.y + manca; c.y = c.y0; c.peso = 1; }
+          alzati++;
+        }
+      }
+      if (alzati === 0) break;
+      giri(160, variabili, 1.6);
+      if (veloci.length > 0) { giri(500, veloci, 1.8); giri(40, variabili, 1.6); }
+    }
+  }
+  // pendenza massima 22 % (7 % sulle strade veloci): dove i dati chiedono di piu' si spalma il dislivello
   for (let giro = 0; giro < 60; giro++) {
     let cambiati = 0;
     for (let s = 0; s < lista.length; s++) {
       const strada = lista[s];
-      if (strada.g || strada.b) continue;
+      if (rigida(strada)) continue;
+      const PENDENZA = stradaVeloce(strada) ? 0.07 : 0.22;
       const p = strada.p, n = p.length / 3, g = gruppoDi[s];
       for (let i = 0; i + 1 < n; i++) {
         const a = g[i], b = g[i + 1];
@@ -132,7 +286,7 @@ function sistemaQuote(lista) {
   // quote sulle strade; gallerie e ponti in linea retta tra i capi (i nodi lungo un ponte prendono la sua quota)
   for (let giro = 0; giro < 3; giro++) for (let s = 0; s < lista.length; s++) {   // 3 giri: un ponte puo' finire a meta' di un altro
     const strada = lista[s];
-    if (!strada.g && !strada.b) continue;
+    if (!rigida(strada)) continue;
     const p = strada.p, n = p.length / 3, g = gruppoDi[s];
     if (n < 2) continue;
     const d = distanze(p);
@@ -145,7 +299,7 @@ function sistemaQuote(lista) {
   }
   for (let s = 0; s < lista.length; s++) {
     const strada = lista[s];
-    if (strada.g || strada.b) continue;
+    if (rigida(strada)) continue;
     const p = strada.p, g = gruppoDi[s];
     for (let i = 0; i < g.length; i++) p[i * 3 + 1] = g[i].y;
   }
@@ -235,7 +389,7 @@ function stessoPiano(lista, griglia, quote) {
   }
   // i nodi in comune tornano a una sola quota (quella della strada piu' importante che ci passa)
   const scelta = new Map();
-  const normaliPrima = ordine.filter(function (s) { return !lista[s].g && !lista[s].b; }).concat(ordine.filter(function (s) { return lista[s].g || lista[s].b; }));
+  const normaliPrima = ordine.filter(function (s) { return !rigida(lista[s]); }).concat(ordine.filter(function (s) { return rigida(lista[s]); }));
   for (const s of normaliPrima) {
     const p = lista[s].p, g = quote.gruppoDi[s];
     for (let i = 0; i < g.length; i++) {
@@ -246,7 +400,7 @@ function stessoPiano(lista, griglia, quote) {
   // ponti e gallerie: i capi sulla quota del nodo, in mezzo di nuovo in linea retta
   for (const s of ordine) {
     const strada = lista[s];
-    if (!strada.g && !strada.b) continue;
+    if (!rigida(strada)) continue;
     const p = strada.p, g = quote.gruppoDi[s], n = g.length;
     if (n < 2) continue;
     const y0 = g[0].n >= 2 ? scelta.get(g[0]) : p[1], y1 = g[n - 1].n >= 2 ? scelta.get(g[n - 1]) : p[(n - 1) * 3 + 1];
@@ -256,7 +410,7 @@ function stessoPiano(lista, griglia, quote) {
   }
   for (const s of ordine) {
     const strada = lista[s];
-    if (strada.g || strada.b) continue;
+    if (rigida(strada)) continue;
     const p = strada.p, g = quote.gruppoDi[s], n = g.length;
     let d = null;
     for (let i = 0; i < n; i++) {
@@ -285,7 +439,7 @@ function quotaSuAltra(strade, s, x, z, y) {
       for (const [o, j] of pezzi) {
         if (o === s || strade.grado[o] >= gradoMigliore) continue;
         const altra = strade.lista[o];
-        if (altra.g || altra.b) continue;
+        if (altra.g || (altra.b && !strade.lista[s].riemp)) continue;
         const q = altra.p;
         const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
         const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
@@ -526,6 +680,319 @@ function preparaRete(lista) {
   for (let s = 0; s < lista.length; s++) inserisciPunti(lista[s], nuovi[s]);
 }
 
+// Direzione (unitaria) della strada nel punto i
+function direzioneIn(p, i) {
+  const n = p.length / 3;
+  const a = Math.max(i - 1, 0) * 3, b = Math.min(i + 1, n - 1) * 3;
+  const dx = p[b] - p[a], dz = p[b + 2] - p[a + 2];
+  const l = Math.hypot(dx, dz) || 1;
+  return [dx / l, dz / l];
+}
+
+// I capi delle strade veloci, per nodo: chiave -> [{ s: strada, fine: indice del punto (0 oppure n - 1) }]
+function capiVeloci(lista) {
+  const nodi = new Map();
+  for (let s = 0; s < lista.length; s++) {
+    const strada = lista[s];
+    if (!stradaVeloce(strada) || strada.riemp) continue;
+    const p = strada.p, n = p.length / 3;
+    if (n < 2) continue;
+    for (const fine of [0, n - 1]) {
+      const k = chiaveNodo(p[fine * 3], p[fine * 3 + 2]);
+      if (!nodi.has(k)) nodi.set(k, []);
+      nodi.get(k).push({ s: s, fine: fine });
+    }
+  }
+  return nodi;
+}
+
+// Le rampe senza numero di corsie nei dati valgono 6 m (due corsie), ma se continuano una rampa a una corsia sono a
+// una corsia anche loro: senza questo, a meta' rampa l'asfalto raddoppiava di colpo.
+function larghezzaRaccordi(lista) {
+  const nodi = capiVeloci(lista);
+  for (let giro = 0; giro < 3; giro++) {
+    for (const capi of nodi.values()) {
+      if (capi.length !== 2) continue;
+      const a = lista[capi[0].s], b = lista[capi[1].s];
+      for (const [larga, stretta] of [[a, b], [b, a]]) {
+        if (larga.t.endsWith("_link") && larga.w === 6 && !larga.ww && stretta.w < 4) larga.w = stretta.w;
+      }
+    }
+  }
+}
+
+// --- Forma delle carreggiate delle strade veloci ----------------------------------------------------------
+// In OpenStreetMap dove una rampa entra in autostrada (o dove la strada a due sensi si divide in due carreggiate) le
+// due linee convergono fino a toccarsi in UN punto. Disegnate cosi', i due nastri si sovrappongono a cuneo: l'asfalto
+// si stringe fino a una corsia e poi si riallarga di colpo. Nella realta' le corsie corrono AFFIANCATE.
+//  1) "affianca": vicino al nodo le due strade che convergono vengono spostate di lato finche' stanno una accanto
+//     all'altra, e insieme sono larghe quanto la strada che continua;
+//  2) "rastrema": dove una strada continua in un'altra di larghezza diversa (2 corsie -> 3), la larghezza cambia in
+//     45 m invece che di colpo.
+// Va chiamata DOPO le quote (i nodi in comune servono a metterle sullo stesso piano).
+function formaVeloci(lista) {
+  const nodi = capiVeloci(lista);
+  // punti in fila allontanandosi dal capo "capo" della strada s; continua nella strada successiva
+  const catena = function (s, capo, massimo) {
+    const punti = [], viste = new Set();
+    let fatta = 0;
+    for (;;) {
+      viste.add(s);
+      const p = lista[s].p, n = p.length / 3;
+      const passo = capo === 0 ? 1 : -1;
+      for (let i = capo; i >= 0 && i < n; i += passo) {
+        if (punti.length > 0) {
+          const u = punti[punti.length - 1];
+          fatta += Math.hypot(p[i * 3] - u.x, p[i * 3 + 2] - u.z);
+        }
+        punti.push({ s: s, i: i, x: p[i * 3], y: p[i * 3 + 1], z: p[i * 3 + 2] });
+        if (fatta > massimo) return punti;
+      }
+      const ultimo = capo === 0 ? n - 1 : 0;
+      const altri = (nodi.get(chiaveNodo(p[ultimo * 3], p[ultimo * 3 + 2])) || []).filter(function (e) { return e.s !== s; });
+      if (altri.length !== 1 || lista[altri[0].s].g || viste.has(altri[0].s)) return punti;
+      s = altri[0].s;
+      capo = altri[0].fine;
+    }
+  };
+  // punto piu' vicino su una catena: [distanza, x, y, z]
+  const vicinoSu = function (c, x, z) {
+    let migliore = [Infinity, 0, 0, 0];
+    for (let k = 0; k + 1 < c.length; k++) {
+      const a = c[k], b = c[k + 1];
+      const lungo = (b.x - a.x) * (b.x - a.x) + (b.z - a.z) * (b.z - a.z);
+      let t = lungo > 0 ? ((x - a.x) * (b.x - a.x) + (z - a.z) * (b.z - a.z)) / lungo : 0;
+      t = Math.min(Math.max(t, 0), 1);
+      const qx = a.x + (b.x - a.x) * t, qz = a.z + (b.z - a.z) * t;
+      const d = Math.hypot(x - qx, z - qz);
+      if (d < migliore[0]) migliore = [d, qx, a.y + (b.y - a.y) * t, qz];
+    }
+    return migliore;
+  };
+  const spinte = new Map();      // "s:i" -> [dx, dz, somma delle quote, quante]
+  const cuciture = [];           // [s, i, valore]
+  const rastremi = [];           // [s, fine, larghezza nel nodo]
+  const prolunghe = [];          // [s, fine, dirX, dirZ, quota]
+  const usati = new Set();
+  for (const capi of nodi.values()) {
+    if (capi.length !== 3) continue;
+    if (capi.some(function (e) { return lista[e.s].g; })) continue;
+    if (new Set(capi.map(function (e) { return e.s; })).size !== 3) continue;
+    const cat = capi.map(function (e) { return catena(e.s, e.fine, 320); });
+    if (cat.some(function (c) { return c.length < 2; })) continue;
+    const N = cat[0][0];
+    const dir = cat.map(function (c) {
+      let j = 1;
+      while (j < c.length - 1 && Math.hypot(c[j].x - N.x, c[j].z - N.z) < 30) j++;
+      const dx = c[j].x - N.x, dz = c[j].z - N.z, l = Math.hypot(dx, dz) || 1;
+      return [dx / l, dz / l];
+    });
+    // le due che partono dal nodo quasi nella stessa direzione sono quelle che convergono; la terza continua
+    let coppia = null;
+    for (const [a, b, c] of [[0, 1, 2], [0, 2, 1], [1, 2, 0]]) {
+      const dot = dir[a][0] * dir[b][0] + dir[a][1] * dir[b][1];
+      if (!coppia || dot > coppia.dot) coppia = { a: a, b: b, c: c, dot: dot };
+    }
+    if (coppia.dot < 0.9) continue;
+    const a = coppia.a, b = coppia.b, c = coppia.c;
+    const mx = dir[a][0] + dir[b][0], mz = dir[a][1] + dir[b][1], ml = Math.hypot(mx, mz) || 1;
+    if (-(dir[c][0] * mx + dir[c][1] * mz) / ml < 0.85) continue;
+    const wA = lista[capi[a].s].w, wB = lista[capi[b].s].w, wC = lista[capi[c].s].w;
+    const affiancate = (wA + wB) / 2;                 // distanza tra i centri quando stanno una accanto all'altra
+    const sMin = Math.min(wC - affiancate, affiancate);
+    if (sMin < 0.6) continue;
+    const cucite = Math.abs(sMin - affiancate) < 0.3;
+    const opposte = capi[a].fine !== capi[b].fine;    // una arriva al nodo e l'altra parte: sensi di marcia opposti
+    for (const [io, altro, padrona] of [[a, b, true], [b, a, false]]) {
+      const mia = cat[io], sua = cat[altro];
+      // da che parte sta l'altra? si guarda dove le due si sono gia' staccate
+      let lato = 0;
+      for (let k = 1; k < mia.length && lato === 0; k++) {
+        const v = vicinoSu(sua, mia[k].x, mia[k].z);
+        if (v[0] < 1.2 && k < mia.length - 1) continue;
+        const d = direzioneIn(lista[mia[k].s].p, mia[k].i);
+        lato = (-d[1] * (mia[k].x - v[1]) + d[0] * (mia[k].z - v[3])) >= 0 ? 1 : -1;   // +1 = io sto alla sua sinistra (lungo la mia direzione)
+      }
+      if (lato === 0) continue;
+      for (let k = 0; k < mia.length; k++) {
+        const pt = mia[k];
+        const d = direzioneIn(lista[pt.s].p, pt.i);
+        const v = vicinoSu(sua, pt.x, pt.z);
+        const sep = lato * (-d[1] * (pt.x - v[1]) + d[0] * (pt.z - v[3]));   // distanza con segno: negativa se si sono incrociate
+        if (sep >= sMin) break;
+        const quanto = (sMin - sep) / 2;
+        const chiave = pt.s + ":" + pt.i;
+        let voce = spinte.get(chiave);
+        if (!voce) { voce = [0, 0, 0, 0]; spinte.set(chiave, voce); }
+        voce[0] += -d[1] * lato * quanto;
+        voce[1] += d[0] * lato * quanto;
+        const peso = Math.min(quanto / 0.5, 1);
+        voce[2] += pt.y + (v[2] - pt.y) * 0.5 * peso;   // stessa quota della corsia accanto
+        voce[3]++;
+        // la cucitura (la riga tra le due corsie affiancate) sta dalla parte dell'altra; la disegna una sola delle due
+        const dirStrada = direzioneIn(lista[pt.s].p, pt.i);
+        void dirStrada;
+        if (cucite && quanto > 0.02) cuciture.push([pt.s, pt.i, -lato * (padrona ? (opposte ? 2 : 1) : 3)]);
+      }
+      // 1.5 m di sovrapposizione con la strada che continua: non restano fessure tra i nastri
+      const y1 = cat[c].length > 1 ? N.y + (cat[c][1].y - N.y) * Math.min(1, 1.5 / (Math.hypot(cat[c][1].x - N.x, cat[c][1].z - N.z) || 1)) : N.y;
+      prolunghe.push([capi[io].s, capi[io].fine, dir[c][0], dir[c][1], y1]);
+    }
+    for (const e of capi) usati.add(e.s + ":" + e.fine);
+    if (wC - (sMin + affiancate) > 0.3) rastremi.push([capi[c].s, capi[c].fine, sMin + affiancate]);
+  }
+  for (const capi of nodi.values()) {
+    if (capi.length !== 2 || capi[0].s === capi[1].s) continue;
+    const A = lista[capi[0].s], B = lista[capi[1].s];
+    if (Math.abs(A.w - B.w) < 0.3) continue;
+    const nelNodo = A.g ? A.w : (B.g ? B.w : (A.w + B.w) / 2);
+    for (const e of capi) if (!lista[e.s].g && !usati.has(e.s + ":" + e.fine)) rastremi.push([e.s, e.fine, nelNodo]);
+  }
+  // larghezze che cambiano piano
+  const RASTREMA = 45;
+  for (const [s, fine, nelNodo] of rastremi) {
+    const strada = lista[s], p = strada.p, n = p.length / 3;
+    if (!strada.ww || strada.ww.length !== n) {
+      const prima = strada.ww;
+      strada.ww = [];
+      for (let i = 0; i < n; i++) strada.ww.push(prima ? prima[Math.min(i, prima.length - 1)] : strada.w);
+    }
+    let fatta = 0;
+    const passo = fine === 0 ? 1 : -1;
+    for (let i = fine; i >= 0 && i < n; i += passo) {
+      if (i !== fine) fatta += Math.hypot(p[i * 3] - p[(i - passo) * 3], p[i * 3 + 2] - p[(i - passo) * 3 + 2]);
+      if (fatta >= RASTREMA) break;
+      const f = 1 - fatta / RASTREMA;
+      strada.ww[i] += (nelNodo - strada.w) * f * f * (3 - 2 * f);
+    }
+  }
+  // spostamenti di lato
+  for (const [chiave, v] of spinte) {
+    const [s, i] = chiave.split(":").map(Number);
+    const p = lista[s].p;
+    p[i * 3] += v[0];
+    p[i * 3 + 1] = v[2] / v[3];
+    p[i * 3 + 2] += v[1];
+    if (!lista[s].spinta) lista[s].spinta = new Uint8Array(p.length / 3);
+    lista[s].spinta[i] = 1;
+  }
+  for (const [s, i, valore] of cuciture) {
+    if (!lista[s].cuc) lista[s].cuc = new Int8Array(lista[s].p.length / 3);
+    lista[s].cuc[i] = valore;
+  }
+  // prolunghe: un punto in piu' oltre il capo, lungo la strada che continua
+  for (const [s, fine, dx, dz, y] of prolunghe) {
+    const strada = lista[s], p = strada.p, n = p.length / 3;
+    const capo = fine === 0 ? 0 : n - 1;
+    const nuovo = [p[capo * 3] + dx * 1.5, y, p[capo * 3 + 2] + dz * 1.5];
+    for (const nome of ["ww", "cuc", "spinta"]) {
+      if (!strada[nome]) continue;
+      const v = Array.from(strada[nome]);
+      if (fine === 0) v.unshift(v[0]); else v.push(v[v.length - 1]);
+      strada[nome] = nome === "ww" ? v : (nome === "cuc" ? Int8Array.from(v) : Uint8Array.from(v));
+    }
+    if (fine === 0) strada.p = nuovo.concat(p); else p.push(nuovo[0], nuovo[1], nuovo[2]);
+  }
+}
+
+// Tra due carreggiate veloci affiancate (le due direzioni dell'A13, una rampa che si stacca) non resta una striscia
+// d'erba larga un metro: lo spazio viene ASFALTATO (fino a 6.5 m), come lo spartitraffico e le zone zebrate vere.
+// Ogni riempimento e' una "strada" in piu' in fondo alla lista (riemp: true): cosi' si disegna, si guida e sposta il
+// terreno come le altre. Tra due carreggiate in senso opposto c'e' anche la barriera centrale.
+function riempiTraCarreggiate(lista) {
+  const griglia = costruisciGriglia(lista);
+  const barriere = [];
+  const quante = lista.length;
+  const segna = function (strada, i, lato) {
+    if (!strada.chiuso) strada.chiuso = new Uint8Array(strada.p.length / 3);
+    strada.chiuso[i] |= lato > 0 ? 1 : 2;
+  };
+  for (let s = 0; s < quante; s++) {
+    const A = lista[s];
+    if (!stradaVeloce(A) || A.g) continue;
+    const p = A.p, n = p.length / 3;
+    for (const lato of [1, -1]) {
+      let corsa = null, barriera = null, buchi = 0, buchiBarriera = 0;
+      const chiudi = function () {
+        if (corsa && corsa.p.length >= 6) {
+          lista.push({ n: A.n, t: "riempimento", w: Math.max.apply(null, corsa.ww), ww: corsa.ww, b: corsa.b, g: false, p: corsa.p, riemp: true });
+        }
+        corsa = null;
+      };
+      const chiudiBarriera = function () {
+        if (barriera && barriera.length >= 6) barriere.push(barriera);
+        barriera = null;
+      };
+      for (let i = 0; i < n; i++) {
+        const d = direzioneIn(p, i);
+        const nx = -d[1] * lato, nz = d[0] * lato;
+        const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
+        const meta = larghezzaIn(A, i) / 2;
+        const cx = Math.floor(x / CELLA), cz = Math.floor(z / CELLA);
+        let m = null;
+        for (let ix = cx - 1; ix <= cx + 1; ix++) for (let iz = cz - 1; iz <= cz + 1; iz++) {
+          const pezzi = griglia.get(ix + "," + iz);
+          if (!pezzi) continue;
+          for (const [o, j] of pezzi) {
+            if (o === s || o >= quante) continue;
+            const B = lista[o];
+            if (!stradaVeloce(B) || B.g) continue;
+            const q = B.p;
+            const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+            const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+            if (lungo < 0.01) continue;
+            const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+            if (t < 0 || t > 1) continue;
+            const vx = ax + (bx - ax) * t - x, vz = az + (bz - az) * t - z;
+            const dist = Math.hypot(vx, vz);
+            if (dist < 0.3 || (m && dist >= m.dist)) continue;
+            if ((vx * nx + vz * nz) / dist < 0.8) continue;        // deve stare di fianco, da questo lato
+            const lung = Math.sqrt(lungo);
+            const dot = (d[0] * (bx - ax) + d[1] * (bz - az)) / lung;
+            if (Math.abs(dot) < 0.9) continue;
+            const j3 = j / 3;
+            const metaB = (larghezzaIn(B, j3) + (larghezzaIn(B, j3 + 1) - larghezzaIn(B, j3)) * t) / 2;
+            const yB = q[j + 1] + (q[j + 4] - q[j + 1]) * t;
+            if (Math.abs(yB - y) > 0.6) continue;
+            if (dist - meta - metaB < -0.5) continue;              // sovrapposta (il capo di una corsia che confluisce): non e' "di fianco"
+            m = { dist: dist, vx: vx / dist, vz: vz / dist, dot: dot, spazio: dist - meta - metaB, y: yB, o: o, j: j3, t: t,
+              latoB: (-(bz - az) * -vx + (bx - ax) * -vz) >= 0 ? 1 : -1 };
+          }
+        }
+        // una sola delle due carreggiate fa il lavoro: stesso senso -> quella che ha l'altra a sinistra;
+        // senso opposto -> quella che va verso est
+        const mia = m !== null && m.spazio <= (m.dot > 0 ? 4 : 6.5) && (m.dot > 0 ? lato === 1 : (d[0] > 0.05 || (Math.abs(d[0]) <= 0.05 && d[1] > 0)));
+        if (mia && m.spazio > 0.05) {
+          const B = lista[m.o];
+          const ponte = A.b || B.b;
+          const punto = [x + m.vx * (meta + m.spazio / 2), (y + m.y) / 2, z + m.vz * (meta + m.spazio / 2)];
+          if (corsa && corsa.b !== ponte) { corsa.p.push(punto[0], punto[1], punto[2]); corsa.ww.push(m.spazio + 0.8); chiudi(); }
+          if (!corsa) corsa = { p: [], ww: [], b: ponte };
+          corsa.p.push(punto[0], punto[1], punto[2]);
+          corsa.ww.push(m.spazio + 0.8);
+          segna(A, i, lato);
+          segna(B, m.j, m.latoB);
+          segna(B, m.j + 1, m.latoB);
+          buchi = 0;
+        } else if (corsa && buchi < 1) buchi++;   // un punto senza l'altra carreggiata di fronte (una curva, un cambio di pezzo): si salta
+        else chiudi();
+        // barriera centrale: tra due carreggiate in senso opposto (non dove sono ancora cucite insieme)
+        const cucita = m !== null && (latoOccupatoDaCorsia(A, i, lato) || latoOccupatoDaCorsia(lista[m.o], m.j, m.latoB));
+        if (mia && m.dot < 0 && !cucita) {
+          if (!barriera) barriera = [];
+          barriera.push(x + m.vx * (meta + m.spazio / 2), (y + m.y) / 2, z + m.vz * (meta + m.spazio / 2));
+          if (m.spazio <= 0.05) { segna(A, i, lato); segna(lista[m.o], m.j, m.latoB); segna(lista[m.o], m.j + 1, m.latoB); }
+          buchiBarriera = 0;
+        } else if (barriera && buchiBarriera < 1) buchiBarriera++;
+        else chiudiBarriera();
+      }
+      chiudi();
+      chiudiBarriera();
+    }
+  }
+  return barriere;
+}
+
 export async function caricaStrade() {
   const risposta = await fetch("dati/strade.json");
   if (!risposta.ok) {
@@ -533,13 +1000,21 @@ export async function caricaStrade() {
   }
   const dati = await risposta.json();
   preparaRete(dati.strade);
+  larghezzaRaccordi(dati.strade);
   const quote = sistemaQuote(dati.strade);
+  const gradoStrade = stessoPiano(dati.strade, costruisciGriglia(dati.strade), quote);
+
+  // strade veloci: corsie affiancate agli svincoli, larghezze che cambiano piano, spartitraffico asfaltato
+  const vere = dati.strade.length;
+  formaVeloci(dati.strade);
+  const barriere = riempiTraCarreggiate(dati.strade);
   const griglia = costruisciGriglia(dati.strade);
-
-  const grado = stessoPiano(dati.strade, griglia, quote);
-
-  // grado: 0 = la strada piu' importante (la piu' larga); dove due strade si sovrappongono comanda quella
-  return { lista: dati.strade, griglia: griglia, incroci: quote.incroci, grado: grado };
+  // grado: 0 = la strada piu' importante (la piu' larga); dove due strade si sovrappongono comanda quella.
+  // I riempimenti vengono dopo tutte le strade vere.
+  const grado = new Int32Array(dati.strade.length);
+  grado.set(gradoStrade);
+  for (let s = vere; s < grado.length; s++) grado[s] = s;
+  return { lista: dati.strade, griglia: griglia, incroci: quote.incroci, grado: grado, barriere: barriere };
 }
 
 // Il punto e' sull'asfalto di una strada qualsiasi (non in galleria)? "margine" allarga la carreggiata
@@ -621,26 +1096,62 @@ function creaMesh(posizioni, indici, colore, spostamento) {
   return nastro;
 }
 
-// Parapetto: due "muretti" alti 1 m ai lati di un ponte
-function aggiungiParapetti(p, larghezza, posizioni, indici) {
+// Parapetto: due "muretti" alti 1 m ai lati di un ponte, che scendono 0.7 m sotto l'asfalto (il fianco
+// dell'impalcato: da sotto e di lato il ponte non sembra piu' un foglio di carta). Niente parapetto dal lato dove
+// c'e' un'altra corsia affiancata o lo spartitraffico asfaltato.
+function aggiungiParapetti(strada, posizioni, indici) {
+  const p = strada.p;
   const punti = p.length / 3;
   for (const lato of [-1, 1]) {
+    let prima = false;
     for (let i = 0; i < punti; i++) {
-      const prima = Math.max(i - 1, 0) * 3;
-      const dopo = Math.min(i + 1, punti - 1) * 3;
-      let dx = p[dopo] - p[prima];
-      let dz = p[dopo + 2] - p[prima + 2];
-      const lunghezza = Math.hypot(dx, dz) || 1;
-      const x = p[i * 3] - (dz / lunghezza) * lato * larghezza / 2;
-      const z = p[i * 3 + 2] + (dx / lunghezza) * lato * larghezza / 2;
+      const d = direzioneIn(p, i);
+      const meta = larghezzaIn(strada, i) / 2;
+      const x = p[i * 3] - d[1] * lato * meta;
+      const z = p[i * 3 + 2] + d[0] * lato * meta;
       const y = p[i * 3 + 1];
+      const libero = !latoOccupato(strada, i, lato);
+      if (!libero) { prima = false; continue; }
       const primo = posizioni.length / 3;
-      posizioni.push(x, y, z, x, y + 1.0, z);
-      if (i > 0) {
+      posizioni.push(x, y - 0.7, z, x, y + 1.0, z);
+      if (prima) {
         indici.push(primo - 2, primo, primo - 1, primo - 1, primo, primo + 1);
+      }
+      prima = true;
+    }
+  }
+}
+
+// Da questo lato (+1 = sinistra lungo la strada, -1 = destra) c'e' una corsia affiancata o lo spartitraffico asfaltato?
+function latoOccupatoDaCorsia(strada, i, lato) {
+  return !!strada.cuc && strada.cuc[i] !== 0 && Math.sign(strada.cuc[i]) === lato;
+}
+function latoOccupato(strada, i, lato) {
+  if (strada.chiuso && (strada.chiuso[i] & (lato > 0 ? 1 : 2))) return true;
+  return latoOccupatoDaCorsia(strada, i, lato);
+}
+
+// Barriera centrale tra le due carreggiate (profilo di cemento tipo "New Jersey"): due facce inclinate e la testa
+function aggiungiBarriere(barriere, scena) {
+  if (!barriere || barriere.length === 0) return;
+  const pos = [], ind = [];
+  const BASE = 0.26, TESTA = 0.1, ALTA = 0.85;
+  for (const linea of barriere) {
+    const n = linea.length / 3;
+    for (let i = 0; i < n; i++) {
+      const d = direzioneIn(linea, i);
+      const x = linea[i * 3], y = linea[i * 3 + 1] - 0.05, z = linea[i * 3 + 2];
+      const primo = pos.length / 3;
+      for (const [lat, alto] of [[-BASE, 0], [-TESTA, ALTA], [TESTA, ALTA], [BASE, 0]]) pos.push(x - d[1] * lat, y + alto, z + d[0] * lat);
+      if (i > 0) for (let k = 0; k < 3; k++) {
+        const a = primo - 4 + k, b = primo + k;
+        ind.push(a, b, a + 1, a + 1, b, b + 1);
       }
     }
   }
+  const mesh = creaMesh(pos, ind, 0xb9b7b0, 0);
+  mesh.castShadow = true;
+  scena.add(mesh);
 }
 
 // Muri di sostegno: dove il terreno a lato sta piu' in basso dell'asfalto (tornanti, strade a mezza costa) un muro
@@ -661,7 +1172,7 @@ function aggiungiMuri(strada, terreno, muri) {
       const y = p[i * 3 + 1];
       // il terreno al bordo e poco piu' in la': si prende il piu' basso
       const giu = Math.min(quotaTerreno(terreno, x, z), quotaTerreno(terreno, x - dz * lato * 1.2, z + dx * lato * 1.2));
-      const qui = { x: x, y: y, z: z, giu: giu - 0.4, serve: y - giu > 0.3 };
+      const qui = { x: x, y: y, z: z, giu: giu - 0.4, serve: y - giu > 0.3 && !latoOccupato(strada, i, lato) };
       if (prima !== null && (prima.serve || qui.serve)) {
         const primo = muri.posizioni.length / 3;
         muri.posizioni.push(prima.x, prima.y, prima.z, prima.x, Math.min(prima.giu, prima.y), prima.z, x, y, z, x, Math.min(qui.giu, y), z);
@@ -689,12 +1200,12 @@ function aggiungiGuardrail(strada, terreno, nastro, paletti) {
       const lunghezza = Math.hypot(dx, dz) || 1;
       dx = dx / lunghezza;
       dz = dz / lunghezza;
-      const distanza = strada.w / 2 + 0.4;
+      const distanza = larghezzaIn(strada, i) / 2 + 0.4;
       const x = p[i * 3] - dz * lato * distanza;
       const z = p[i * 3 + 2] + dx * lato * distanza;
       const y = p[i * 3 + 1];
       const fuori = quotaTerreno(terreno, p[i * 3] - dz * lato * (distanza + 2), p[i * 3 + 2] + dx * lato * (distanza + 2));
-      if (y - fuori > 1.5) {
+      if (y - fuori > 1.5 && !latoOccupato(strada, i, lato)) {
         if (prima !== null) {
           const primo = nastro.posizioni.length / 3;
           nastro.posizioni.push(prima.x, prima.y + 0.5, prima.z, prima.x, prima.y + 0.8, prima.z,
@@ -859,9 +1370,13 @@ function meshDa(g, materiale, ricevi) {
 }
 
 // C'e' un'altra strada (diversa da "escludi") che copre il punto (x, z)? (serve per interrompere i marciapiedi agli incroci)
-function copertoDaAltra(strade, x, z, escludi, margine) {
+// "perRighe": serve per le righe sull'asfalto. Lo spartitraffico asfaltato non le cancella, e tra due strade veloci
+// conta solo l'asfalto vero dell'altra (non il suo capo arrotondato ne' il margine): cosi' le righe non si
+// interrompono dove un pezzo di autostrada continua nel successivo o dove le due carreggiate si sfiorano.
+function copertoDaAltra(strade, x, z, escludi, margine, perRighe) {
   const cx = Math.floor(x / CELLA);
   const cz = Math.floor(z / CELLA);
+  const veloceIo = perRighe && escludi >= 0 && stradaVeloce(strade.lista[escludi]);
   for (let ix = cx - 1; ix <= cx + 1; ix++) {
     for (let iz = cz - 1; iz <= cz + 1; iz++) {
       const pezzi = strade.griglia.get(ix + "," + iz);
@@ -870,13 +1385,16 @@ function copertoDaAltra(strade, x, z, escludi, margine) {
         if (s === escludi) continue;
         const altra = strade.lista[s];
         if (altra.g) continue;
+        if (perRighe && altra.riemp) continue;
         const p = altra.p;
         const ax = p[i], az = p[i + 2], bx = p[i + 3], bz = p[i + 5];
         const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
         let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
+        const traVeloci = veloceIo && stradaVeloce(altra);
+        if (traVeloci && (t < 0 || t > 1)) continue;
         t = Math.min(Math.max(t, 0), 1);
         const d = Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t));
-        if (d < larghezzaIn(altra, i / 3) / 2 + margine) return true;
+        if (d < larghezzaIn(altra, i / 3) / 2 + (traVeloci ? -0.05 : margine)) return true;
       }
     }
   }
@@ -1035,7 +1553,7 @@ function aggiungiRotonde(strade, scena) {
 function aggiungiIncroci(strade, materiale, scena) {
   const nodi = new Map();
   for (const s of strade.lista) {
-    if (s.g || s.b || s.w < 3.5) continue;
+    if (s.g || s.b || s.w < 3.5 || s.riemp) continue;
     const p = s.p;
     const n = p.length / 3;
     for (let i = 0; i < n; i++) {
@@ -1135,6 +1653,12 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     const strada = strade.lista[indice];
     const gruppo = pezzo(strada);
     const lar = function (i) { return larghezzaIn(strada, i); };
+    if (strada.riemp) {
+      // spartitraffico e zone tra una rampa e la carreggiata: asfalto un po' piu' scuro, i bordi seguono le due strade
+      const scuro = new THREE.Color(0.84, 0.84, 0.85);
+      nastroConUV(strada.p, lar, 0.002, gruppo.asfalto, scuro, 0, function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); });
+      continue;
+    }
     if (strada.g) {
       nastroConUV(strada.p, lar, 0, gruppo.gallerie, bianco);
     } else {
@@ -1146,12 +1670,12 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       const bordo = strada.b ? null : function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); };
       nastroConUV(strada.p, lar, alzata, gruppo.asfalto, new THREE.Color(v, v, v), 0, bordo);
     }
-    if (strada.w >= 5.5) {
-      // mezzeria tratteggiata + linee di bordo continue (interrotte dove passa un'altra strada)
+    if (strada.w >= 5.5 || stradaVeloce(strada)) {
+      // righe tra le corsie (tratteggiate) + linee di bordo continue (interrotte dove passa un'altra strada)
       aggiungiLinee(indice, strada, strade, gruppo.righe);
     }
     if (strada.b) {
-      aggiungiParapetti(strada.p, strada.w, parapetti.posizioni, parapetti.indici);
+      aggiungiParapetti(strada, parapetti.posizioni, parapetti.indici);
     } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
       aggiungiGuardrail(strada, terreno, guardrail, paletti);
     }
@@ -1183,6 +1707,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
 
   aggiungiIncroci(strade, asfaltoMateriale, scena);
   aggiungiRotonde(strade, scena);
+  aggiungiBarriere(strade.barriere, scena);
 
   for (const g of gruppi.values()) {
     for (const [dati, materiale, ricevi] of [[g.asfalto, asfaltoMateriale, true], [g.gallerie, galleriaMateriale, true], [g.marciapiedi, marciapiedeMateriale, true], [g.righe, righeMateriale, true]]) {
@@ -1192,12 +1717,17 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   }
 }
 
-// Mezzeria (tratteggio 3 m + 3 m) e linee di bordo (continue, a 0.35 m dal bordo dell'asfalto).
-// Si campiona la strada ogni 3 m e si disegna solo dove il punto non e' coperto da un'altra strada:
+// Righe tra le corsie (tratteggiate) e linee di bordo (continue, a 0.35 m dal bordo dell'asfalto).
+//  - strade normali: una mezzeria (3 m si', 3 m no);
+//  - strade larghe 3 corsie o piu': una riga tra ogni corsia;
+//  - strade veloci: tratti da 6 m ogni 18 m come in autostrada, linee di bordo anche sulle rampe a una corsia, e
+//    dove due corsie corrono affiancate (rampa che entra, carreggiata che si divide) UNA riga sola sulla cucitura.
+// Si campiona la strada ogni 1.5 m e si disegna solo dove il punto non e' coperto da un'altra strada:
 // agli incroci le righe si fermano al bordo dell'altra strada, come nella realta'.
 function aggiungiLinee(indice, strada, strade, g) {
   const p = strada.p;
   const punti = p.length / 3;
+  const veloceQui = stradaVeloce(strada);
   const campioni = [];
   let dist = 0;
   for (let i = 0; i < punti - 1; i++) {
@@ -1208,28 +1738,41 @@ function aggiungiLinee(indice, strada, strade, g) {
     const dx = (bx - ax) / lung, dz = (bz - az) / lung;
     const n = Math.max(1, Math.round(lung / 1.5));
     const w0 = larghezzaIn(strada, i), w1 = larghezzaIn(strada, i + 1);
+    // cucitura: vale per il pezzo se tutti e due i suoi capi sono affiancati all'altra corsia
+    const cuc = strada.cuc && strada.cuc[i] !== 0 && strada.cuc[i + 1] !== 0 ? strada.cuc[i] : 0;
     for (let k = 0; k <= n; k++) {
       const t = k / n;
-      campioni.push({ x: ax + (bx - ax) * t, y: ay + (by - ay) * t, z: az + (bz - az) * t, dx: dx, dz: dz, w: w0 + (w1 - w0) * t, d: dist + lung * t, nuovo: k === 0 });
+      campioni.push({ x: ax + (bx - ax) * t, y: ay + (by - ay) * t, z: az + (bz - az) * t, dx: dx, dz: dz, w: w0 + (w1 - w0) * t, d: dist + lung * t, nuovo: k === 0, cuc: cuc });
     }
     dist += lung;
   }
-  const strisce = strada.g ? [0] : [0, 1, -1];
-  for (const lato of strisce) {
+  // strisce: [lato, frazione della larghezza]; lato 0 = riga tra due corsie
+  const corsie = strada.w >= 9 ? Math.round(strada.w / 3.3) : (strada.w >= 5.5 ? 2 : 1);
+  const strisce = [];
+  for (let k = 1; k < corsie; k++) strisce.push([0, k / corsie - 0.5]);
+  if (!strada.g) strisce.push([1, 0], [-1, 0]);
+  for (const [lato, frazione] of strisce) {
     let precedente = null;
     for (const c of campioni) {
-      const d = lato === 0 ? 0 : c.w / 2 - 0.35;
+      let d = lato === 0 ? frazione * c.w : c.w / 2 - 0.35;
       if (lato !== 0 && d < 0.5) { precedente = null; continue; }
-      const x = c.x - c.dz * lato * d, z = c.z + c.dx * lato * d;
-      const coperto = copertoDaAltra(strade, x, z, indice, 0.35);
-      // il tratteggio: 3 m si', 3 m no (campioni ogni 1.5 m)
-      const acceso = lato !== 0 || (Math.round(c.d / 1.5) % 4) < 3;
+      let tratteggio = lato === 0, cucitura = false;
+      if (lato !== 0 && c.cuc !== 0 && Math.sign(c.cuc) === lato) {
+        if (Math.abs(c.cuc) === 3) { precedente = null; continue; }   // la disegna l'altra corsia
+        d = c.w / 2;
+        cucitura = true;
+        tratteggio = Math.abs(c.cuc) === 1;
+      }
+      const x = c.x - c.dz * (lato === 0 ? 1 : lato) * d, z = c.z + c.dx * (lato === 0 ? 1 : lato) * d;
+      const coperto = !cucitura && copertoDaAltra(strade, x, z, indice, 0.35, true);
+      // il tratteggio: 3 m si' e 3 m no; sulle strade veloci 6 m si' e 12 m no (campioni ogni 1.5 m)
+      const acceso = !tratteggio || (veloceQui ? (Math.round(c.d / 1.5) % 12) < 5 : (Math.round(c.d / 1.5) % 4) < 3);
       if (coperto || !acceso || c.nuovo) {
         precedente = coperto || !acceso ? null : { x: x, y: c.y, z: z, dx: c.dx, dz: c.dz };
         continue;
       }
       if (precedente !== null) {
-        const mezza = lato === 0 ? 0.11 : 0.1;
+        const mezza = lato === 0 ? 0.11 : (veloceQui ? 0.12 : 0.1);
         const y0 = precedente.y + 0.03, y1 = c.y + 0.03;
         const base = g.posizioni.length / 3;
         g.posizioni.push(
@@ -1322,7 +1865,7 @@ export function puntoStradaVicino(strade, x, z) {
   let migliore = null;
   let distanzaMigliore = Infinity;
   for (const strada of strade.lista) {
-    if (strada.galleria) continue;   // non si riparte dentro una galleria
+    if (strada.galleria || strada.riemp) continue;   // non si riparte dentro una galleria ne' sullo spartitraffico
     const p = strada.p;
     for (let i = 0; i + 5 < p.length; i += 3) {
       const distanza = Math.hypot(p[i] - x, p[i + 2] - z);
