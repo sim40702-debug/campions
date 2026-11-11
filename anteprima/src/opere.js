@@ -17,7 +17,7 @@ function quad(posizioni, a, b, c, d) {
 // Sezione della galleria nel punto i: un anello ad ARCO (due pareti dritte e volta a botte), non una scatola.
 // Ritorna i punti dell'anello (dal pavimento sinistro, su per la volta, al pavimento destro) e la direzione.
 const PUNTI_ARCO = 9;
-function sezione(p, i, larghezza) {
+function sezione(p, i, larghezza, alta) {
   const punti = p.length / 3;
   const a = Math.max(i - 1, 0) * 3;
   const b = Math.min(i + 1, punti - 1) * 3;
@@ -28,8 +28,8 @@ function sezione(p, i, larghezza) {
   dz = dz / lunghezza;
   const meta = larghezza / 2 + 1.0;
   const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
-  const spalla = 2.6;                 // altezza delle pareti dritte
-  const freccia = ALTEZZA_GALLERIA - spalla;   // quanto sale la volta sopra le spalle
+  const spalla = alta - 2.4;          // altezza delle pareti dritte (2.6 m in una galleria normale)
+  const freccia = alta - spalla;   // quanto sale la volta sopra le spalle
   const anello = [];
   const punto = function (lato, alto) {
     return [x - dz * lato, y + alto, z + dx * lato];
@@ -42,7 +42,7 @@ function sezione(p, i, larghezza) {
   }
   anello.push(punto(meta, spalla));
   anello.push(punto(meta, -0.08));
-  return { anello: anello, centro: [x, y + ALTEZZA_GALLERIA - 0.15, z], dirX: dx, dirZ: dz, x: x, y: y, z: z, meta: meta };
+  return { anello: anello, centro: [x, y + alta - 0.15, z], dirX: dx, dirZ: dz, x: x, y: y, z: z, meta: meta, alta: alta };
 }
 
 // Portale: facciata di cemento con apertura ad arco, cornice in rilievo e muri d'ala inclinati che "tengono" la montagna.
@@ -60,7 +60,7 @@ function aggiungiPortale(posizioni, cornice, s, verso, terreno) {
   // un muro alto 8 m che spunta dal prato; in montagna resta alta come prima
   let sopra = -Infinity;
   for (const t of [1.5, 4, 7]) sopra = Math.max(sopra, quotaTerreno(terreno, s.x - s.dirX * verso * t, s.z - s.dirZ * verso * t));
-  const yTetto = Math.min(s.y + ALTEZZA_GALLERIA + 3.2, Math.max(s.y + ALTEZZA_GALLERIA + 0.6, sopra + 0.9));
+  const yTetto = Math.min(s.y + s.alta + 3.2, Math.max(s.y + s.alta + 0.6, sopra + 0.9));
   const esterno = function (lato, y) { return [s.x - fz * 0 + (-s.dirZ) * lato * 1, y, s.z + s.dirX * lato]; };
   const pt = function (lato, y) { return sposta([s.x - s.dirZ * lato, y, s.z + s.dirX * lato], 0); };
   // facciata: fascia tra l'arco (apertura) e il bordo alto, divisa nei tratti dell'arco
@@ -117,9 +117,10 @@ export function aggiungiOpere(strade, scena, terreno) {
     if (punti < 2) continue;
 
     if (strada.g) {
-      let prima = sezione(p, 0, strada.w);
+      const alta = strada.alta || ALTEZZA_GALLERIA;   // i sottopassi corti sono piu' bassi (vedi strade.js)
+      let prima = sezione(p, 0, strada.w, alta);
       for (let i = 1; i < punti; i++) {
-        const ora = sezione(p, i, strada.w);
+        const ora = sezione(p, i, strada.w, alta);
         // il tubo: un quadrilatero per ogni tratto dell'anello (pareti e volta ad arco); il pavimento e' la strada
         for (let k = 0; k < ora.anello.length - 1; k++) {
           quad(tubo, prima.anello[k], ora.anello[k], prima.anello[k + 1], ora.anello[k + 1]);
@@ -131,7 +132,7 @@ export function aggiungiOpere(strade, scena, terreno) {
       for (const [indice, verso] of [[0, -1], [punti - 1, 1]]) {
         const x = p[indice * 3], z = p[indice * 3 + 2];
         if (dentroArea(terreno, x, z, 3)) {
-          aggiungiPortale(portali, cornici, sezione(p, indice, strada.w), verso, terreno);
+          aggiungiPortale(portali, cornici, sezione(p, indice, strada.w, alta), verso, terreno);
         }
       }
     }
@@ -147,7 +148,7 @@ export function aggiungiOpere(strade, scena, terreno) {
 
   const cemento = new THREE.MeshLambertMaterial({ color: 0x8e8d87, side: THREE.DoubleSide });
   const cementoChiaro = new THREE.MeshLambertMaterial({ color: 0xb3b0a8, side: THREE.DoubleSide });
-  const cementoInterno = new THREE.MeshLambertMaterial({ color: 0x7a7974, side: THREE.DoubleSide });
+  const cementoInterno = new THREE.MeshLambertMaterial({ color: 0x7a7974, emissive: 0x24241f, side: THREE.DoubleSide });   // un po' di luce propria: dentro non e' nero pece
   for (const [posizioni, materiale] of [[tubo, cementoInterno], [portali, cemento], [cornici, cementoChiaro]]) {
     if (posizioni.length === 0) continue;
     const geometria = new THREE.BufferGeometry();

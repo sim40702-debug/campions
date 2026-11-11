@@ -3,7 +3,13 @@
 Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.8) – A13 rifatta
+### Novità di questa versione (0.14.9) – sottopasso di Gordola
+
+- **Sottopasso di Via Brere sotto l'A13 (Gordola) sistemato**: prima stava solo 2,7 m sotto l'autostrada, quindi la sua volta spuntava dall'asfalto dell'A13 e toglieva la vista; ora passa circa 5 m più in basso, in trincea, con una volta più bassa (4,2 m).
+- **Da dentro si vede l'uscita**: il terreno e il muro di sostegno dell'autostrada non chiudono più i due imbocchi. Vale per tutti i sottopassi corti (meno di 80 m).
+- L'interno delle gallerie è un po' meno buio.
+
+### Novità della 0.14.8 – A13 rifatta
 
 - **Le due carreggiate dell'A13 sono alla stessa quota**: prima tra Tenero e la Verzasca una stava fino a 2,6 m più in alto dell'altra, con conche e dossi vicino ai ponti. Ora il profilo è unico e dolce (pendenza massima 7 %), anche sui ponti.
 - **Corsie affiancate agli svincoli**: dove una rampa entra o esce, e dove la strada a due sensi si divide in due carreggiate, le corsie corrono una accanto all'altra. Prima l'asfalto si stringeva a cuneo fino a una corsia e poi si riallargava di colpo.

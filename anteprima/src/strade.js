@@ -245,6 +245,41 @@ function sistemaQuote(lista) {
           alzati++;
         }
       }
+      // Sottopassi: una galleria che passa sotto un'altra strada deve starci SOTTO tutta intera (volta compresa).
+      // Nei dati il sottopasso di Via Brere a Gordola stava 2.7 m sotto l'A13: la volta, alta 5 m, spuntava
+      // dall'asfalto dell'autostrada e da sotto si finiva dentro il terreno. Dove manca spazio la galleria SCENDE
+      // (i suoi capi, e le strade che ci arrivano scendono con lei: una trincea, come nei sottopassi veri).
+      for (let s = 0; s < lista.length; s++) {
+        const galleria = lista[s];
+        if (!galleria.g) continue;
+        const p = galleria.p, n = p.length / 3, g = gruppoDi[s];
+        if (n < 2) continue;
+        const d = distanze(p);
+        const serve = (galleria.alta || 5) + 1.4;   // volta + soletta + un po' di margine
+        let manca = 0;
+        for (let i = 0; i < n; i++) {
+          const x = p[i * 3], z = p[i * 3 + 2];
+          const y = g[0].y + (g[n - 1].y - g[0].y) * (d[i] / (d[n - 1] || 1));
+          const pezzi = griglia.get(Math.floor(x / CELLA) + "," + Math.floor(z / CELLA));
+          if (!pezzi) continue;
+          for (const [o, j] of pezzi) {
+            if (o === s || lista[o].g) continue;
+            const q = lista[o].p;
+            const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+            const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+            if (lungo < 0.01) continue;
+            const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+            if (t < 0 || t > 1) continue;
+            if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) > larghezzaIn(lista[o], j / 3) / 2 + 0.5) continue;
+            const luce = quotaIn(o, j / 3, t) - y;
+            if (luce > 1.2 && luce < serve) manca = Math.max(manca, serve - luce);
+          }
+        }
+        if (manca > 0.05) {
+          for (const c of [g[0], g[n - 1]]) { c.y0 = c.y - manca; c.y = c.y0; c.peso = 1; }
+          alzati++;
+        }
+      }
       if (alzati === 0) break;
       giri(160, variabili, 1.6);
       if (veloci.length > 0) { giri(500, veloci, 1.8); giri(40, variabili, 1.6); }
@@ -540,6 +575,35 @@ export function adattaTerreno(terreno, strade) {
   }
   for (const [k, y] of sotto) quote[k] = y;
   for (const [k, y] of ponti) if (quote[k] > y && !sotto.has(k)) quote[k] = y;
+  // Sottopassi corti: il terreno non deve attraversare il tubo. Prima il terreno restava dov'era (la scarpata
+  // dell'autostrada, il prato) e tagliava l'interno del sottopasso: da dentro si vedeva un muro di terra al posto
+  // dell'uscita. Qui tutto il terreno sopra il sottopasso scende sotto il suo asfalto: il tubo sta in una trincea e
+  // la strada di sopra ci passa come su un ponte (con i suoi muri di sostegno ai lati).
+  for (const strada of strade.lista) {
+    if (!strada.g || !strada.alta) continue;
+    const p = strada.p;
+    const raggio = strada.w / 2 + 1 + TOCCA;
+    for (let i = 0; i + 5 < p.length; i += 3) {
+      const ax = p[i], ay = p[i + 1], az = p[i + 2], bx = p[i + 3], by = p[i + 4], bz = p[i + 5];
+      const c0 = Math.max(Math.floor((Math.min(ax, bx) - raggio + terreno.metaX) / passo), 0);
+      const c1 = Math.min(Math.ceil((Math.max(ax, bx) + raggio + terreno.metaX) / passo), colonne - 1);
+      const r0 = Math.max(Math.floor((Math.min(az, bz) - raggio + terreno.metaZ) / passo), 0);
+      const r1 = Math.min(Math.ceil((Math.max(az, bz) + raggio + terreno.metaZ) / passo), righe - 1);
+      const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+      for (let r = r0; r <= r1; r++) {
+        const z = r * passo - terreno.metaZ;
+        for (let c = c0; c <= c1; c++) {
+          const x = c * passo - terreno.metaX;
+          let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
+          t = Math.min(Math.max(t, 0), 1);
+          if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) > raggio) continue;
+          const k = r * colonne + c;
+          const y = ay + (by - ay) * t - 0.3;
+          if (quote[k] > y) quote[k] = y;
+        }
+      }
+    }
+  }
   // ultimo controllo: sotto ogni punto della carreggiata (centro e bordi) il terreno deve stare sotto l'asfalto;
   // dove non e' cosi' (tornanti strettissimi) si abbassano i quattro punti di griglia intorno
   for (const strada of strade.lista) {
@@ -1001,6 +1065,13 @@ export async function caricaStrade() {
   const dati = await risposta.json();
   preparaRete(dati.strade);
   larghezzaRaccordi(dati.strade);
+  // i sottopassi corti (meno di 80 m) hanno la volta piu' bassa di una galleria vera: 4.2 m invece di 5
+  for (const strada of dati.strade) {
+    if (!strada.g) continue;
+    let lunga = 0;
+    for (let i = 3; i < strada.p.length; i += 3) lunga += Math.hypot(strada.p[i] - strada.p[i - 3], strada.p[i + 2] - strada.p[i - 1]);
+    if (lunga < 80) strada.alta = 4.2;
+  }
   const quote = sistemaQuote(dati.strade);
   const gradoStrade = stessoPiano(dati.strade, costruisciGriglia(dati.strade), quote);
 
@@ -1156,7 +1227,32 @@ function aggiungiBarriere(barriere, scena) {
 
 // Muri di sostegno: dove il terreno a lato sta piu' in basso dell'asfalto (tornanti, strade a mezza costa) un muro
 // scende dal bordo della strada fino al terreno, cosi' la strada non resta mai "sospesa" con il vuoto sotto.
-function aggiungiMuri(strada, terreno, muri) {
+// Sotto il punto (x, z) passa un sottopasso corto? Ritorna la quota della cima della sua volta, oppure null.
+function cimaSottopasso(strade, x, z, y) {
+  const cx = Math.floor(x / CELLA), cz = Math.floor(z / CELLA);
+  let cima = null;
+  for (let ix = cx - 1; ix <= cx + 1; ix++) {
+    for (let iz = cz - 1; iz <= cz + 1; iz++) {
+      const pezzi = strade.griglia.get(ix + "," + iz);
+      if (!pezzi) continue;
+      for (const [s, i] of pezzi) {
+        const sotto = strade.lista[s];
+        if (!sotto.g || !sotto.alta) continue;
+        const p = sotto.p;
+        const ax = p[i], az = p[i + 2], bx = p[i + 3], bz = p[i + 5];
+        const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+        let t = lungo > 0 ? ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo : 0;
+        t = Math.min(Math.max(t, 0), 1);
+        if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) > sotto.w / 2 + 2.2) continue;
+        const qui = p[i + 1] + (p[i + 4] - p[i + 1]) * t + sotto.alta;
+        if (qui < y && (cima === null || qui > cima)) cima = qui;
+      }
+    }
+  }
+  return cima;
+}
+
+function aggiungiMuri(strada, terreno, muri, strade) {
   const p = strada.p;
   const punti = p.length / 3;
   for (const lato of [-1, 1]) {
@@ -1173,6 +1269,9 @@ function aggiungiMuri(strada, terreno, muri) {
       // il terreno al bordo e poco piu' in la': si prende il piu' basso
       const giu = Math.min(quotaTerreno(terreno, x, z), quotaTerreno(terreno, x - dz * lato * 1.2, z + dx * lato * 1.2));
       const qui = { x: x, y: y, z: z, giu: giu - 0.4, serve: y - giu > 0.3 && !latoOccupato(strada, i, lato) };
+      // sopra un sottopasso il muro si ferma alla volta: non chiude l'imbocco (prima da dentro si vedeva un muro al posto dell'uscita)
+      const cima = cimaSottopasso(strade, x, z, y);
+      if (cima !== null) qui.giu = Math.max(qui.giu, cima + 0.2);
       if (prima !== null && (prima.serve || qui.serve)) {
         const primo = muri.posizioni.length / 3;
         muri.posizioni.push(prima.x, prima.y, prima.z, prima.x, Math.min(prima.giu, prima.y), prima.z, x, y, z, x, Math.min(qui.giu, y), z);
@@ -1679,7 +1778,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
       aggiungiGuardrail(strada, terreno, guardrail, paletti);
     }
-    if (!strada.g && !strada.b && terreno) aggiungiMuri(strada, terreno, muri);
+    if (!strada.g && !strada.b && terreno) aggiungiMuri(strada, terreno, muri, strade);
     if (marciapiedi && !strada.g && !strada.b && strada.w >= 4 && TIPI_CON_MARCIAPIEDE.includes(strada.t)) {
       aggiungiMarciapiedi(indice, strada, ctx, gruppo.marciapiedi, terreno);
     }
