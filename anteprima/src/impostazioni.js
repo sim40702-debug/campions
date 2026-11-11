@@ -229,8 +229,30 @@ export function preparaMenu(mondo, avviaTest, avviaBenchmark) {
     evento.currentTarget.blur();
     apriChiudi();
   });
+  // Lista dei comandi: non sta piu' fissa in alto sullo schermo, si apre da qui (o con H)
+  const comandi = document.getElementById("comandi");
+  function apriChiudiComandi() {
+    const apri = comandi.style.display !== "block";
+    comandi.style.display = apri ? "block" : "none";
+    if (apri) menu.style.display = "none";
+  }
+  document.getElementById("apriComandi").addEventListener("click", function (evento) {
+    evento.currentTarget.blur();
+    apriChiudiComandi();
+  });
+  document.getElementById("chiudiComandi").addEventListener("click", function (evento) {
+    evento.currentTarget.blur();
+    comandi.style.display = "none";
+  });
   window.addEventListener("keydown", function (evento) {
-    if (evento.code === "Escape" && document.getElementById("mappaGrande").style.display !== "block") apriChiudi();
+    if (evento.target && evento.target.tagName === "INPUT") return;
+    if (evento.code === "KeyH") apriChiudiComandi();
+  });
+  window.addEventListener("keydown", function (evento) {
+    if (evento.code !== "Escape") return;
+    // Esc con la lista dei comandi aperta: la chiude e basta
+    if (comandi.style.display === "block") { comandi.style.display = "none"; return; }
+    if (document.getElementById("mappaGrande").style.display !== "block") apriChiudi();
   });
   document.getElementById("avviaBenchmark").addEventListener("click", function (evento) {
     evento.currentTarget.blur();

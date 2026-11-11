@@ -43,10 +43,6 @@
     </div>
   </div>
 
-  <div id="aiuto">
-    Frecce/WASD: guida (S freno davanti) &nbsp;|&nbsp; Spazio: freno dietro / derapata (in macchina: freno a mano) &nbsp;|&nbsp; Shift: peso dietro (impennata) &nbsp;|&nbsp; E: peso avanti (stoppie) &nbsp;|&nbsp; C: telecamera &nbsp;|&nbsp; R: torna sulla strada &nbsp;|&nbsp; G: garage &nbsp;|&nbsp; P / N: mappa e partenza &nbsp;|&nbsp; T: ora del giorno &nbsp;|&nbsp; M: suono &nbsp;|&nbsp; Esc: impostazioni &nbsp;|&nbsp; F11: schermo intero &nbsp;|&nbsp; H: nascondi aiuto
-  </div>
-
   <div id="barraMeteo">
     <select id="menuMeteoAlto" title="Meteo"></select>
     <select id="menuOraAlto" title="Ora del giorno"></select>
@@ -77,10 +73,32 @@
     <label class="spunta"><input id="meteoRealistico" type="checkbox" checked> Meteo realistico: la neve dipende da quota e stagione</label>
     <label class="spunta"><input id="sceltaNuvole" type="checkbox" checked> Nuvole</label>
     <label class="spunta"><input id="sceltaOmbreCitta" type="checkbox" checked> Ombre degli edifici</label>
+    <button id="apriComandi">Comandi</button>
     <button id="avviaBenchmark">Benchmark ripetibile (8 scenari)</button>
     <button id="avviaTest">Test prestazioni (45 s)</button>
     <button id="chiudiMenu">Chiudi</button>
-    <p class="piccolo">Tasti: F = FPS · Esc = questo menu</p>
+    <p class="piccolo">Tasti: F = FPS · H = comandi · Esc = questo menu</p>
+  </div>
+
+  <div id="comandi" class="finestra">
+    <h2>Comandi</h2>
+    <table>
+      <tr><td>Frecce / WASD</td><td>guida (S: freno davanti)</td></tr>
+      <tr><td>Spazio</td><td>freno dietro / derapata (in macchina: freno a mano)</td></tr>
+      <tr><td>Shift</td><td>peso dietro (impennata)</td></tr>
+      <tr><td>E</td><td>peso avanti (stoppie)</td></tr>
+      <tr><td>C</td><td>telecamera</td></tr>
+      <tr><td>R</td><td>torna sulla strada</td></tr>
+      <tr><td>G</td><td>garage</td></tr>
+      <tr><td>P / N</td><td>mappa e partenza</td></tr>
+      <tr><td>T</td><td>ora del giorno</td></tr>
+      <tr><td>M</td><td>suono sì/no</td></tr>
+      <tr><td>F</td><td>FPS</td></tr>
+      <tr><td>F11</td><td>schermo intero</td></tr>
+      <tr><td>Esc</td><td>impostazioni</td></tr>
+      <tr><td>H</td><td>questa lista</td></tr>
+    </table>
+    <button id="chiudiComandi">Chiudi</button>
   </div>
 
   <div id="garage" class="finestra">

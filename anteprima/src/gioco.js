@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.6";
+const VERSIONE = "0.14.7";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -155,10 +155,6 @@ window.addEventListener("keydown", function (evento) {
     let prossima = tappe.find(function (t) { return t > ambiente.ora + 0.05; });
     if (prossima === undefined) prossima = tappe[0];
     impostaOra(ambiente, prossima);
-  }
-  if (evento.code === "KeyH") {
-    const aiuto = document.getElementById("aiuto");
-    aiuto.style.display = aiuto.style.display === "none" ? "block" : "none";
   }
 });
 window.addEventListener("keyup", function (evento) {
