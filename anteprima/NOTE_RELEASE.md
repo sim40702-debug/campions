@@ -3,7 +3,12 @@
 Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.0) – Valle Verzasca
+### Novità di questa versione (0.15.1) – aggiornamento sicuro su Mac
+
+- **Su Mac l'aggiornamento non può più rovinare l'app**: prima la versione vecchia veniva cancellata subito; se il Mac bloccava la copia della nuova a metà, restava un'app senza i dati ("Mancano i dati del terreno"). Ora la nuova viene copiata accanto, controllata (dati del terreno compresi) e solo dopo prende il posto della vecchia. Se qualcosa non va, la vecchia resta intatta e si apre il .dmg da trascinare in Applicazioni.
+- Se mancano i dati del terreno, il messaggio dice cosa fare (riscaricare l'ultima versione da GitHub).
+
+### Novità della 0.15.0 – Valle Verzasca
 
 - **Tutta la Valle Verzasca si può esplorare**, in moto e in macchina: la mappa va da Ascona fino alle creste sopra Sonogno (16 × 32 km invece di 16 × 12).
 - **Strada della valle completa**, collegata al resto della rete: da Gordola e Tenero alla **diga della Verzasca** e al **Lago di Vogorno**, poi **Vogorno, Corippo, Lavertezzo**, **Brione, Gerra, Frasco e Sonogno**, con la strada per **Mergoscia**, la Val d'Osura e le strade laterali.
