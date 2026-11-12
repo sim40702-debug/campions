@@ -21,7 +21,7 @@ for (const voce of process.argv.slice(4)) {
   await p.waitForFunction(() => window.__mrw && window.__mrw.fotogrammi > 10);
   try { await p.waitForFunction(() => { const t = window.__mrw.terrenoMesh; return !t || t.fotoCaricate >= 1; }, null, { timeout: 60000 }); } catch (e) {}
   try { await p.waitForFunction(() => { const u = window.__mrw.fotoHD; return !u || u.uHDok.value.x + u.uHDok.value.y + u.uHDok.value.z + u.uHDok.value.w >= 1; }, null, { timeout: 60000 }); } catch (e) {}
-  await p.waitForTimeout(process.env.SHOT ? 20000 : 3000);
+  await p.waitForTimeout(process.env.SHOT ? +(process.env.ATTESA || 20000) : 3000);
   if (process.env.SHOT) { fs.mkdirSync(process.env.SHOT, { recursive: true }); await p.screenshot({ path: path.join(process.env.SHOT, nome + ".png"), timeout: 240000 }); }
   const r = await p.evaluate(async () => {
     const m = window.__mrw;
