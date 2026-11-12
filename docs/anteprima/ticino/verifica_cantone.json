@@ -1,0 +1,128 @@
+{
+ "controlli": [
+  {
+   "controllo": "regioni",
+   "ok": true,
+   "testo": "tutte le 19 regioni del cantone sono presenti",
+   "dati": {}
+  },
+  {
+   "controllo": "file",
+   "ok": true,
+   "testo": "19 regioni: tutti i file, terreno.bin della grandezza giusta e le foto da 2 km di ogni pezzo che tocca il cantone",
+   "dati": {}
+  },
+  {
+   "controllo": "area",
+   "ok": true,
+   "testo": "area del confine su griglia di 100 m: 2814.9 km2 (dichiarata 2812.2)",
+   "dati": {
+    "km2_griglia": 2814.9,
+    "km2_dichiarati": 2812.2
+   }
+  },
+  {
+   "controllo": "cuori",
+   "ok": true,
+   "testo": "punti del cantone fuori da ogni cuore: 1 su 281492 (celle da 100 m, tutte dentro l'area di una regione: [[2728050, 1084550]])",
+   "dati": {
+    "fuori": 1,
+    "dove_LV95": [
+     [
+      2728050,
+      1084550
+     ]
+    ]
+   }
+  },
+  {
+   "controllo": "terreno",
+   "ok": true,
+   "testo": "punti del cantone senza terreno vero (quota fissa o fuori griglia): 0",
+   "dati": {
+    "senza_terreno": 0
+   }
+  },
+  {
+   "controllo": "foto",
+   "ok": true,
+   "testo": "punti del cantone senza foto aerea da 2 km: 0",
+   "dati": {
+    "senza_foto": 0
+   }
+  },
+  {
+   "controllo": "cuciture_terreno",
+   "ok": true,
+   "testo": "quote nella sovrapposizione: 50 coppie, 639485 punti, media 0.008 m, 99,9% sotto 0.5 m, massima 1.4 m",
+   "dati": {
+    "coppie": 50,
+    "punti": 639485,
+    "diff_max_m": 1.4,
+    "diff_p999_m": 0.5,
+    "diff_media_m": 0.0076
+   }
+  },
+  {
+   "controllo": "cuciture_strade_posizione",
+   "ok": true,
+   "testo": "punti di strada della sovrapposizione presenti anche nella regione vicina: 100.0 % (1578057 su 1578057)",
+   "dati": {
+    "percento": 100.0,
+    "punti": 1578057,
+    "trovati": 1578057
+   }
+  },
+  {
+   "controllo": "cuciture_strade_quota",
+   "ok": true,
+   "testo": "quota delle strade normali nei punti in comune (1530805): media 0.005 m, 99,9% sotto 0.46 m, massima 7.32 m",
+   "dati": {
+    "media_m": 0.0047,
+    "p999_m": 0.46,
+    "max_m": 7.32
+   }
+  },
+  {
+   "controllo": "cuciture_ponti_gallerie",
+   "ok": false,
+   "informativo": true,
+   "testo": "ponti e gallerie: 3561 punti su 47252 con scarto di quota > 1 m",
+   "dati": {
+    "punti": 47252,
+    "oltre_1m": 3561,
+    "max_m": 52.8
+   }
+  },
+  {
+   "controllo": "cuciture_edifici",
+   "ok": true,
+   "testo": "edifici contati nella sovrapposizione: 255722 (lato A) e 255721 (lato B), scarto 0.0 %",
+   "dati": {
+    "a": 255722,
+    "b": 255721
+   }
+  }
+ ],
+ "punti_per_regione": {
+  "R_2712_1074": 13772,
+  "R_2696_1090": 6659,
+  "R_2712_1090": 17962,
+  "R_2664_1106": 104,
+  "R_2680_1106": 13408,
+  "R_2696_1106": 24931,
+  "R_2712_1106": 24845,
+  "R_2728_1106": 2441,
+  "R_2664_1122": 3029,
+  "R_2680_1122": 25600,
+  "R_2696_1122": 25600,
+  "R_2712_1122": 22366,
+  "R_2664_1138": 4390,
+  "R_2680_1138": 25599,
+  "R_2696_1138": 25600,
+  "R_2712_1138": 21631,
+  "R_2680_1154": 6762,
+  "R_2696_1154": 7576,
+  "R_2712_1154": 9216
+ }
+}
