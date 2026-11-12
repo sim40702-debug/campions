@@ -374,6 +374,102 @@ function disegnaPietra(a, v) {
   }
 }
 
+// Muratura di sasso a vista (gneiss della Verzasca): corsi irregolari di pietre grigie con fughe scure.
+// Disegna nel rettangolo (0, 0, largo, alto) del contesto "c"; "grana" = quanto sono grandi i sassi.
+function muraturaDiSasso(c, largo, alto, grana) {
+  c.fillStyle = "#6f6a61";      // malta e ombre tra i sassi
+  c.fillRect(0, 0, largo, alto);
+  let y = 0;
+  while (y < alto) {
+    const h = (9 + rnd() * 13) * grana;
+    let x = -rnd() * 30 * grana;
+    while (x < largo) {
+      const w = (14 + rnd() * 36) * grana * (h > 16 * grana ? 1.25 : 1);
+      const g = 138 + rnd() * 40;
+      const sorte = rnd();
+      let rr = g + 6, gg = g + 1, bb = g - 9;                      // grigio caldo (gneiss al sole)
+      if (sorte < 0.24) { rr = g + 16; gg = g + 4; bb = g - 20; }  // ossidato, color ruggine chiaro
+      else if (sorte < 0.36) { rr = g * 0.82; gg = g * 0.81; bb = g * 0.79; }   // scuro
+      else if (sorte < 0.43) { rr = g + 24; gg = g + 22; bb = g + 14; }         // chiaro (quarzo)
+      const sx = 0.8 + rnd() * 1.3, sy = 0.8 + rnd() * 1.2;
+      c.fillStyle = "rgb(" + Math.floor(rr) + "," + Math.floor(gg) + "," + Math.floor(bb) + ")";
+      c.fillRect(x + sx, y + sy, w - sx - 0.6, h - sy - 0.6);
+      c.fillStyle = "rgba(255,255,255,0.1)";
+      c.fillRect(x + sx, y + sy, w - sx - 1, 1.6);
+      c.fillStyle = "rgba(0,0,0,0.13)";
+      c.fillRect(x + sx, y + h - 3, w - sx - 1, 2);
+      // venature dello gneiss: righe sottili orizzontali
+      if (rnd() < 0.5) {
+        c.fillStyle = "rgba(60,55,50,0.12)";
+        c.fillRect(x + sx + 2, y + sy + (h - sy) * (0.3 + rnd() * 0.4), w - sx - 5, 1);
+      }
+      x += w;
+    }
+    y += h;
+  }
+  // licheni e colature
+  for (let i = 0; i < 26; i++) {
+    c.fillStyle = rnd() < 0.5 ? "rgba(150,150,110," + (0.05 + rnd() * 0.08) + ")" : "rgba(30,30,30," + (0.04 + rnd() * 0.07) + ")";
+    c.fillRect(rnd() * largo, rnd() * alto, 6 + rnd() * 26, 4 + rnd() * 18);
+  }
+}
+
+// 5b) Rustico della Valle Verzasca: muro di sasso a vista con poche aperture piccole. Una campata = 3 m x 2.6 m.
+//     Varianti: finestrella con architrave di granito, muro cieco, finestra con le ante di legno chiuse, feritoia del fienile.
+function disegnaRustico(a, v) {
+  const c = a.d;
+  muraturaDiSasso(c, T, T, 1);
+  a.r.fillStyle = "rgb(0,250,0)";
+  a.r.fillRect(0, 0, T, T);
+  if (v === 1) return;                       // muro cieco
+  const legno = "#5b4330";
+  if (v === 3) {
+    // feritoia / apertura del fienile: buia, con architrave
+    const x = 108, y = 96, w = 40, h = 58;
+    c.fillStyle = "#9a958b";
+    c.fillRect(x - 12, y - 13, w + 24, 13);
+    c.fillStyle = "#1c1a18";
+    c.fillRect(x, y, w, h);
+    c.fillStyle = "rgba(0,0,0,0.3)";
+    c.fillRect(x - 12, y, w + 24, 3);
+    return;
+  }
+  const x = 98, y = 82, w = 60, h = 78;
+  // architrave, stipiti e davanzale di granito
+  c.fillStyle = "#a39e94";
+  c.fillRect(x - 15, y - 15, w + 30, 15);
+  c.fillRect(x - 12, y + h, w + 24, 10);
+  c.fillStyle = "#8f8a80";
+  c.fillRect(x - 9, y, 9, h);
+  c.fillRect(x + w, y, 9, h);
+  c.fillStyle = "rgba(0,0,0,0.28)";
+  c.fillRect(x - 15, y, w + 30, 3);
+  c.fillRect(x - 12, y + h + 10, w + 24, 3);
+  if (v === 2) {
+    // ante di legno chiuse
+    c.fillStyle = legno;
+    c.fillRect(x, y, w, h);
+    c.fillStyle = "rgba(0,0,0,0.3)";
+    for (let xx = x + 9; xx < x + w; xx += 10) c.fillRect(xx, y, 1.5, h);
+    c.fillRect(x + w / 2 - 1, y, 2.5, h);
+    c.fillStyle = "rgba(0,0,0,0.35)";
+    c.fillRect(x, y + 12, w, 4);
+    c.fillRect(x, y + h - 16, w, 4);
+    a.r.fillStyle = "rgb(0,215,0)";
+    a.r.fillRect(x, y, w, h);
+    return;
+  }
+  vetro(a, x, y, w, h, 0, { senzaTende: true });
+  c.fillStyle = legno;                        // telaio e croce di legno
+  c.fillRect(x, y, w, 4);
+  c.fillRect(x, y + h - 4, w, 4);
+  c.fillRect(x, y, 4, h);
+  c.fillRect(x + w - 4, y, 4, h);
+  c.fillRect(x + w / 2 - 2, y, 4, h);
+  c.fillRect(x, y + h * 0.48, w, 3);
+}
+
+
 // 6) Uffici / hotel: facciata a vetri continua con fasce, montanti e parapetti
 function disegnaUffici(a, v) {
   const c = a.d;
@@ -553,20 +649,39 @@ function texLamiera() {
   return c;
 }
 function texArdesia() {
-  // lastre di pietra (piode) dei tetti di montagna
+  // piode: lastre di gneiss dei tetti delle valli, posate a corsi irregolari (la texture copre 2 m di falda)
   const c = tela(256, 256);
   const g = c.getContext("2d");
-  g.fillStyle = "#6a6764";
+  g.fillStyle = "#3f3e3d";
   g.fillRect(0, 0, 256, 256);
-  for (let y = 0; y < 256; y += 20) {
-    for (let x = ((y / 20) % 2) * 20; x < 276; x += 40) {
-      const t = 0.8 + rnd() * 0.35;
-      g.fillStyle = "rgb(" + Math.floor(112 * t) + "," + Math.floor(108 * t) + "," + Math.floor(104 * t) + ")";
-      g.fillRect(x - 19, y + 1, 38, 18);
-      g.fillStyle = "rgba(0,0,0,0.25)";
-      g.fillRect(x - 19, y + 16, 38, 3);
+  let y = 0;
+  while (y < 256) {
+    const h = Math.min(24 + rnd() * 12, 256 - y);
+    let x = -rnd() * 40;
+    while (x < 256) {
+      const w = 26 + rnd() * 44;
+      const t = 0.78 + rnd() * 0.42;
+      const caldo = rnd() < 0.2 ? 8 : 0;
+      g.fillStyle = "rgb(" + Math.floor((98 + caldo) * t) + "," + Math.floor(96 * t) + "," + Math.floor((95 - caldo) * t) + ")";
+      g.fillRect(x + 1, y + 1, w - 2, h - 1);
+      g.fillStyle = "rgba(255,255,255,0.1)";
+      g.fillRect(x + 1, y + 1, w - 2, 2);
+      g.fillStyle = "rgba(0,0,0,0.34)";       // ombra della lastra di sopra
+      g.fillRect(x + 1, y + h - 5, w - 2, 5);
+      x += w;
     }
+    y += h;
   }
+  for (let i = 0; i < 46; i++) {              // licheni
+    g.fillStyle = rnd() < 0.6 ? "rgba(150,150,105," + (0.05 + rnd() * 0.1) + ")" : "rgba(200,200,195," + (0.04 + rnd() * 0.06) + ")";
+    g.fillRect(rnd() * 256, rnd() * 256, 5 + rnd() * 22, 3 + rnd() * 10);
+  }
+  return c;
+}
+function texSasso() {
+  // muro di sasso senza aperture (timpani, ruderi, comignoli, muri di sostegno): la texture copre 2.4 m
+  const c = tela(256, 256);
+  muraturaDiSasso(c.getContext("2d"), 256, 256, 1.15);
   return c;
 }
 
@@ -637,13 +752,20 @@ function creaAtlante(disegna, anisotropia) {
   };
 }
 
+// La muratura di sasso come texture (una sola, in comune): serve anche ai muri di sostegno e ai parapetti delle strade
+let _sasso = null;
+export function texturaSasso(anisotropia) {
+  if (!_sasso) _sasso = struttura(texSasso(), anisotropia || 8, true);
+  return _sasso;
+}
+
 // Crea tutti i materiali di facciata e di tetto (una sola volta)
 export function creaMateriali(notte, anisotropia, ambiente) {
   const tipi = {
     persiane: disegnaPersiane, finestre: disegnaFinestre, moderno: disegnaModerno, storico: disegnaStorico,
-    pietra: disegnaPietra, uffici: disegnaUffici, capannone: disegnaCapannone, negozio: disegnaNegozio
+    pietra: disegnaPietra, rustico: disegnaRustico, uffici: disegnaUffici, capannone: disegnaCapannone, negozio: disegnaNegozio
   };
-  const probabilita = { persiane: 0.55, finestre: 0.55, moderno: 0.62, storico: 0.5, pietra: 0.4, uffici: 0.8, capannone: 0.35, negozio: 1.2 };
+  const probabilita = { persiane: 0.55, finestre: 0.55, moderno: 0.62, storico: 0.5, pietra: 0.4, rustico: 0.22, uffici: 0.8, capannone: 0.35, negozio: 1.2 };
   const facciate = {};
   for (const nome of Object.keys(tipi)) {
     const atlante = creaAtlante(tipi[nome], anisotropia);
@@ -661,9 +783,12 @@ export function creaMateriali(notte, anisotropia, ambiente) {
     lamiera: new THREE.MeshStandardMaterial({ map: struttura(texLamiera(), anisotropia, true), vertexColors: true, roughness: 0.45, metalness: 0.5, side: THREE.DoubleSide }),
     ardesia: new THREE.MeshStandardMaterial({ map: struttura(texArdesia(), anisotropia, true), vertexColors: true, roughness: 0.9, side: THREE.DoubleSide })
   };
+  // muro di sasso senza finestre (stessa pietra della facciata "rustico")
+  const sasso = new THREE.MeshStandardMaterial({ map: texturaSasso(anisotropia), vertexColors: true, roughness: 0.96, metalness: 0, side: THREE.DoubleSide });
+  aggiungiMeteo(sasso, ambiente, { neve: 0, bagnato: 0.7 });
   const dettagli = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.15, side: THREE.DoubleSide });
   aggiungiMeteo(liscio, ambiente, { neve: 0.5, bagnato: 0.6 });
   aggiungiMeteo(dettagli, ambiente, { neve: 0.85, bagnato: 0.6 });
   for (const t of Object.values(tetti)) aggiungiMeteo(t, ambiente, { neve: 1, bagnato: 1 });
-  return { facciate: facciate, liscio: liscio, tetti: tetti, dettagli: dettagli };
+  return { facciate: facciate, liscio: liscio, sasso: sasso, tetti: tetti, dettagli: dettagli };
 }

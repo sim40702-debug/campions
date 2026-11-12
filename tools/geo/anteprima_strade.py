@@ -76,7 +76,8 @@ def raccogli_pezzi(elementi, zona, trasforma, filtro):
                 "linea": pezzo.segmentize(PASSO_PUNTI_M),
                 "tag": tag,
                 "ponte": tag.get("bridge") not in (None, "no"),
-                "galleria": tag.get("tunnel") not in (None, "no") or tag.get("covered") == "yes",
+                # un paravalanghe (tunnel=avalanche_protector) e' una strada coperta ma all'aperto: segue il terreno
+                "galleria": tag.get("tunnel") not in (None, "no", "avalanche_protector") or tag.get("covered") == "yes",
                 "incroci": incroci,
             })
     return pezzi
@@ -172,10 +173,11 @@ def calcola_profili(pezzi, griglia, zona):
 
 
 def limita_larghezze(pezzi, edifici, larghezza_di):
+    # larghezza_di(pezzo) = larghezza piena della strada.
     # Per ogni punto: meta' larghezza <= distanza dalla casa piu' vicina - 0.4 m
     albero = STRtree(edifici) if edifici else None
     for pezzo in pezzi:
-        piena = larghezza_di(pezzo["tag"])
+        piena = larghezza_di(pezzo)
         larghezze = []
         for e, n in pezzo["coordinate"]:
             meta = piena / 2

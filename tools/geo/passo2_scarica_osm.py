@@ -101,6 +101,15 @@ def query_trasporti():
             + ");\nout geom;\n")
 
 
+def query_opere():
+    # Dighe (la diga della Verzasca a Contra): linee o contorni con waterway=dam / man_made=dam
+    f = filtro_pilota()
+    return ("[out:json][timeout:300];\n(\n"
+            + '  way["waterway"="dam"]' + f + ";\n"
+            + '  way["man_made"="dam"]' + f + ";\n"
+            + ");\nout geom;\n")
+
+
 def main():
     argomenti = utilita.leggi_argomenti("Scarica confini e strade da OpenStreetMap")
     utilita.crea_cartelle()
@@ -142,6 +151,14 @@ def main():
         print("8) Parchi, giardini, prati e zone d'uso del suolo del pilota (per la mappa)...")
         uso = utilita.chiedi_overpass(query_uso_suolo(), utilita.file_osm("uso_suolo", True))
         print("   Elementi scaricati: " + str(len(uso.get("elements", []))))
+
+        print("9) Dighe del pilota...")
+        try:
+            opere = utilita.chiedi_overpass(query_opere(), utilita.file_osm("opere", True))
+            print("   Elementi scaricati: " + str(len(opere.get("elements", []))))
+        except RuntimeError as errore:
+            # la diga e' un di piu': senza di lei il gioco funziona lo stesso, quindi non si ferma la release
+            print("   Non scaricate (" + str(errore) + "): il gioco restera' senza diga")
 
     print("Fatto. I file sono in: " + str(cartella))
 

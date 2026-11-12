@@ -16,6 +16,7 @@ import * as THREE from "three";
 import { creaMateriali } from "./facciate.js";
 import { profiloQui, scegliPesato, coloreVariato } from "./luoghi.js";
 import { stradaVicina, larghezzaIn } from "./strade.js";
+import { quotaTerreno } from "./terreno.js";
 import { liberaDopoCaricamento } from "./memoria.js";
 
 const PEZZO = 500;       // metri: pezzi dei muri e dei tetti
@@ -303,7 +304,7 @@ function pezzoDi(mappa, chiave, crea) {
 
 function nuovoPezzo() {
   const p = {};
-  for (const nome of FACCIATE.concat(["uffici", "capannone", "negozio", "liscio", "tegole", "piatto", "lamiera", "ardesia"])) p[nome] = nuovoGruppo();
+  for (const nome of FACCIATE.concat(["rustico", "sasso", "uffici", "capannone", "negozio", "liscio", "tegole", "piatto", "lamiera", "ardesia"])) p[nome] = nuovoGruppo();
   return p;
 }
 
@@ -367,6 +368,12 @@ function costruisciEdificio(i, e, ctx) {
   const gruppi = pezzoDi(ctx.pezzi, chiave, nuovoPezzo);
   const chiaveDet = Math.floor(e.cx / PEZZO_DET) + "," + Math.floor(e.cz / PEZZO_DET);
   const det = pezzoDi(ctx.dettagli, chiaveDet, nuovoGruppo);
+
+  // rustici delle valli e ruderi: muri di sasso che seguono il terreno, tetto a due falde in piode
+  if (e.s || e.k === 3) {
+    costruisciRustico(e, ctx, gruppi, det, r, rnd, seme);
+    return;
+  }
 
   const verso = Math.sign(superficie(p)) || 1;
   const piani = Math.max(1, Math.round(e.alt / 3));
@@ -437,6 +444,10 @@ function costruisciEdificio(i, e, ctx) {
   if (e.k === 2) {
     // campanile: guglia a punta
     tettoAPunta(gruppoTegole, e, _colTetto, Math.max(4, Math.sqrt(e.area) * 1.3), seme);
+  } else if (e.k === 1 && (punti !== 4 || e.r === 1)) {
+    // chiese con abside, sacrestia, navate: due falde sulla pianta vera (prima: piramide o tetto piatto)
+    const assi = assiDelTetto(e, ctx);
+    tettoAFalde(gruppoTegole, gruppi.liscio, false, e, assi, Math.min(assi.meta * 0.6, 4.2), 0.45, 0.3, coloreFalda, _colMuro, seme);
   } else if (spiovente && punti === 4) {
     tettoADueFalde(gruppi, gruppoTegole, det, e, _colMuro, coloreFalda, seme, r, profilo, rnd);
   } else if (spiovente && punti <= 8) {
@@ -451,6 +462,218 @@ function costruisciEdificio(i, e, ctx) {
   if (e.k === 0 && piani >= 3 && facciata !== "capannone" && facciata !== "pietra" && facciata !== "uffici" && r[3] < profilo.balconi) {
     const lato = nmoduli.length > 0 ? nmoduli[Math.floor(rnd() * nmoduli.length)] : null;
     if (lato) balconi(det, e, lato, piani, facciata, rnd, _colMuro);
+  }
+}
+
+// --- Rustici (case di sasso delle valli) ------------------------------------------------------------------
+
+// Rettangolo orientato piu' piccolo che contiene la pianta: il colmo del tetto corre lungo il lato lungo.
+// Ritorna centro (cx, cz), direzione del colmo (ux, uz), direzione di traverso (sx, sz), meta' lunghezza e meta' larghezza.
+function assiDelTetto(e, ctx) {
+  const p = e.p, n = p.length / 2;
+  let migliore = null;
+  for (let k = 0; k < n; k++) {
+    const j = (k + 1) % n;
+    let ux = p[j * 2] - p[k * 2], uz = p[j * 2 + 1] - p[k * 2 + 1];
+    const l = Math.hypot(ux, uz);
+    if (l < 0.5) continue;
+    ux /= l; uz /= l;
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (let q = 0; q < n; q++) {
+      const a = p[q * 2] * ux + p[q * 2 + 1] * uz, b = -p[q * 2] * uz + p[q * 2 + 1] * ux;
+      a0 = Math.min(a0, a); a1 = Math.max(a1, a); b0 = Math.min(b0, b); b1 = Math.max(b1, b);
+    }
+    const area = (a1 - a0) * (b1 - b0);
+    if (!migliore || area < migliore.area - 0.01) migliore = { area: area, ux: ux, uz: uz, a0: a0, a1: a1, b0: b0, b1: b1 };
+  }
+  if (!migliore) migliore = { ux: 1, uz: 0, a0: e.cx - 2, a1: e.cx + 2, b0: e.cz - 2, b1: e.cz + 2 };
+  let ux = migliore.ux, uz = migliore.uz;
+  let lunga = (migliore.a1 - migliore.a0) / 2, meta = (migliore.b1 - migliore.b0) / 2;
+  const ca = (migliore.a0 + migliore.a1) / 2, cb = (migliore.b0 + migliore.b1) / 2;
+  const cx = ca * ux - cb * uz, cz = ca * uz + cb * ux;
+  let gira = meta > lunga;
+  // pianta quasi quadrata su un pendio: il colmo segue la linea di massima pendenza (il timpano guarda la valle,
+  // come nei nuclei veri: Corippo, Sonogno)
+  if (ctx && ctx.terreno && Math.max(lunga, meta) / Math.max(Math.min(lunga, meta), 0.1) < 1.25) {
+    const gx = quotaTerreno(ctx.terreno, cx + 4, cz) - quotaTerreno(ctx.terreno, cx - 4, cz);
+    const gz = quotaTerreno(ctx.terreno, cx, cz + 4) - quotaTerreno(ctx.terreno, cx, cz - 4);
+    if (Math.hypot(gx, gz) > 1.2) gira = Math.abs(gx * ux + gz * uz) < Math.abs(-gx * uz + gz * ux);
+  }
+  if (e.o === 1) gira = !gira;       // OpenStreetMap: roof:orientation=across
+  if (gira) {
+    const t = ux; ux = -uz; uz = t;
+    const m = lunga; lunga = meta; meta = m;
+  }
+  return { cx: cx, cz: cz, ux: ux, uz: uz, sx: -uz, sz: ux, lunga: Math.max(lunga, 0.5), meta: Math.max(meta, 0.5) };
+}
+
+// Taglia un poligono (lista di [a, b]) con la retta b = 0 e tiene la parte con b * segno >= 0
+function tagliaSulColmo(punti, segno) {
+  const ris = [];
+  for (let i = 0; i < punti.length; i++) {
+    const P = punti[i], Q = punti[(i + 1) % punti.length];
+    const dp = P[1] * segno, dq = Q[1] * segno;
+    if (dp >= 0) ris.push(P);
+    if ((dp > 0 && dq < 0) || (dp < 0 && dq > 0)) {
+      const t = dp / (dp - dq);
+      ris.push([P[0] + (Q[0] - P[0]) * t, 0]);
+    }
+  }
+  return ris;
+}
+
+// Tetto a due falde su una pianta QUALSIASI (anche a L, con sporgenze): le due falde sono la pianta, allargata
+// della gronda, tagliata lungo il colmo. I timpani (i muri sotto le falde) seguono il tetto.
+//   gruppoTetto: dove vanno le falde; gruppoTimpano: dove vanno i timpani ("sassoUV" = con le UV della muratura)
+function tettoAFalde(gruppoTetto, gruppoTimpano, sassoUV, e, assi, alzata, gronda, sporto, colTetto, colMuro, seme) {
+  const p = e.p, n = p.length / 2;
+  const pendenza = alzata / assi.meta;
+  const obliqua = Math.sqrt(1 + pendenza * pendenza);
+  const kA = (assi.lunga + sporto) / assi.lunga, kB = (assi.meta + gronda) / assi.meta;
+  const locali = [];
+  for (let k = 0; k < n; k++) {
+    const dx = p[k * 2] - assi.cx, dz = p[k * 2 + 1] - assi.cz;
+    locali.push([dx * assi.ux + dz * assi.uz, dx * assi.sx + dz * assi.sz]);
+  }
+  const quotaTetto = function (b) { return e.h + alzata * (1 - Math.abs(b) / assi.meta); };
+  // falde
+  const allargata = locali.map(function (q) { return [q[0] * kA, q[1] * kB]; });
+  for (const segno of [1, -1]) {
+    const meta = tagliaSulColmo(allargata, segno);
+    if (meta.length < 3) continue;
+    const contorno = meta.map(function (q) { return new THREE.Vector2(q[0], q[1]); });
+    for (const tri of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+      for (const idx of tri) {
+        const a = meta[idx][0], b = meta[idx][1];
+        // 4 cm sopra il muro: la falda non "sfarfalla" con la cima dei muri
+        aggiungiVertice(gruppoTetto, assi.cx + assi.ux * a + assi.sx * b, quotaTetto(b) + 0.04, assi.cz + assi.uz * a + assi.sz * b,
+          colTetto, a / 2 + seme, Math.abs(b) * obliqua / 2, seme);
+      }
+    }
+  }
+  // timpani: sopra ogni lato del muro, dalla gronda fino alla falda
+  for (let k = 0; k < n; k++) {
+    const j = (k + 1) % n;
+    const A = locali[k], B = locali[j];
+    const pezzi = [[0, 1]];
+    if ((A[1] > 0.01 && B[1] < -0.01) || (A[1] < -0.01 && B[1] > 0.01)) {
+      const t = A[1] / (A[1] - B[1]);
+      pezzi[0] = [0, t];
+      pezzi.push([t, 1]);
+    }
+    const lungo = Math.hypot(p[j * 2] - p[k * 2], p[j * 2 + 1] - p[k * 2 + 1]);
+    for (const [t0, t1] of pezzi) {
+      const b0 = A[1] + (B[1] - A[1]) * t0, b1 = A[1] + (B[1] - A[1]) * t1;
+      const y0 = Math.max(quotaTetto(b0), e.h), y1 = Math.max(quotaTetto(b1), e.h);
+      if (y0 - e.h < 0.02 && y1 - e.h < 0.02) continue;
+      const x0 = p[k * 2] + (p[j * 2] - p[k * 2]) * t0, z0 = p[k * 2 + 1] + (p[j * 2 + 1] - p[k * 2 + 1]) * t0;
+      const x1 = p[k * 2] + (p[j * 2] - p[k * 2]) * t1, z1 = p[k * 2 + 1] + (p[j * 2 + 1] - p[k * 2 + 1]) * t1;
+      const u0 = sassoUV ? lungo * t0 / 2.4 + seme : 0, u1 = sassoUV ? lungo * t1 / 2.4 + seme : 0;
+      const v = function (y) { return sassoUV ? y / 2.4 : 0; };
+      aggiungiVertice(gruppoTimpano, x0, e.h, z0, colMuro, u0, v(e.h), seme);
+      aggiungiVertice(gruppoTimpano, x1, e.h, z1, colMuro, u1, v(e.h), seme);
+      aggiungiVertice(gruppoTimpano, x1, y1, z1, colMuro, u1, v(y1), seme);
+      aggiungiVertice(gruppoTimpano, x0, e.h, z0, colMuro, u0, v(e.h), seme);
+      aggiungiVertice(gruppoTimpano, x1, y1, z1, colMuro, u1, v(y1), seme);
+      aggiungiVertice(gruppoTimpano, x0, y0, z0, colMuro, u0, v(y0), seme);
+    }
+  }
+}
+
+const INTONACI_RUSTICI = [0xf1ead8, 0xe9e2d0, 0xf3efe6, 0xe6d9bd, 0xddd3bf, 0xefe3c6, 0xe8d2b0];
+
+// Rustico: e.s = 1 sasso a vista, 2 intonacato; e.k = 3 rudere (muri bassi senza tetto).
+//  - ogni muro parte dal terreno vero sotto di lui (non dal punto piu' basso di tutta la casa);
+//  - i piani sono bassi (2.6 m) e si contano dalla gronda in giu': le finestre di muri diversi sono allineate
+//    e a monte si vede solo l'ultimo piano, come nelle case sui pendii;
+//  - tetto a due falde in piode su qualsiasi pianta, con i timpani di sasso.
+function costruisciRustico(e, ctx, gruppi, det, r, rnd, seme) {
+  const p = e.p, punti = p.length / 2;
+  const rudere = e.k === 3;
+  const sasso = rudere || e.s !== 2;
+  const PIANO = sasso ? 2.6 : 2.8;
+  if (sasso) {
+    // gneiss: grigio, a volte piu' caldo o piu' scuro
+    const luce = 0.84 + r[1] * 0.2, caldo = (r[2] - 0.4) * 0.07;
+    _colMuro.setRGB(luce + caldo, luce, luce - caldo);
+  } else {
+    coloreVariato(INTONACI_RUSTICI[Math.floor(r[1] * INTONACI_RUSTICI.length)], r[2], r[3], 0, _colMuro);
+  }
+  const gruppoMuro = rudere ? gruppi.sasso : (sasso ? gruppi.rustico : gruppi[r[0] < 0.6 ? "persiane" : "finestre"]);
+  const suolo = [];
+  for (let k = 0; k < punti; k++) suolo.push(ctx.terreno ? quotaTerreno(ctx.terreno, p[k * 2], p[k * 2 + 1]) : e.b + 0.5);
+  const quantiPiani = Math.max(1, Math.ceil((e.h - e.b) / PIANO));
+  const verso = Math.sign(superficie(p)) || 1;
+
+  // ---- Muri ----
+  for (let k = 0; k < punti; k++) {
+    const j = (k + 1) % punti;
+    const ax = p[k * 2], az = p[k * 2 + 1], bx = p[j * 2], bz = p[j * 2 + 1];
+    const lungo = Math.hypot(bx - ax, bz - az);
+    if (lungo < 0.3) continue;
+    const base = Math.min(suolo[k], suolo[j], e.h - 0.6) - 0.6;
+    let altoA = e.h, altoB = e.h;
+    if (rudere) {
+      // muri sbrecciati: ogni spigolo ha la sua altezza
+      altoA = e.h - ((Math.abs(Math.sin(ax * 12.9898 + az * 78.233)) * 43758.5453) % 1) * 0.9;
+      altoB = e.h - ((Math.abs(Math.sin(bx * 12.9898 + bz * 78.233)) * 43758.5453) % 1) * 0.9;
+    }
+    const campate = rudere ? lungo / 2.4 : Math.max(1, Math.round(lungo / 3));
+    const u0 = rudere ? seme : 0, u1 = u0 + campate;
+    const vDi = function (y) { return rudere ? y / 2.4 : quantiPiani - (e.h - y) / PIANO; };
+    aggiungiVertice(gruppoMuro, ax, base, az, _colMuro, u0, vDi(base), seme + k);
+    aggiungiVertice(gruppoMuro, bx, base, bz, _colMuro, u1, vDi(base), seme + k);
+    aggiungiVertice(gruppoMuro, bx, altoB, bz, _colMuro, u1, vDi(altoB), seme + k);
+    aggiungiVertice(gruppoMuro, ax, base, az, _colMuro, u0, vDi(base), seme + k);
+    aggiungiVertice(gruppoMuro, bx, altoB, bz, _colMuro, u1, vDi(altoB), seme + k);
+    aggiungiVertice(gruppoMuro, ax, altoA, az, _colMuro, u0, vDi(altoA), seme + k);
+    // case intonacate: zoccolo di sasso al piede
+    if (!sasso && lungo > 2) {
+      const nx = verso * (bz - az) / lungo, nz = -verso * (bx - ax) / lungo, o = 0.04;
+      const grigio = _colZoccolo.setRGB(0.86, 0.85, 0.83);
+      const cima = Math.max(suolo[k], suolo[j]) + 0.7;
+      if (cima < e.h - 1) {
+        const uu = lungo / 2.4;
+        aggiungiVertice(gruppi.sasso, ax + nx * o, base, az + nz * o, grigio, seme, base / 2.4, seme);
+        aggiungiVertice(gruppi.sasso, bx + nx * o, base, bz + nz * o, grigio, seme + uu, base / 2.4, seme);
+        aggiungiVertice(gruppi.sasso, bx + nx * o, cima, bz + nz * o, grigio, seme + uu, cima / 2.4, seme);
+        aggiungiVertice(gruppi.sasso, ax + nx * o, base, az + nz * o, grigio, seme, base / 2.4, seme);
+        aggiungiVertice(gruppi.sasso, bx + nx * o, cima, bz + nz * o, grigio, seme + uu, cima / 2.4, seme);
+        aggiungiVertice(gruppi.sasso, ax + nx * o, cima, az + nz * o, grigio, seme, cima / 2.4, seme);
+      }
+    }
+  }
+  if (rudere) return;
+
+  // ---- Tetto ----
+  const assi = assiDelTetto(e, ctx);
+  // piode: falde ripide (30-37 gradi), poca gronda; le case intonacate a volte hanno i coppi
+  const pendenza = 0.56 + r[2] * 0.2;
+  const alzata = Math.min(assi.meta * pendenza, 3.6);
+  const coppi = !sasso && r[4] < 0.1;
+  const luceTetto = 0.82 + r[5] * 0.3;
+  if (coppi) _colTetto.setRGB(0.78, 0.72, 0.68).multiplyScalar(0.85 + r[5] * 0.2);   // coppi vecchi, scuriti
+  else _colTetto.setRGB(luceTetto + (r[4] - 0.5) * 0.05, luceTetto, luceTetto - (r[4] - 0.5) * 0.05);
+  const unaFalda = e.r === 4;
+  if (unaFalda) {
+    // tetto a una falda sola (tettoie, stalle addossate): il colmo e' un bordo della pianta
+    assi.cx -= assi.sx * assi.meta; assi.cz -= assi.sz * assi.meta;
+    assi.meta *= 2;
+  }
+  tettoAFalde(coppi ? gruppi.tegole : gruppi.ardesia, sasso ? gruppi.sasso : gruppi.liscio, sasso, e, assi,
+    unaFalda ? Math.min(alzata, 1.8) : alzata, 0.32, 0.22, _colTetto, _colMuro, seme);
+
+  // ---- Comignolo di sasso (solo le case abitate, non le stalle) ----
+  if (!unaFalda && e.area > 34 && r[3] < 0.62) {
+    const t = (rnd() - 0.5) * 1.2 * Math.max(assi.lunga - 0.8, 0);
+    const fuori = assi.meta * (0.2 + rnd() * 0.25) * (rnd() < 0.5 ? 1 : -1);
+    const cx = assi.cx + assi.ux * t + assi.sx * fuori, cz = assi.cz + assi.uz * t + assi.sz * fuori;
+    const y = e.h + alzata * (1 - Math.abs(fuori) / assi.meta);
+    const ang = Math.atan2(assi.uz, assi.ux);
+    _colDettaglio.setRGB(0.5, 0.49, 0.47);
+    scatola(det, cx, y - 0.4, cz, 0.6, 1.25, 0.6, ang, _colDettaglio);
+    _colDettaglio.setRGB(0.36, 0.35, 0.34);
+    scatola(det, cx, y + 0.85, cz, 0.85, 0.09, 0.85, ang, _colDettaglio);   // lastra di copertura
   }
 }
 
@@ -613,6 +836,7 @@ export function aggiungiEdifici(edifici, scena, contesto) {
     edifici: edifici,
     luoghi: contesto.luoghi,
     strade: contesto.strade,
+    terreno: contesto.terreno || null,
     pezzi: new Map(),
     dettagli: new Map()
   };
@@ -626,6 +850,7 @@ export function aggiungiEdifici(edifici, scena, contesto) {
   const mappaMateriali = {};
   for (const nome of Object.keys(materiali.facciate)) mappaMateriali[nome] = materiali.facciate[nome];
   mappaMateriali.liscio = materiali.liscio;
+  mappaMateriali.sasso = materiali.sasso;
   for (const nome of Object.keys(materiali.tetti)) mappaMateriali[nome] = materiali.tetti[nome];
 
   const pezzi = [];

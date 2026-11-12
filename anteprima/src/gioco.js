@@ -24,7 +24,7 @@ import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./amb
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
-import { aggiungiOpere } from "./opere.js";
+import { aggiungiOpere, caricaDighe, aggiungiDighe } from "./opere.js";
 import { caricaTrasporti, aggiungiTrasporti, aggiornaTrasporti } from "./trasporti.js";
 import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
 import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
@@ -308,9 +308,10 @@ async function avvia() {
     const dettagli = await caricaDettagli();
     const luoghi = creaLuoghi(dettagli.localita);
     await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");
-    aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
+    aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, terreno: terreno, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
     aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
     aggiungiOpere(strade, scena, terreno);
+    aggiungiDighe(await caricaDighe(), scena, terreno);   // la diga della Verzasca
 
     await mostraStato("Treni, funicolari e teleferiche...");
     const trasporti = await caricaTrasporti();
