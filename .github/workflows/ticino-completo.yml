@@ -61,7 +61,7 @@ jobs:
           if [ "${{ inputs.dati }}" = "true" ]; then dati=true; fi
           case "$MESSAGGIO" in *"[dati]"*) dati=true;; esac
           solo="${{ inputs.regioni }}"
-          nel_messaggio=$(echo "$MESSAGGIO" | grep -o '\[regioni:[A-Z0-9_,]*\]' | head -1 | sed 's/\[regioni://; s/\]//')
+          nel_messaggio=$(echo "$MESSAGGIO" | grep -o '\[regioni:[A-Z0-9_,]*\]' | head -1 | sed 's/\[regioni://; s/\]//' || true)
           if [ -n "$nel_messaggio" ]; then solo="$nel_messaggio"; fi
           if [ -n "$solo" ]; then dati=true; fi
           echo "solo=$solo" >> $GITHUB_OUTPUT

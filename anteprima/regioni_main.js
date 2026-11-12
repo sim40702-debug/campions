@@ -13,7 +13,8 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 
-const URL_PACCHETTI = "https://github.com/sim40702-debug/swissgass/releases/download/ticino-completo-dati/";
+// (MRW_URL_PACCHETTI serve solo per le prove: i pacchetti presi da un altro indirizzo)
+const URL_PACCHETTI = process.env.MRW_URL_PACCHETTI || "https://github.com/sim40702-debug/swissgass/releases/download/ticino-completo-dati/";
 
 let attuale = null;          // id della regione in uso
 const inCorso = {};          // id -> promessa dello scaricamento in corso
