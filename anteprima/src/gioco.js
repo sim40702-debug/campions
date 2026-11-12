@@ -10,7 +10,7 @@ import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino, prepara
 import { creaMoto, posizionaMoto, aggiornaMoto, haMappaImpennate } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
 import { partenzaSalvata, preparaPartenza } from "./partenza.js";
-import { aggiornaSuono, scoppioInCorso } from "./audio.js";
+import { aggiornaSuono, scoppioInCorso, provaSuono450 } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
 import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, preparaEdificiVicini, dentroEdificio } from "./edifici.js";
@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.15.5";
+const VERSIONE = "0.15.6";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -416,6 +416,7 @@ async function avvia() {
       }
       return { impennata: traccia, caduto: moto.caduto, kmh: Math.round(moto.velocita * 3.6) };
     };
+    window.__mrw.provaSuono450 = provaSuono450;
     window.__mrw.moto = moto;
     window.__mrw.terreno = terreno;
     window.__mrw.strade = strade;
