@@ -47,7 +47,7 @@ const rapporto = await p.evaluate(async () => {
   R.pendenze = { tratti_oltre_25: ripide, massima_pct: +(pendMax * 100).toFixed(0), esempi: esRip };
   // 4) strada rispetto al terreno (fuori da ponti e gallerie)
   let sopra = 0, sotto = 0, tot = 0, maxS = 0, maxSotto = 0; const esSopra = [];
-  for (const s of vere) { if (s.g || s.b) continue; for (let i = 0; i < s.p.length; i += 6) { tot++; const d = s.p[i + 1] - quotaTerreno(m.terreno, s.p[i], s.p[i + 2]); if (d > 1.0) { sopra++; maxS = Math.max(maxS, d); if (esSopra.length < 40) esSopra.push({ n: s.n, t: s.t, x: Math.round(s.p[i]), z: Math.round(s.p[i + 2]), d: +d.toFixed(1) }); } if (d < -0.5) { sotto++; maxSotto = Math.min(maxSotto, d); } } }
+  for (const s of vere) { if (s.g || s.b) continue; for (let i = 0; i < s.p.length; i += 6) { tot++; const d = s.p[i + 1] - quotaTerreno(m.terreno, s.p[i], s.p[i + 2]); if (d > 1.0) { sopra++; maxS = Math.max(maxS, d); if (esSopra.length < 400) esSopra.push({ n: s.n, t: s.t, x: Math.round(s.p[i]), z: Math.round(s.p[i + 2]), d: +d.toFixed(1) }); } if (d < -0.5) { sotto++; maxSotto = Math.min(maxSotto, d); } } }
   R.terreno = { punti: tot, stradaSopraTerreno_oltre1m: sopra, stradaSottoTerreno_oltre50cm: sotto, maxSopra: +maxS.toFixed(2), maxSotto: +maxSotto.toFixed(2), esempiSopra: esSopra };
   // 5) incroci
   const D = S.datiIncroci; const incr = D.incroci;

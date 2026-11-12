@@ -12,6 +12,7 @@ import * as THREE from "three";
 import { creaMaterialeAcqua } from "./onde.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
 import { aggiungiDettaglio } from "./superfici.js";
+import { aggiungiFotoHD, aggiornaFotoHD } from "./terreno_hd.js";
 import { usoQui } from "./uso_suolo.js";
 import { liberaDopoCaricamento } from "./memoria.js";
 
@@ -28,6 +29,7 @@ function materialeTerreno(ambiente) {
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>
         varying vec2 vTerrenoXZ;
+        float hdPeso = 0.0;   // quanto la foto di dettaglio (terreno_hd.js) ha preso il posto di quella a 2 m
         float hT(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float nT(vec2 p) {
           vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -37,7 +39,7 @@ function materialeTerreno(ambiente) {
         {
           // distanza dalla camera: vicino grana fine, lontano solo macchie grandi (niente "sfarfallio")
           float d = length(vViewPosition);
-          float vicino = 1.0 - smoothstep(60.0, 380.0, d);
+          float vicino = (1.0 - smoothstep(60.0, 380.0, d)) * (1.0 - hdPeso * 0.9);
           float macro = nT(vTerrenoXZ * 0.045) * 0.6 + nT(vTerrenoXZ * 0.13) * 0.4;
           float micro = nT(vTerrenoXZ * 1.7) * 0.5 + nT(vTerrenoXZ * 5.3) * 0.5;
           float k = 0.84 + macro * 0.32 + (micro - 0.5) * 0.26 * vicino;
@@ -46,6 +48,7 @@ function materialeTerreno(ambiente) {
   };
   m.customProgramCacheKey = function () { return "terreno-grana"; };
   aggiungiDettaglio(m, { macchie: 0, grana: 0, rugosita: 0.12, rilievo: 0.09, scalaRilievo: 2.2, nome: "terreno" });
+  aggiungiFotoHD(m);
   return aggiungiMeteo(m, ambiente, { neve: 1, bagnato: 0.8 });
 }
 
@@ -364,6 +367,7 @@ function gestisciFoto(terrenoMesh, x, z) {
 // Crea i pezzi dettagliati vicino a (x, z) e toglie quelli lontani.
 // Al massimo un pezzo nuovo alla volta, cosi' il gioco non si blocca.
 export function aggiornaTerreno(terrenoMesh, x, z, dt, sincrono) {
+  aggiornaFotoHD(x, z);
   // un pezzo in costruzione: si avanza per qualche millisecondo per fotogramma (mai piu' di 3 ms)
   const lavoro = terrenoMesh.lavoro;
   if (lavoro) {

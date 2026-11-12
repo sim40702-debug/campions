@@ -236,6 +236,48 @@ function disegnaLineeArresto(scena, strade, contesto, liste) {
   return quante;
 }
 
+// Pozze di luce dei lampioni: di notte un alone caldo sull'asfalto sotto ogni lampione (decalcomania additiva, un solo disegno).
+// Non sono luci vere (i lampioni sono centinaia): servono a far vedere dove la luce cade e a dare ritmo alla strada.
+function aggiungiPozzeDiLuce(lampioni, scena, ambiente) {
+  const lista = lampioni.filter(function (l) { return l.strada; });
+  if (lista.length === 0) return;
+  const tela = document.createElement("canvas");
+  tela.width = tela.height = 128;
+  const g = tela.getContext("2d");
+  const grad = g.createRadialGradient(64, 64, 2, 64, 64, 64);
+  grad.addColorStop(0, "rgba(255,226,170,1)");
+  grad.addColorStop(0.35, "rgba(255,200,130,0.55)");
+  grad.addColorStop(1, "rgba(255,180,100,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(tela);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0,
+    polygonOffset: true, polygonOffsetFactor: -7, polygonOffsetUnits: -7, fog: false
+  });
+  const forma = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const ist = new THREE.InstancedMesh(forma, mat, lista.length);
+  const m = new THREE.Matrix4();
+  const raggio = 9;
+  lista.forEach(function (l, i) {
+    const s = l.strada;
+    const destra = [-s.dirZ, s.dirX];
+    const dist = s.larghezza / 2 + 0.6;
+    const px = l.x - destra[0] * dist * 0.5, pz = l.z - destra[1] * dist * 0.5;
+    m.makeScale(raggio * 2, 1, raggio * 2).setPosition(px, s.y + 0.07, pz);
+    ist.setMatrixAt(i, m);
+  });
+  ist.frustumCulled = false;
+  ist.renderOrder = 2;
+  ist.visible = false;
+  scena.add(ist);
+  ambiente.osservatori.push(function (a) {
+    const n = a.uniformi.notte.value;
+    ist.visible = n > 0.04;
+    mat.opacity = Math.min(1, n * 1.1) * (1 - a.uniformi.bagnato.value * 0.15) * 0.42;
+  });
+}
+
 export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   const lampioni = coppie(dettagli.lampioni).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.6));
   const semafori = coppie(dettagli.semafori).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.8, true));
@@ -248,6 +290,7 @@ export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   for (const l of lampioni) l.angolo = l.angolo - Math.PI / 2;
 
   istanze(formaLampione(), lampioni, scena);
+  if (contesto && contesto.ambiente) aggiungiPozzeDiLuce(lampioni, scena, contesto.ambiente);
   if (contesto) {
     aggiungiArredoUrbano(scena, terreno, strade, contesto, lampioni, dettagli, testaLampione());
     creaSegnali(scena, terreno, strade, contesto, dettagli);

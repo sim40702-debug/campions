@@ -2,7 +2,7 @@
 // le disegna come nastri di asfalto e permette di sapere "su che strada sono".
 
 import { aggiungiDettaglio } from "./superfici.js";
-import { calcolaIncroci, costruisciIncroci } from "./incroci.js";
+import { calcolaIncroci, costruisciIncroci, frecceStrada } from "./incroci.js";
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
@@ -1843,10 +1843,20 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       }
     });
   }
+  // frecce di corsia: solo per le strade con turn:lanes nei dati
+  let frecce = 0;
+  strade.lista.forEach(function (strada, indice) {
+    if (strada.tf || strada.tb) frecce += frecceStrada(gruppoIn(strada.p[0], strada.p[2]).righe, strada, indice, strade.tagli.get(indice));
+  });
+  if (strade.incroci2) strade.incroci2.frecce = frecce;
   scena.add(creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0));
   scena.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
   if (muri.posizioni.length > 0) {
     const muro = creaMesh(muri.posizioni, muri.indici, 0x9a968d, 0);
+    // muri di sostegno: cemento/pietra con macchie, grana e rilievo (non piu' una superficie piatta e scura)
+    muro.material.dispose();
+    muro.material = new THREE.MeshStandardMaterial({ color: 0xb3aea3, roughness: 0.93, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+    aggiungiDettaglio(muro.material, { macchie: 0.38, grana: 0.28, rugosita: 0.2, rilievo: 0.05, scalaRilievo: 4.5, nome: "muro" });
     muro.castShadow = true;
     scena.add(muro);
   }

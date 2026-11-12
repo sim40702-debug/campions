@@ -14,6 +14,7 @@ import { stradaVicina } from "./strade.js";
 import { dentroEdificio, zonaQui, ZONA } from "./edifici.js";
 import { profiloQui } from "./luoghi.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
+import { aggiungiFogliame } from "./superfici.js";
 import { usoQui } from "./uso_suolo.js";
 
 const CELLA = 250;            // metri
@@ -210,6 +211,7 @@ function materiale(tempo, ambiente) {
         }`);
   };
   m.customProgramCacheKey = function () { return "alberi-vento"; };
+  aggiungiFogliame(m);
   aggiungiMeteo(m, ambiente, { neve: 0.55, bagnato: 0.5 });
   MATERIALE = m;
   return m;

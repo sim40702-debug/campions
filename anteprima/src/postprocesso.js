@@ -121,6 +121,10 @@ const FRAMMENTO_FINALE = `
   uniform vec2 uPixel;
   uniform float uEsposizione;
   uniform float uBagliore;
+  uniform sampler2D tProfondita;
+  uniform vec3 uSole;       // posizione del sole sullo schermo (uv) e intensita' del riverbero
+  uniform float uAspetto;
+  uniform float uGrigio;    // 0 sereno, 1 meteo pessimo
   uniform float uNotte;
   uniform float uTempo;
   varying vec2 vUv;
@@ -153,10 +157,17 @@ const FRAMMENTO_FINALE = `
     c += det * 0.28;
     // bagliore
     c += (texture2D(tBagliore1, vUv).rgb * 0.65 + texture2D(tBagliore2, vUv).rgb * 0.9) * uBagliore;
+    // riverbero del sole: alone morbido nel cielo e un velo leggero sulle cose davanti (obiettivo sporco)
+    if (uSole.z > 0.0) {
+      float dS = length((vUv - uSole.xy) * vec2(uAspetto, 1.0));
+      float alone = exp(-dS * 4.5) * 0.28 + exp(-dS * 20.0) * 0.8 + exp(-dS * 90.0) * 2.5;
+      float cielo = step(0.99999, texture2D(tProfondita, vUv).x);
+      c += vec3(1.0, 0.84, 0.6) * alone * uSole.z * mix(0.2, 1.0, cielo);
+    }
     c = aces(max(c, 0.0));
     // correzione colore (in spazio display, dopo il tone mapping)
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    c = mix(vec3(l), c, 1.10 + 0.06 * (1.0 - uNotte));                       // saturazione
+    c = mix(vec3(l), c, (1.10 + 0.06 * (1.0 - uNotte)) * (1.0 - 0.38 * uGrigio));   // saturazione (meno con meteo brutto)
     c = mix(c, c * c * (3.0 - 2.0 * c), 0.28);                              // curva a S morbida (contrasto)
     vec3 caldo = vec3(1.035, 1.0, 0.955);
     vec3 freddo = vec3(0.955, 0.99, 1.045);
@@ -181,6 +192,7 @@ function materialeSchermo(frammento, uniformi) {
 export function creaPostprocesso(disegnatore) {
   const post = { attivo: true, bagliore: 1, ao: true, larghezza: 0, altezza: 0 };
   const dimensione = new THREE.Vector2();
+  const avanti = new THREE.Vector3(), vSole = new THREE.Vector3();
 
   // un triangolo che copre lo schermo
   const geometria = new THREE.BufferGeometry();
@@ -197,7 +209,8 @@ export function creaPostprocesso(disegnatore) {
   const uFinale = {
     tScena: { value: null }, tBagliore1: { value: null }, tBagliore2: { value: null },
     uPixel: { value: new THREE.Vector2() }, uEsposizione: { value: 1.1 }, uBagliore: { value: 0.16 },
-    uNotte: { value: 0 }, uTempo: { value: 0 }, tAO: { value: null }, uAO: { value: 0.9 }
+    uNotte: { value: 0 }, uTempo: { value: 0 }, tAO: { value: null }, uAO: { value: 0.9 },
+    tProfondita: { value: null }, uSole: { value: new THREE.Vector3(0.5, 0.5, 0) }, uAspetto: { value: 1.78 }, uGrigio: { value: 0 }
   };
   const uAO = {
     tProfondita: { value: null }, uProj: { value: new THREE.Vector2(1, 1) }, uNearFar: { value: new THREE.Vector2(0.3, 9000) },
@@ -249,7 +262,7 @@ export function creaPostprocesso(disegnatore) {
   }
 
   // Disegna un fotogramma. "esposizione" e' quella dell'ambiente (disegnatore.toneMappingExposure)
-  post.disegna = function (scena, telecamera, notte, tempo) {
+  post.disegna = function (scena, telecamera, notte, tempo, atmo) {
     if (!post.attivo) {
       disegnatore.info.reset();
       disegnatore.setRenderTarget(null);
@@ -281,6 +294,19 @@ export function creaPostprocesso(disegnatore) {
     uFinale.uAO.value = post.ao ? 0.9 : 0;
     if (!post.ao) uFinale.tAO.value = rtA1.texture;
     uFinale.uEsposizione.value = disegnatore.toneMappingExposure;
+    uFinale.tProfondita.value = rtScena.depthTexture;
+    uFinale.uAspetto.value = telecamera.aspect;
+    uFinale.uGrigio.value = atmo ? atmo.grigio : 0;
+    // sole sullo schermo (solo se davanti alla telecamera, sopra l'orizzonte e non coperto dalle nuvole)
+    uFinale.uSole.value.z = 0;
+    if (atmo && atmo.direzioneSole && atmo.direzioneSole.y > 0.02) {
+      telecamera.getWorldDirection(avanti);
+      const davanti = avanti.dot(atmo.direzioneSole);
+      if (davanti > 0.15) {
+        vSole.copy(atmo.direzioneSole).multiplyScalar(1000).add(telecamera.position).project(telecamera);
+        uFinale.uSole.value.set(vSole.x * 0.5 + 0.5, vSole.y * 0.5 + 0.5, Math.pow((davanti - 0.15) / 0.85, 2.0) * (1 - atmo.grigio * 0.85) * Math.min(1, atmo.direzioneSole.y * 6) * 0.9);
+      }
+    }
     uFinale.uBagliore.value = 0.2 * post.bagliore * (1 + notte * 0.9);
     uFinale.uNotte.value = notte;
     uFinale.uTempo.value = (tempo % 100) * 0.37;

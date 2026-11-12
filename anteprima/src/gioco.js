@@ -19,6 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 import { creaPostprocesso } from "./postprocesso.js";
+import { caricaFotoHD, uniformiHD } from "./terreno_hd.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
 const VERSIONE = "0.15.3";
@@ -314,6 +315,7 @@ async function avvia() {
     await mostraStato("Caricamento delle strade (OpenStreetMap)...");
     const strade = await caricaStrade();
     adattaTerreno(terreno, strade);   // il terreno segue le strade (prima di disegnarlo)
+    await caricaFotoHD();   // foto aeree di dettaglio (facoltative: terreno_hd.js)
     const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
 
     await mostraStato("Fiumi e torrenti...");
@@ -385,6 +387,7 @@ async function avvia() {
     };
     window.__mrw.moto = moto;
     window.__mrw.dettagli = dettagli;
+    window.__mrw.fotoHD = uniformiHD;
     window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
     window.__mrw.terreno = terreno;
     window.__mrw.strade = strade;
@@ -503,7 +506,7 @@ async function avvia() {
       const localita = localitaVicina(dettagli, moto.x, moto.z);
       aggiornaInterfaccia(moto, terreno, zona && zona.nome !== localita ? (localita ? localita + " · " + zona.nome : zona.nome) : localita, mappa, ambiente);
       const prima = performance.now();
-      post.disegna(scena, telecamera, ambiente.uniformi.notte.value, tempoGioco);
+      post.disegna(scena, telecamera, ambiente.uniformi.notte.value, tempoGioco, { direzioneSole: ambiente.direzioneSole, grigio: ambiente.mix ? ambiente.mix.grigio : 0 });
       // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)
       const tm = window.__mrw && window.__mrw.tempi;
       if (tm && tm.js.length < 3000) { tm.js.push(prima - inizioFotogramma); tm.render.push(performance.now() - prima); }

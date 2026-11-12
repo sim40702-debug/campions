@@ -109,7 +109,13 @@ const FRAMMENTO_NUVOLE = `
     vec2 rel = vMondo.xz - uCentro.xz;
     float dist = length(rel);
     float sfuma = 1.0 - smoothstep(2200.0, 5200.0, dist);
-    gl_FragColor = vec4(colore, nuvola * sfuma * 0.92);
+    // strato alto di cirri: strisce sottili e chiare, piu' visibili con poche nuvole basse
+    vec2 pc = vec2(p.x * 0.35 + p.y * 0.15, p.y * 1.9) + vec2(uTempo * 0.0015, 0.0);
+    float cirro = smoothstep(0.52, 0.86, fbm(pc * 2.2)) * (1.0 - uCopertura * 0.55) * 0.34 * sfuma;
+    float a0 = nuvola * sfuma * 0.92;
+    float a = a0 + cirro * (1.0 - a0);
+    vec3 col = (colore * a0 + uColoreChiaro * cirro * (1.0 - a0)) / max(a, 1e-4);
+    gl_FragColor = vec4(col, a);
   }`;
 
 export function creaAmbiente(scena, disegnatore, sole, hemi, telecamera) {
@@ -258,8 +264,15 @@ export function aggiornaAmbiente(amb, dt, posizioneCamera) {
   }
   amb.tempo += dt;
   amb.uniformi.tempo.value = amb.tempo;
-  const meteo = METEO[meteoEffettivo(amb)];
-  aggiornaPrecipitazioni(amb, meteo, dt, posizioneCamera);
+  const obiettivo = METEO[meteoEffettivo(amb)];
+  aggiornaPrecipitazioni(amb, obiettivo, dt, posizioneCamera);
+  // transizione dolce del meteo: nuvole, nebbia, sole e grigio si avvicinano al nuovo valore in qualche secondo
+  // (prima cambiavano di colpo quando si sceglieva un altro meteo)
+  if (!amb.mix) amb.mix = { nuvole: obiettivo.nuvole, nebbia: obiettivo.nebbia, sole: obiettivo.sole, grigio: obiettivo.grigio };
+  const kMix = amb.mix.pronto ? Math.min(1, dt * 0.45) : 1;
+  amb.mix.pronto = true;
+  for (const k of ["nuvole", "nebbia", "sole", "grigio"]) amb.mix[k] += (obiettivo[k] - amb.mix[k]) * kMix;
+  const meteo = Object.assign({}, obiettivo, { nuvole: amb.mix.nuvole, nebbia: amb.mix.nebbia, sole: amb.mix.sole, grigio: amb.mix.grigio });
 
   const elevazione = posizioneSole(amb.ora, amb.direzioneSole);
   amb.elevazione = elevazione;
@@ -439,5 +452,5 @@ function aggiornaPrecipitazioni(amb, meteo, dt, cam) {
 
 // Cambia il meteo senza ricordarlo (benchmark e prove)
 export function impostaMeteoSenzaSalvare(amb, chiave) {
-  if (METEO[chiave] || chiave === "auto") amb.meteo = chiave;
+  if (METEO[chiave] || chiave === "auto") { amb.meteo = chiave; amb.mix = null; }   // senza transizione
 }

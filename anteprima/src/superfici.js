@@ -65,3 +65,48 @@ export function aggiungiDettaglio(materiale, opzioni) {
 }
 
 void THREE;
+
+// Fogliame: le chiome sono forme morbide a "nuvola"; da vicino il programma della scheda video aggiunge puntini di foglie
+// chiari e scuri, grumi di colore e una normale ruvida (la luce si frange come tra foglie vere). Sfuma con la distanza.
+export function aggiungiFogliame(materiale) {
+  const precedente = materiale.onBeforeCompile;
+  const chiavePrec = materiale.customProgramCacheKey ? materiale.customProgramCacheKey() : "";
+  materiale.onBeforeCompile = function (shader, disegnatore) {
+    if (precedente) precedente(shader, disegnatore);
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vFogPos;")
+      .replace("#include <begin_vertex>", `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vFogPos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+        #else
+          vFogPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        #endif`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>
+        varying vec3 vFogPos;
+        float hF(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+        float nF(vec3 p) {
+          vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(hF(i), hF(i + vec3(1,0,0)), f.x), mix(hF(i + vec3(0,1,0)), hF(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(hF(i + vec3(0,0,1)), hF(i + vec3(1,0,1)), f.x), mix(hF(i + vec3(0,1,1)), hF(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }
+        float vicinoF;`)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        vicinoF = 1.0 - smoothstep(18.0, 110.0, length(vViewPosition));
+        {
+          float punti = hF(floor(vFogPos * 6.0));
+          float grumi = nF(vFogPos * 0.8) * 0.5 + nF(vFogPos * 2.6) * 0.5;
+          diffuseColor.rgb *= (0.9 + 0.2 * grumi) * (1.0 + (punti - 0.5) * 0.55 * vicinoF);
+          // un po' di giallo-verde sulle punte illuminate
+          diffuseColor.rgb += vec3(0.02, 0.03, -0.005) * punti * vicinoF;
+        }`)
+      .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+        {
+          vec3 cF = floor(vFogPos * 5.0);
+          vec3 j = vec3(hF(cF + 1.1), hF(cF + 2.2), hF(cF + 3.3)) - 0.5;
+          normal = normalize(normal + j * 0.6 * vicinoF);
+        }`);
+  };
+  materiale.customProgramCacheKey = function () { return chiavePrec + "|fogliame"; };
+  return materiale;
+}

@@ -287,3 +287,115 @@ export function lineaPrecedenza(g, x, y, z, dirX, dirZ, da, a) {
     g.indici.push(base, base + 1, base + 2);
   }
 }
+
+// --- Frecce direzionali (SOLO dove OpenStreetMap ha turn:lanes) -----------------------------------------------------
+// Una freccia per corsia, a poca distanza dall'incrocio: dritta, a sinistra, a destra o combinate ("through;right").
+// Se i dati non dicono le corsie di svolta, non si disegna niente: le frecce non si inventano.
+function direzioniToken(token) {
+  const out = [];
+  for (const t of token.split(";")) {
+    if (t === "through") out.push(0);
+    else if (t === "left" || t === "sharp_left") out.push(-1);
+    else if (t === "slight_left") out.push(-0.5);
+    else if (t === "right" || t === "sharp_right") out.push(1);
+    else if (t === "slight_right") out.push(0.5);
+  }
+  return out;
+}
+
+// (x, y, z) = centro della freccia, (dirX, dirZ) = verso di marcia; destra = (-dirZ, dirX)
+function disegnaFreccia(g, x, y, z, dirX, dirZ, direzioni) {
+  const rx = -dirZ, rz = dirX;
+  const P = function (a, l) { return [x + dirX * a + rx * l, y + 0.037, z + dirZ * a + rz * l]; };   // a = lungo, l = di lato (destra +)
+  const tri = function (p, q, r) {
+    const base = g.posizioni.length / 3;
+    g.posizioni.push(...p, ...q, ...r);
+    g.indici.push(base, base + 1, base + 2, base, base + 2, base + 1);
+  };
+  const quad = function (p, q, r, s) { tri(p, q, r); tri(p, r, s); };
+  // gambo: da -1.5 a +0.2 (largo 0.22)
+  quad(P(-1.5, -0.11), P(-1.5, 0.11), P(0.2, 0.11), P(0.2, -0.11));
+  for (const d of direzioni) {
+    // la punta si piega di d * 45 gradi: tratto inclinato fino a 1.0 m, poi punta triangolare
+    const ang = d * Math.PI / 4;
+    const sx = Math.cos(ang), sl = Math.sin(ang);
+    const lungo = 0.2, lato = 0;
+    const fx = lungo + sx * 0.9, fl = lato + sl * 0.9;
+    // tratto
+    const nx = -sl, nl = sx;   // perpendicolare (in coordinate lungo, lato)
+    quad(P(lungo + nx * -0.11, lato + nl * -0.11), P(lungo + nx * 0.11, lato + nl * 0.11), P(fx + nx * 0.11, fl + nl * 0.11), P(fx + nx * -0.11, fl + nl * -0.11));
+    // punta
+    tri(P(fx + nx * -0.42, fl + nl * -0.42), P(fx + nx * 0.42, fl + nl * 0.42), P(fx + sx * 0.8, fl + sl * 0.8));
+  }
+}
+
+// Disegna le frecce di una strada nel gruppo "righe". Ritorna quante
+export function frecceStrada(g, strada, indice, tagli) {
+  const p = strada.p, n = p.length / 3;
+  if (n < 2 || strada.g || strada.b) return 0;
+  const sensoUnico = strada.o === 1 || strada.o === -1;
+  const f = strada.tf ? strada.tf.split("|") : null;
+  const b = strada.tb ? strada.tb.split("|") : null;
+  const lf = f ? f.length : 0, lb = b ? b.length : 0;
+  const totale = sensoUnico ? lf : (strada.lf && strada.lb ? strada.lf + strada.lb : lf + lb);
+  if (totale === 0) return 0;
+  const larghezzaCorsia = strada.w / Math.max(totale, 1);
+  let tot = 0;
+  const lungoStrada = function (dalFine) {
+    // punto e direzione a distanza "d" dal capo (dalFine = true: dalla fine verso l'inizio)
+    return function (d) {
+      let resto = d;
+      for (let k = 0; k < n - 1; k++) {
+        const i = dalFine ? n - 1 - k : k, j = dalFine ? n - 2 - k : k + 1;
+        const l = Math.hypot(p[j * 3] - p[i * 3], p[j * 3 + 2] - p[i * 3 + 2]);
+        if (l < 1e-3) continue;
+        if (resto <= l) {
+          const t = resto / l;
+          return { x: p[i * 3] + (p[j * 3] - p[i * 3]) * t, y: p[i * 3 + 1] + (p[j * 3 + 1] - p[i * 3 + 1]) * t, z: p[i * 3 + 2] + (p[j * 3 + 2] - p[i * 3 + 2]) * t, dx: (p[i * 3] - p[j * 3]) / l, dz: (p[i * 3 + 2] - p[j * 3 + 2]) / l };
+        }
+        resto -= l;
+      }
+      return null;
+    };
+  };
+  // distanza dal capo: oltre il raccordo dell'incrocio, almeno 11 m
+  let taglioFine = 0, taglioInizio = 0;
+  for (const rec of tagli || []) {
+    const t = Math.max(rec.L, rec.R);
+    if (rec.k === n - 1 && !rec.avanti) taglioFine = Math.max(taglioFine, t);
+    if (rec.k === 0 && rec.avanti) taglioInizio = Math.max(taglioInizio, t);
+  }
+  if (f) {
+    const q = lungoStrada(true)(Math.max(11, taglioFine + 6));
+    if (q) {
+      // q.dx,dz e' gia' il verso della linea (verso la fine): il verso di marcia di queste corsie
+      const dx = q.dx, dz = q.dz;
+      const rx = -dz, rz = dx;
+      f.forEach(function (tok, i) {
+        const dirs = direzioniToken(tok);
+        if (dirs.length === 0) return;
+        const lat = sensoUnico ? (i + 0.5 - lf / 2) * larghezzaCorsia : (i + 0.5) * larghezzaCorsia;
+        disegnaFreccia(g, q.x + rx * lat, q.y, q.z + rz * lat, dx, dz, dirs);
+        tot++;
+      });
+    }
+  }
+  if (b) {
+    const q = lungoStrada(false)(Math.max(11, taglioInizio + 6));
+    if (q) {
+      // verso di marcia = verso l'inizio: q.dx,dz (da j a i, cioe' all'indietro)
+      const dx = q.dx, dz = q.dz;
+      const rx = -dz, rz = dx;
+      b.forEach(function (tok, i) {
+        const dirs = direzioniToken(tok);
+        if (dirs.length === 0) return;
+        // a destra di chi va all'indietro = a sinistra rispetto al verso della linea
+        const lat = (i + 0.5) * larghezzaCorsia;
+        disegnaFreccia(g, q.x + rx * lat, q.y, q.z + rz * lat, dx, dz, dirs);
+        tot++;
+      });
+    }
+  }
+  void indice;
+  return tot;
+}

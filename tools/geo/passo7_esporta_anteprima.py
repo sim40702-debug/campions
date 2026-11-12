@@ -503,6 +503,18 @@ def main():
             voce["o"] = 1
         elif tag.get("oneway") == "-1":
             voce["o"] = -1
+        # corsie di svolta (turn:lanes): solo dove OpenStreetMap le ha. Le frecce nel gioco si disegnano SOLO per queste strade.
+        # tf = corsie nel verso della linea, tb = corsie nel verso opposto, da sinistra a destra rispetto al verso di marcia
+        for chiave_osm, chiave_voce in (("turn:lanes:forward", "tf"), ("turn:lanes:backward", "tb")):
+            if tag.get(chiave_osm):
+                voce[chiave_voce] = tag[chiave_osm]
+        if tag.get("turn:lanes") and "tf" not in voce:
+            voce["tf"] = tag["turn:lanes"]
+        for chiave_osm, chiave_voce in (("lanes:forward", "lf"), ("lanes:backward", "lb")):
+            try:
+                voce[chiave_voce] = int(tag[chiave_osm])
+            except (KeyError, ValueError):
+                pass
         if min(pezzo["larghezze"]) < pezzo["larghezza"] - 0.05:
             voce["ww"] = pezzo["larghezze"]
             strette = strette + 1
