@@ -9,7 +9,6 @@ let principale = null;
 let rombo = null;
 let filtro = null;
 let volume = null;
-let voce450 = null;      // la voce a parte del monocilindrico 450
 let faseColpetti = 0;    // a che punto e' il "mem-mem-mem" dei colpetti di gas in impennata
 let ultimoSuono = 0;
 let acceso = true;
@@ -47,8 +46,6 @@ function avvia() {
   principale.start();
   rombo.start();
 
-  voce450 = creaVoce450(contesto, contesto.destination);
-
   rumore = contesto.createBuffer(1, contesto.sampleRate, contesto.sampleRate);
   const campioni = rumore.getChannelData(0);
   for (let i = 0; i < campioni.length; i++) campioni[i] = Math.random() * 2 - 1;
@@ -67,110 +64,6 @@ function avvia() {
   filtroGomme.connect(stridio);
   stridio.connect(contesto.destination);
   gomme.start();
-}
-
-// --- Voce del monocilindrico 450 (MRW SM 450) -------------------------------------------------------------
-// Sempre creata al momento, senza file audio. E' stata accordata misurando una registrazione di un vero 450
-// monocilindrico: tanti bassi (il colpo di ogni scoppio, 20-60 Hz), un corpo pieno fino a 400 Hz e poi gli
-// acuti che calano in fretta. Ogni scoppio e' un colpo secco ("tac-tac-tac"), non una nota continua.
-// Forza delle armoniche dello scoppio (la prima e' lo scoppio stesso), dalla misura a bande:
-const ARMONICHE_450 = [0.72, 0.33, 0.31, 0.28, 0.28, 0.24, 0.24, 0.24, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06,
-  0.035, 0.035, 0.035, 0.035, 0.035, 0.035, 0.035, 0.035, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028,
-  0.028, 0.028, 0.028, 0.028, 0.028, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015];
-
-function creaVoce450(ctx, uscita) {
-  // onda dello scoppio: tutte le armoniche partono insieme (coseni), cosi' viene un colpo e non un ronzio
-  const reale = new Float32Array(ARMONICHE_450.length + 1);
-  const immaginaria = new Float32Array(ARMONICHE_450.length + 1);
-  for (let k = 0; k < ARMONICHE_450.length; k++) {
-    // un po' di sfasamento alle armoniche alte: il colpo resta secco ma meno "elettronico"
-    const fase = k < 8 ? 0 : (k * 2.4) % 6.283;
-    reale[k + 1] = ARMONICHE_450[k] * Math.cos(fase);
-    immaginaria[k + 1] = ARMONICHE_450[k] * Math.sin(fase);
-  }
-  const scoppio = ctx.createOscillator();
-  scoppio.setPeriodicWave(ctx.createPeriodicWave(reale, immaginaria));
-  const forzaScoppio = ctx.createGain();
-  forzaScoppio.gain.value = 0.5;
-
-  // soffio dello scarico: rumore che "respira" a ogni scoppio (lo apre e lo chiude l'onda dello scoppio)
-  const tampone = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const campioni = tampone.getChannelData(0);
-  for (let i = 0; i < campioni.length; i++) campioni[i] = Math.random() * 2 - 1;
-  const soffio = ctx.createBufferSource();
-  soffio.buffer = tampone;
-  soffio.loop = true;
-  const filtroSoffio = ctx.createBiquadFilter();
-  filtroSoffio.type = "bandpass";
-  filtroSoffio.frequency.value = 240;
-  filtroSoffio.Q.value = 0.6;
-  const forzaSoffio = ctx.createGain();
-  forzaSoffio.gain.value = 0;
-  const respiro = ctx.createGain();   // quanto lo scoppio apre il soffio
-  respiro.gain.value = 0.1;
-  scoppio.connect(respiro);
-  respiro.connect(forzaSoffio.gain);
-
-  // il gas aperto "sporca" il suono (lo scarico satura) e apre gli acuti
-  const satura = ctx.createWaveShaper();
-  const curva = new Float32Array(1024);
-  for (let i = 0; i < curva.length; i++) {
-    const x = (i / (curva.length - 1)) * 2 - 1;
-    curva[i] = Math.tanh(x * 2.2) / Math.tanh(2.2);
-  }
-  satura.curve = curva;
-  const acuti = ctx.createBiquadFilter();
-  acuti.type = "lowpass";
-  acuti.frequency.value = 600;
-  acuti.Q.value = 0.5;
-  const bassi = ctx.createBiquadFilter();   // toglie quello che sta sotto i 22 Hz (non si sente, sporca solo)
-  bassi.type = "highpass";
-  bassi.frequency.value = 22;
-  const forza = ctx.createGain();
-  forza.gain.value = 0;
-
-  // rumore meccanico (catena, valvole, aria): un fruscio leggero sugli acuti che cresce con il gas
-  const filtroMeccanica = ctx.createBiquadFilter();
-  filtroMeccanica.type = "highpass";
-  filtroMeccanica.frequency.value = 1800;
-  const meccanica = ctx.createGain();
-  meccanica.gain.value = 0.03;
-  soffio.connect(filtroMeccanica);
-  filtroMeccanica.connect(meccanica);
-  meccanica.connect(forza);
-
-  scoppio.connect(forzaScoppio);
-  forzaScoppio.connect(satura);
-  soffio.connect(filtroSoffio);
-  filtroSoffio.connect(forzaSoffio);
-  forzaSoffio.connect(satura);
-  satura.connect(acuti);
-  acuti.connect(bassi);
-  bassi.connect(forza);
-  forza.connect(uscita);
-  scoppio.start();
-  soffio.start();
-
-  return {
-    // scoppi al secondo, gas da 0 a 1, volume, e in quanto tempo arrivarci (secondi)
-    imposta: function (scoppiAlSecondo, gas, quantoForte, ora, tempo) {
-      scoppio.frequency.setTargetAtTime(Math.max(12, scoppiAlSecondo), ora, tempo);
-      respiro.gain.setTargetAtTime(0.08 + gas * 0.3, ora, tempo);
-      forzaScoppio.gain.setTargetAtTime(0.45 + gas * 0.5, ora, tempo);
-      acuti.frequency.setTargetAtTime(420 + gas * 2400 + scoppiAlSecondo * 6, ora, tempo);
-      meccanica.gain.setTargetAtTime(0.025 + gas * 0.045, ora, tempo);
-      forza.gain.setTargetAtTime(quantoForte, ora, tempo);
-    }
-  };
-}
-
-// Per le prove: due secondi del suono del 450 a giri e gas fissi, calcolati senza altoparlanti
-export async function provaSuono450(giri, gas, secondi) {
-  const ctx = new OfflineAudioContext(1, Math.round(44100 * secondi), 44100);
-  const voce = creaVoce450(ctx, ctx.destination);
-  voce.imposta(giri / 120, gas, 0.5, 0, 0.001);
-  const reso = await ctx.startRendering();
-  return Array.from(reso.getChannelData(0));
 }
 
 // Un colpo dallo scarico all'istante "quando" (secondi del contesto audio)
@@ -241,14 +134,11 @@ export function aggiornaSuono(moto, inPausa) {
 
   // scoppi al secondo: un motore a 4 tempi scoppia ogni 2 giri per ogni cilindro
   const scoppi = (giri / 60) * (s.cilindri / 2);
-  const mono450 = s.suono === "mono450";
   principale.frequency.setTargetAtTime(Math.max(20, scoppi), ora, 0.03);
   rombo.frequency.setTargetAtTime(Math.max(10, scoppi / 2), ora, 0.03);
   filtro.frequency.setTargetAtTime(500 + gas * 1500 + s.cilindri * 200, ora, 0.05);
   const forte = acceso && !inPausa ? 0.05 + gas * 0.09 : 0;
-  volume.gain.setTargetAtTime(mono450 ? 0 : forte, ora, 0.05);
-  // il 450 ha la sua voce (colpi secchi e tanti bassi); le altre moto la tengono a zero
-  voce450.imposta(scoppi, gas, mono450 && acceso && !inPausa ? 0.16 + gas * 0.2 : 0, ora, 0.03);
+  volume.gain.setTargetAtTime(forte, ora, 0.05);
 
   // Gomme che strisciano in derapata
   const striscia = acceso && !inPausa && moto.suStrada && Math.abs(moto.velocita) > 3

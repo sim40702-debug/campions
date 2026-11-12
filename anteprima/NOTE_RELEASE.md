@@ -3,7 +3,12 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.6) – nuovo suono del 450
+### Novità di questa versione (0.15.7) – torna il suono di prima
+
+- **MRW SM 450: è tornato il suono di prima** (quello della 0.15.5). Il suono nuovo della 0.15.6 grattava ed è stato tolto.
+- Resta il **"mem-mem-mem" in impennata** con le monocilindriche: a ruota alzata e gas tenuto i giri salgono e scendono circa 3 volte al secondo.
+
+### Novità della 0.15.6 (suono tolto nella 0.15.7)
 
 - **MRW SM 450: suono nuovo da vero monocilindrico**: colpi secchi a ogni scoppio, tanti bassi, il soffio dello scarico che "respira" e un filo di rumore meccanico. È sempre creato al momento (nessun file audio nel gioco): è stato accordato misurando la registrazione di un vero 450, e a 5 500 giri le frequenze corrispondono entro 2–3 dB fino a 2 500 Hz.
 - **In impennata fa "mem-mem-mem"**: con un monocilindrico, quando la ruota davanti è su e tieni il gas, il motore sale e scende di giri circa 3 volte al secondo come i colpetti di gas di chi tiene un'impennata.
