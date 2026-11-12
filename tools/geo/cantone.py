@@ -372,7 +372,10 @@ def chiudi(ident):
                 edifici_nel_cuore = edifici_nel_cuore + 1
 
     foto = len(list((CARTELLA_ANTEPRIMA / "foto").glob("*.jpg"))) if (CARTELLA_ANTEPRIMA / "foto").exists() else 0
-    bytes_dati = sum(f.stat().st_size for f in CARTELLA_ANTEPRIMA.rglob("*") if f.is_file())
+    # le foto di dettaglio (passo 9) stanno in un pacchetto a parte, facoltativo: non contano nei dati della regione
+    cartella_hd = CARTELLA_ANTEPRIMA / "foto_hd"
+    foto_hd = len(list(cartella_hd.glob("hd_*.jpg"))) if cartella_hd.exists() else 0
+    bytes_dati = sum(f.stat().st_size for f in CARTELLA_ANTEPRIMA.rglob("*") if f.is_file() and cartella_hd not in f.parents)
     controllo = {
         "id": ident, "cuore": cuore, "area": area,
         "km2_cantone": round(parte.area / 1e6, 1),
@@ -385,6 +388,7 @@ def chiudi(ident):
         "edifici_nel_cuore": edifici_nel_cuore,
         "localita": conta("dettagli.json", "localita"),
         "foto_aeree": foto,
+        "foto_dettaglio_hd": foto_hd,
         "dati_MB": round(bytes_dati / 1e6, 1),
     }
     # una regione e' "completa" solo se il terreno copre tutto il pezzo di cantone e ci sono le foto
@@ -399,9 +403,18 @@ def chiudi(ident):
     pacchetto = uscita / ("regione_" + ident + ".tar.gz")
     with tarfile.open(pacchetto, "w:gz", compresslevel=6) as archivio:
         for file in sorted(CARTELLA_ANTEPRIMA.rglob("*")):
-            if file.is_file():
+            if file.is_file() and cartella_hd not in file.parents:
                 archivio.add(file, arcname=str(file.relative_to(CARTELLA_ANTEPRIMA)).replace("\\", "/"))
     controllo["pacchetto_MB"] = round(pacchetto.stat().st_size / 1e6, 1)
+    # pacchetto facoltativo delle foto di dettaglio (0,5 m): il gioco lo scarica solo con i profili Media, Alta, Ultra.
+    # Dentro ci sono i file "foto_hd/..." (indice.json compreso), che si aprono dentro la cartella della regione.
+    if foto_hd > 0 and (cartella_hd / "indice.json").exists():
+        pacchetto_hd = uscita / ("hd_" + ident + ".tar.gz")
+        with tarfile.open(pacchetto_hd, "w:gz", compresslevel=1) as archivio:     # (i JPEG non si comprimono: livello 1)
+            for file in sorted(cartella_hd.rglob("*")):
+                if file.is_file():
+                    archivio.add(file, arcname="foto_hd/" + str(file.relative_to(cartella_hd)).replace("\\", "/"))
+        controllo["pacchetto_hd_MB"] = round(pacchetto_hd.stat().st_size / 1e6, 1)
     utilita.scrivi_json(controllo, uscita / ("controllo_" + ident + ".json"))
     print("Controllo della regione " + ident + ":")
     for chiave, valore in controllo.items():

@@ -73,6 +73,12 @@ jobs:
           gh release download ticino-completo-dati -D scarico -p cantone.tar.gz -p regione_R_2696_1106.tar.gz
           tar -xzf scarico/cantone.tar.gz -C anteprima/cantone
           tar -xzf scarico/regione_R_2696_1106.tar.gz -C anteprima/dati
+          # foto di dettaglio a 0,5 m della regione di Locarno (facoltative: se il pacchetto non c'e' l'app funziona lo stesso)
+          if gh release download ticino-completo-dati -D scarico -p hd_R_2696_1106.tar.gz; then
+            tar -xzf scarico/hd_R_2696_1106.tar.gz -C anteprima/dati
+          else
+            echo "nessun pacchetto HD per Locarno"
+          fi
           ls anteprima/cantone anteprima/dati | head -40
 
       - uses: actions/setup-node@v4

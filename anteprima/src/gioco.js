@@ -35,7 +35,7 @@ import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from
 import { aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 import { preparaMinimappa } from "./mappa.js";
 import { creaZone, aggiornaZona } from "./zone.js";
-import { preparaRegioni, aggiornaRegioni, PARTENZA_EST, PARTENZA_NORD } from "./regioni.js";
+import { preparaRegioni, aggiornaRegioni, richiediFotoHD, PARTENZA_EST, PARTENZA_NORD } from "./regioni.js";
 import { preparaCantone } from "./cantone.js";
 import { aggiungiSfondo } from "./sfondo.js";
 
@@ -405,6 +405,12 @@ async function avvia() {
 
     // Impostazioni e test delle prestazioni
     const mondo = { erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, strade: strade, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
+    // foto di dettaglio facoltative (pacchetto a parte): si scaricano in secondo piano solo con i profili che le usano
+    mondo.richiediFotoHD = function () {
+      richiediFotoHD(regioni, async function () {
+        if (await caricaFotoHD()) applicaQualita(qualitaSalvata(), mondo);
+      });
+    };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     const bench = creaBenchmark({

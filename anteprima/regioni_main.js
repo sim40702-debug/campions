@@ -87,7 +87,8 @@ function scaricate() {
 }
 
 function stato() {
-  return { attuale: regioneAttuale(), inclusa: regioneInclusa(), scaricate: scaricate() };
+  const elenco = scaricate();
+  return { attuale: regioneAttuale(), inclusa: regioneInclusa(), scaricate: elenco, conFotoHD: elenco.filter(haFotoHD) };
 }
 
 function imposta(id) {
@@ -190,6 +191,53 @@ function cancella(cartella) {
   }
 }
 
+// Scarica un pacchetto .tar.gz e lo apre in "cartella" (gia' creata). Dice l'avanzamento con { id, tipo, percento, ... }.
+// Se qualcosa non va lancia un errore: chi chiama toglie la cartella parziale.
+async function scaricaPacchetto(nomeFile, cartella, id, tipo, avanzamento) {
+  const risposta = await net.fetch(URL_PACCHETTI + nomeFile);
+  if (!risposta.ok) {
+    throw new Error(risposta.status === 404 ? "questo pacchetto non e' ancora stato preparato" : "GitHub risponde " + risposta.status);
+  }
+  const totale = parseInt(risposta.headers.get("content-length") || "0", 10);
+  const apritore = creaApritore(cartella);
+  const gunzip = zlib.createGunzip();
+  let errore = null;
+  gunzip.on("data", function (pezzo) {
+    try {
+      apritore.aggiungi(pezzo);
+    } catch (e) {
+      errore = e;
+    }
+  });
+  const finito = new Promise(function (fatto, fallito) {
+    gunzip.on("end", fatto);
+    gunzip.on("error", fallito);
+  });
+
+  const lettore = risposta.body.getReader();
+  let ricevuti = 0;
+  let ultimo = -1;
+  while (true) {
+    const { done, value } = await lettore.read();
+    if (done) break;
+    if (errore) throw errore;
+    // se gunzip e' pieno si aspetta che si svuoti (cosi' non si riempie la memoria)
+    if (!gunzip.write(Buffer.from(value))) {
+      await new Promise(function (fatto) { gunzip.once("drain", fatto); });
+    }
+    ricevuti += value.length;
+    const percento = totale > 0 ? Math.floor((ricevuti / totale) * 100) : 0;
+    if (percento !== ultimo) {
+      ultimo = percento;
+      avanzamento({ id: id, tipo: tipo, percento: percento, megabyte: Math.round(ricevuti / 1e6), totale: Math.round(totale / 1e6) });
+    }
+  }
+  gunzip.end();
+  await finito;
+  if (errore) throw errore;
+  return apritore.chiudi();
+}
+
 async function scaricaDavvero(id, avanzamento) {
   if (!/^R_\d{4}_\d{4}$/.test(id)) throw new Error("Regione non valida: " + id);
   const finale = path.join(cartellaRegioni(), id);
@@ -198,48 +246,7 @@ async function scaricaDavvero(id, avanzamento) {
   fs.mkdirSync(parziale, { recursive: true });
 
   try {
-    const risposta = await net.fetch(URL_PACCHETTI + "regione_" + id + ".tar.gz");
-    if (!risposta.ok) {
-      throw new Error(risposta.status === 404 ? "questa regione non e' ancora stata preparata" : "GitHub risponde " + risposta.status);
-    }
-    const totale = parseInt(risposta.headers.get("content-length") || "0", 10);
-    const apritore = creaApritore(parziale);
-    const gunzip = zlib.createGunzip();
-    let errore = null;
-    gunzip.on("data", function (pezzo) {
-      try {
-        apritore.aggiungi(pezzo);
-      } catch (e) {
-        errore = e;
-      }
-    });
-    const finito = new Promise(function (fatto, fallito) {
-      gunzip.on("end", fatto);
-      gunzip.on("error", fallito);
-    });
-
-    const lettore = risposta.body.getReader();
-    let ricevuti = 0;
-    let ultimo = -1;
-    while (true) {
-      const { done, value } = await lettore.read();
-      if (done) break;
-      if (errore) throw errore;
-      // se gunzip e' pieno si aspetta che si svuoti (cosi' non si riempie la memoria)
-      if (!gunzip.write(Buffer.from(value))) {
-        await new Promise(function (fatto) { gunzip.once("drain", fatto); });
-      }
-      ricevuti += value.length;
-      const percento = totale > 0 ? Math.floor((ricevuti / totale) * 100) : 0;
-      if (percento !== ultimo) {
-        ultimo = percento;
-        avanzamento({ id: id, percento: percento, megabyte: Math.round(ricevuti / 1e6), totale: Math.round(totale / 1e6) });
-      }
-    }
-    gunzip.end();
-    await finito;
-    if (errore) throw errore;
-    apritore.chiudi();
+    await scaricaPacchetto("regione_" + id + ".tar.gz", parziale, id, "regione", avanzamento);
 
     // controllo: i file ci sono e sono proprio di questa regione
     if (!completa(parziale)) throw new Error("nel pacchetto mancano dei file");
@@ -258,6 +265,58 @@ async function scaricaDavvero(id, avanzamento) {
   }
 }
 
+// --- Foto di dettaglio (0,5 m): pacchetto FACOLTATIVO di una regione ----------------------------------------
+// Si scarica a parte (da 20 a 250 MB), solo con i profili Media, Alta e Ultra, e dopo che la regione e' gia' in uso:
+// il gioco parte subito con la foto a 2 m e quando il pacchetto e' pronto aggiunge il dettaglio.
+// Se il pacchetto non esiste (404) o il download fallisce, niente cambia: la regione funziona come prima.
+const hdInCorso = {};
+
+function haFotoHD(id) {
+  const cartella = cartellaDi(id);
+  return !!cartella && fs.existsSync(path.join(cartella, "foto_hd", "indice.json"));
+}
+
+async function scaricaHDDavvero(id, avanzamento) {
+  if (!/^R_\d{4}_\d{4}$/.test(id)) throw new Error("Regione non valida: " + id);
+  if (haFotoHD(id)) return true;
+  const finale = path.join(cartellaRegioni(), id);
+  // la regione che sta dentro l'app non si puo' modificare: le sue foto di dettaglio (se ci sono) sono gia' nell'app
+  if (!completa(finale)) return false;
+  const parziale = finale + ".hd.parziale";
+  cancella(parziale);
+  fs.mkdirSync(parziale, { recursive: true });
+  try {
+    await scaricaPacchetto("hd_" + id + ".tar.gz", parziale, id, "hd", avanzamento);
+    const indice = path.join(parziale, "foto_hd", "indice.json");
+    if (!fs.existsSync(indice)) throw new Error("nel pacchetto delle foto di dettaglio manca l'indice");
+    const dati = JSON.parse(fs.readFileSync(indice, "utf-8"));
+    // controllo: tutti i tasselli dell'indice ci sono
+    for (const tassello of dati.tasselli) {
+      if (!fs.existsSync(path.join(parziale, "foto_hd", "hd_" + tassello[0] + "_" + tassello[1] + ".jpg"))) {
+        throw new Error("nel pacchetto delle foto di dettaglio mancano dei tasselli");
+      }
+    }
+    cancella(path.join(finale, "foto_hd"));
+    fs.renameSync(path.join(parziale, "foto_hd"), path.join(finale, "foto_hd"));
+    cancella(parziale);
+    return true;
+  } catch (errore) {
+    cancella(parziale);
+    throw errore;
+  }
+}
+
+// Scarica le foto di dettaglio di una regione (una sola volta anche se richieste due volte insieme)
+function scaricaHD(id, avanzamento) {
+  if (haFotoHD(id)) return Promise.resolve(true);
+  if (!hdInCorso[id]) {
+    hdInCorso[id] = scaricaHDDavvero(id, avanzamento).finally(function () {
+      delete hdInCorso[id];
+    });
+  }
+  return hdInCorso[id];
+}
+
 // Scarica una regione (una sola volta anche se viene chiesta due volte insieme)
 function scarica(id, avanzamento) {
   if (cartellaDi(id) !== null) return Promise.resolve(true);
@@ -273,7 +332,7 @@ function scarica(id, avanzamento) {
 function pulisci() {
   try {
     for (const nome of fs.readdirSync(cartellaRegioni())) {
-      if (nome.endsWith(".parziale")) cancella(path.join(cartellaRegioni(), nome));
+      if (nome.endsWith(".parziale")) cancella(path.join(cartellaRegioni(), nome));   // anche ".hd.parziale"
     }
   } catch (errore) {
     // niente da pulire
@@ -304,4 +363,4 @@ function megabyteUsati() {
   return Math.round(totale / 1e6);
 }
 
-module.exports = { stato, imposta, scarica, elimina, pulisci, cartellaDatiAttuale, megabyteUsati, creaApritore };
+module.exports = { stato, imposta, scarica, scaricaHD, haFotoHD, elimina, pulisci, cartellaDatiAttuale, megabyteUsati, creaApritore };

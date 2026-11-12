@@ -71,6 +71,15 @@ ipcMain.handle("regioni-scarica", async function (evento, id) {
     return { ok: false, errore: errore.message };
   }
 });
+ipcMain.handle("regioni-scarica-hd", async function (evento, id) {
+  try {
+    return await regioni.scaricaHD(id, function (avanzamento) {
+      if (!evento.sender.isDestroyed()) evento.sender.send("regioni-avanzamento", avanzamento);
+    });
+  } catch (errore) {
+    return false;   // le foto di dettaglio sono facoltative: se non si scaricano il gioco va avanti come prima
+  }
+});
 ipcMain.handle("regioni-elimina", function (evento, id) {
   return regioni.elimina(id);
 });

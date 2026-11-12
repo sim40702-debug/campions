@@ -108,6 +108,7 @@ export function applicaQualita(chiave, mondo) {
   impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno, q.visibilita, q.raggioFoto2m);
   impostaErba(mondo.erba, q.erba, q.densitaErba);
   impostaFotoHD(q.fotoHD, mondo.disegnatore.capabilities.getMaxAnisotropy());
+  if (q.fotoHD > 0 && mondo.richiediFotoHD) mondo.richiediFotoHD();   // pacchetto HD della regione, se manca
   salvaQualita(chiave);
 }
 

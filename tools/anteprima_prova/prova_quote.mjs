@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const radice = path.resolve(import.meta.dirname, "../../anteprima");
+const radice = process.env.RADICE_APP ? path.resolve(process.env.RADICE_APP) : path.resolve(import.meta.dirname, "../../anteprima");   // RADICE_APP: prova su un'altra copia (per esempio una regione del cantone)
 globalThis.fetch = async function (url) {
   const f = path.join(radice, url);
   const ok = fs.existsSync(f);

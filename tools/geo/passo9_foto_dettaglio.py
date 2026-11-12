@@ -17,6 +17,8 @@
 import json
 import math
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import rasterio
@@ -28,12 +30,18 @@ import config
 import utilita
 
 CARTELLA_DATI_GIOCO = config.CARTELLA_SCRIPT.parent.parent / "anteprima" / "dati"
+# Ticino completo: MRW_CARTELLA_DATI permette di lavorare su una cartella-regione gia' pronta (strade.json dentro)
+# e di scrivere li' foto_hd/ (senza toccare anteprima/dati)
+if os.environ.get("MRW_CARTELLA_DATI"):
+    import pathlib
+    CARTELLA_DATI_GIOCO = pathlib.Path(os.environ["MRW_CARTELLA_DATI"])
 CARTELLA_HD = CARTELLA_DATI_GIOCO / "foto_hd"
 STAC = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.swisstopo.swissimage-dop10/items"
 
 LATO_M = 500            # lato di un tassello (metri)
 MARGINE_M = 6           # margine per lato (metri)
 RISOLUZIONE_M = 0.5     # metri per pixel
+QUALITA_JPEG = int(os.environ.get("MRW_HD_QUALITA", "82"))   # (le prove di dimensione: vedi docs/anteprima/ticino)
 DISTANZA_STRADA_M = 220  # si fa il tassello se c'e' una strada entro questa distanza dal suo bordo
 
 # lettura a finestre di file remoti (cloud optimized GeoTIFF)
@@ -116,54 +124,91 @@ def main():
     print("2) Cerco le SWISSIMAGE 10 cm...")
     tasselli = cerca_tasselli(area)
     print("   trovati " + str(len(tasselli)) + " tasselli da 1 km")
-    aperti = {}
+    locale = threading.local()      # ogni thread apre i suoi file (un file aperto non si condivide tra thread)
+    tutti_aperti = []
 
     def apri(sigla):
-        if sigla not in aperti:
-            aperti[sigla] = rasterio.open("/vsicurl/" + tasselli[sigla][1])
-        return aperti[sigla]
+        if not hasattr(locale, "aperti"):
+            locale.aperti = {}
+        if sigla not in locale.aperti:
+            f = rasterio.open("/vsicurl/" + tasselli[sigla][1])
+            locale.aperti[sigla] = f
+            tutti_aperti.append(f)
+        return locale.aperti[sigla]
 
     CARTELLA_HD.mkdir(parents=True, exist_ok=True)
-    indice = []
     pixel = int(round((LATO_M + 2 * MARGINE_M) / RISOLUZIONE_M))
-    fatti = 0
-    for r in range(righe):
-        for c in range(colonne):
-            if not serve[r, c]:
-                continue
-            # rettangolo del tassello in LV95 (nord_max in alto: la riga 0 e' a NORD in coordinate di gioco z crescente = sud)
-            x_min = c * LATO_M - meta_x - MARGINE_M
-            z_min = r * LATO_M - meta_z - MARGINE_M
-            e0 = centro_est + x_min
-            e1 = e0 + LATO_M + 2 * MARGINE_M
-            n_alto = centro_nord - z_min          # z cresce verso sud
-            n_basso = n_alto - (LATO_M + 2 * MARGINE_M)
-            # sigle dei tasselli da 1 km che toccano il rettangolo, es. "2704-1113"
-            sigle = []
-            for ee in range(int(e0 // 1000), int(e1 // 1000) + 1):
-                for nn in range(int(n_basso // 1000), int(n_alto // 1000) + 1):
-                    sigla = str(ee) + "-" + str(nn)
-                    if sigla in tasselli:
-                        sigle.append(sigla)
-            if not sigle:
-                continue
+
+    # Ticino completo: in una regione i tasselli servono solo fino a dove si gioca in quella regione
+    # (il cuore piu' 2 km: oltre si passa alla regione vicina, dove quei tasselli sono nel suo cuore)
+    if os.environ.get("MRW_AREA"):
+        resto = int(os.environ.get("MRW_HD_RESTO_M", "2000"))
+        cuore_e0, cuore_e1 = est_min + config.REGIONE_MARGINE_M - resto, est_max - config.REGIONE_MARGINE_M + resto
+        cuore_n0, cuore_n1 = nord_min + config.REGIONE_MARGINE_M - resto, nord_max - config.REGIONE_MARGINE_M + resto
+        prima = int(serve.sum())
+        for r in range(righe):
+            for c in range(colonne):
+                if not serve[r, c]:
+                    continue
+                ce = centro_est + (c + 0.5) * LATO_M - meta_x
+                cn = centro_nord - ((r + 0.5) * LATO_M - meta_z)
+                if not (cuore_e0 <= ce <= cuore_e1 and cuore_n0 <= cn <= cuore_n1):
+                    serve[r, c] = False
+        print("   regione: tasselli nel cuore + " + str(resto) + " m: " + str(int(serve.sum())) + " (su " + str(prima) + ")")
+
+    lavori = [(c, r) for r in range(righe) for c in range(colonne) if serve[r, c]]
+    massimo = int(os.environ.get("MRW_HD_MAX", "0"))       # solo per le prove: ferma dopo N tasselli
+    if massimo > 0:
+        lavori = lavori[:massimo]
+
+    def fai(lavoro):
+        c, r = lavoro
+        # rettangolo del tassello in LV95 (nord_max in alto: la riga 0 e' a NORD in coordinate di gioco z crescente = sud)
+        x_min = c * LATO_M - meta_x - MARGINE_M
+        z_min = r * LATO_M - meta_z - MARGINE_M
+        e0 = centro_est + x_min
+        e1 = e0 + LATO_M + 2 * MARGINE_M
+        n_alto = centro_nord - z_min          # z cresce verso sud
+        n_basso = n_alto - (LATO_M + 2 * MARGINE_M)
+        # sigle dei tasselli da 1 km che toccano il rettangolo, es. "2704-1113"
+        sigle = []
+        for ee in range(int(e0 // 1000), int(e1 // 1000) + 1):
+            for nn in range(int(n_basso // 1000), int(n_alto // 1000) + 1):
+                sigla = str(ee) + "-" + str(nn)
+                if sigla in tasselli:
+                    sigle.append(sigla)
+        if not sigle:
+            return None
+        ultimo_errore = None
+        for tentativo in range(3):
             try:
                 sorgenti = [apri(s) for s in sigle]
                 mosaico, _ = merge(sorgenti, bounds=(e0, n_basso, e1, n_alto), res=RISOLUZIONE_M)
+                break
             except Exception as errore:
-                print("   tassello " + str(c) + "," + str(r) + " non letto: " + str(errore))
-                continue
-            immagine = np.transpose(mosaico[:3, :pixel, :pixel], (1, 2, 0)).astype(np.uint8)
-            if immagine.shape[0] != pixel or immagine.shape[1] != pixel:
-                grande = np.zeros((pixel, pixel, 3), dtype=np.uint8)
-                grande[:immagine.shape[0], :immagine.shape[1]] = immagine
-                immagine = grande
-            Image.fromarray(immagine).save(CARTELLA_HD / ("hd_" + str(c) + "_" + str(r) + ".jpg"), quality=82)
-            indice.append([c, r])
-            fatti += 1
-            if fatti % 10 == 0:
-                print("   " + str(fatti) + " tasselli...")
-    for f in aperti.values():
+                ultimo_errore = errore
+                mosaico = None
+        if mosaico is None:
+            print("   tassello " + str(c) + "," + str(r) + " non letto: " + str(ultimo_errore))
+            return None
+        immagine = np.transpose(mosaico[:3, :pixel, :pixel], (1, 2, 0)).astype(np.uint8)
+        if immagine.shape[0] != pixel or immagine.shape[1] != pixel:
+            grande = np.zeros((pixel, pixel, 3), dtype=np.uint8)
+            grande[:immagine.shape[0], :immagine.shape[1]] = immagine
+            immagine = grande
+        Image.fromarray(immagine).save(CARTELLA_HD / ("hd_" + str(c) + "_" + str(r) + ".jpg"), quality=QUALITA_JPEG)
+        return [c, r]
+
+    indice = []
+    fatti = 0
+    with ThreadPoolExecutor(max_workers=int(os.environ.get("MRW_HD_THREAD", "6"))) as esecutore:
+        for esito in esecutore.map(fai, lavori):
+            if esito is not None:
+                indice.append(esito)
+                fatti += 1
+                if fatti % 25 == 0:
+                    print("   " + str(fatti) + " tasselli di " + str(len(lavori)) + "...")
+    for f in tutti_aperti:
         f.close()
     utilita.scrivi_json({
         "lato_m": LATO_M, "margine_m": MARGINE_M, "pixel": pixel, "risoluzione_m": RISOLUZIONE_M,

@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld("regioniApp", {
   scarica: function (id) {
     return ipcRenderer.invoke("regioni-scarica", id);
   },
+  scaricaHD: function (id) {
+    return ipcRenderer.invoke("regioni-scarica-hd", id);
+  },
   elimina: function (id) {
     return ipcRenderer.invoke("regioni-elimina", id);
   },

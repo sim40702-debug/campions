@@ -98,7 +98,7 @@ async function caricaElenco() {
 // Scarica una regione mostrando l'avanzamento con la funzione "dillo" (testo)
 export async function scaricaRegione(regione, dillo) {
   function avanza(a) {
-    if (a.id === regione.id) dillo("Scarico la regione " + nomeRegione(regione) + ": " + a.percento + " % (" + a.megabyte + " di " + a.totale + " MB)");
+    if (a.id === regione.id && a.tipo !== "hd") dillo("Scarico la regione " + nomeRegione(regione) + ": " + a.percento + " % (" + a.megabyte + " di " + a.totale + " MB)");
   }
   ascoltatori.push(avanza);
   dillo("Scarico la regione " + nomeRegione(regione) + "...");
@@ -165,10 +165,28 @@ export async function preparaRegioni(mostraStato) {
   const attuale = regioneConId(elenco, stato.attuale);
   return {
     elenco: elenco, attuale: attuale, scaricate: stato.scaricate, megabyte: stato.megabyte,
+    inclusa: stato.inclusa, conFotoHD: stato.conFotoHD || [],
     // partenza richiesta in LV95 (il gioco la usa solo se cade dentro la regione caricata)
     partenza: { est: est, nord: nord, angolo: passaggio ? passaggio.angolo : null, velocita: passaggio ? passaggio.velocita : 0, daPassaggio: !!passaggio },
     attesa: 0, inScarico: null, falliti: {}, avviso: "", cambio: false
   };
+}
+
+// Foto di dettaglio (0,5 m) della regione in uso: pacchetto facoltativo che si scarica IN SECONDO PIANO, solo con i profili
+// che le usano (Media, Alta, Ultra). Il gioco parte subito con la foto a 2 m; quando il pacchetto e' pronto si chiama
+// "quandoPronte" (che le carica). Niente internet o pacchetto non ancora preparato: non cambia nulla.
+let hdRichieste = {};
+export function richiediFotoHD(regioni, quandoPronte) {
+  if (!app || !app.scaricaHD || !regioni || !regioni.attuale) return;
+  const id = regioni.attuale.id;
+  if (id === regioni.inclusa || regioni.conFotoHD.indexOf(id) >= 0 || hdRichieste[id]) return;
+  hdRichieste[id] = true;
+  app.scaricaHD(id).then(function (ok) {
+    if (ok) quandoPronte();
+    else delete hdRichieste[id];      // si riprova alla prossima richiesta (per esempio cambiando profilo)
+  }).catch(function () {
+    delete hdRichieste[id];
+  });
 }
 
 // Cambia regione: ricorda dove si e' (coordinate svizzere, direzione, velocita') e ricarica il gioco

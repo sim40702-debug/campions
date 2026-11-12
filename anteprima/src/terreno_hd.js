@@ -21,7 +21,7 @@ const stato = { indice: null, cache: new Map(), raggio: 0, anisotropia: 8, caric
 
 export async function caricaFotoHD() {
   try {
-    const r = await fetch("dati/foto_hd/indice.json");
+    const r = await fetch("dati/foto_hd/indice.json", { cache: "no-store" });
     if (!r.ok) return false;
     const indice = await r.json();
     stato.indice = indice;

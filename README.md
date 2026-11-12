@@ -4,7 +4,7 @@ Gioco di moto open world. La prima mappa esplorabile è il **Canton Ticino** (Sv
 
 Il progetto ha due parti:
 
-- **Anteprima Ticino** – versione giocabile leggera (Three.js + Electron) del **Locarnese** e di tutta la **Valle Verzasca** (fino a Sonogno), 16 × 32 km. È quella che si scarica e si gioca oggi.
+- **Anteprima Ticino** – versione giocabile leggera (Three.js + Electron) di **tutto il Canton Ticino** (2 812 km², 19 regioni da 24 × 24 km: la regione di Locarno è nell'app, le altre si scaricano entrando). È quella che si scarica e si gioca oggi.
 - **Versione Unreal Engine 5** – il gioco principale, in costruzione (cartella `unreal/`).
 
 ## Giocare l'anteprima
@@ -53,7 +53,7 @@ Le novità di ogni versione e le istruzioni per il primo avvio (Mac non firmato,
 - **Valle Verzasca com'è davvero**: rustici di sasso con i tetti in piode, ruderi, la **diga di Contra** con il Lago di Vogorno pieno, stradine a una corsia con muretti di sasso, acciottolato nei nuclei, paravalanghe.
 - **Valle Verzasca**: la strada della valle da Gordola e dalla diga della Verzasca a Vogorno, Corippo, Lavertezzo, Brione, Gerra, Frasco e Sonogno, con Mergoscia e le strade laterali; entrando nella valle compare il suo nome.
 
-Non ci sono ancora: avversari, multiplayer, il resto del Ticino (l'angolo di Leventina che entra nel rettangolo della mappa è solo paesaggio, senza strade).
+Non ci sono ancora: avversari, multiplayer, un mondo unico senza il breve caricamento al passaggio tra regioni. Dettagli e limiti della copertura del cantone: [`docs/anteprima/ticino/REPORT_TICINO_0.16.0.md`](docs/anteprima/ticino/REPORT_TICINO_0.16.0.md).
 
 ## Struttura della repository
 

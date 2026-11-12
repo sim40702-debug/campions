@@ -3,7 +3,25 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.5) – mappa fluida e caricamento più corto
+### Novità di questa versione (0.16.0) – Tutto il Ticino con la grafica nuova
+
+Questa versione unisce il **Ticino completo** (19 regioni da 24 × 24 km, tutto il cantone) con il lavoro grafico delle fasi 2–4 fatto a Locarno. Tutto viene dagli stessi dati veri (swisstopo, OpenStreetMap): non ci sono dati inventati.
+
+**Dal lavoro grafico (fasi 2–4), ora in ogni regione**
+- **Incroci veri e rotonde** calcolati dalle strade di OpenStreetMap, raccordi circolari, linee di STOP e di precedenza, frecce di corsia dove OpenStreetMap ha `turn:lanes`, asfalto con usura, toppe, tombini più chiari.
+- **Foto aeree di dettaglio a 0,5 m** vicino alla moto (profili Media, Alta, Ultra), con dissolvenza dolce sulla foto a 2 m. Per le regioni scaricate sono un **pacchetto facoltativo** (da circa 20 a 250 MB a regione): il gioco parte subito con la foto a 2 m, scarica il pacchetto **in secondo piano** e aggiunge il dettaglio quando è pronto. Senza internet o senza pacchetto non cambia nient'altro. La regione di Locarno ha già il dettaglio nell'app.
+- **Foto a 2 m caricate per profilo**: il raggio dipende dalla qualità (Bassa 3 km, Media 4,5 km, Alta 6 km, Ultra 8 km) e le foto lontane si tolgono, così la memoria della scheda video non cresce con la grandezza della regione.
+- **Ombre stabili**, erba e vegetazione bassa, banchine e cemento dei ponti, atmosfera e fogliame degli alberi.
+
+**Novità di questa unione**
+- Le regioni scaricate hanno lo stesso pacchetto HD opzionale della regione di Locarno (`hd_R_xxxx_yyyy`), preparato dal passo 9 (ora in parallelo, solo nel cuore della regione più 2 km).
+- Nuovi controlli automatici di tutto il cantone (`tools/geo/verifica_cantone.py`): copertura, cuciture del terreno e delle strade tra regioni vicine, foto complete.
+
+**Da sapere**
+- **Non provato su un Mac o un PC veri**: tutte le misure sono state fatte con grafica software (senza scheda video). I valori di memoria video sono stime di calcolo, non misure.
+- Ponti e gallerie lunghi che attraversano il bordo di una regione hanno quote diverse nelle due regioni (fino a 50 m nella galleria del San Gottardo); passando da una regione all'altra la moto si rimette sulla strada della regione nuova. Dettagli: `docs/anteprima/ticino/REPORT_TICINO_0.16.0.md`.
+
+### Novità della 0.15.5 – mappa fluida e caricamento più corto
 
 - **Mappa grande (tasto N) fluida**: la mappa si disegna una volta su un'immagine più grande dello schermo e mentre la trascini o fai zoom si sposta solo quella; prima a ogni movimento del mouse venivano ridisegnate tutte le strade e le case della regione.
 - **Con una mappa aperta (N o K) il mondo 3D dietro non viene più disegnato**: tutta la potenza va alla mappa.
