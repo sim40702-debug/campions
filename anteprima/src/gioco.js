@@ -20,6 +20,7 @@ import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 import { creaPostprocesso } from "./postprocesso.js";
 import { caricaFotoHD, uniformiHD } from "./terreno_hd.js";
+import { creaErba, aggiornaErba } from "./erba.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
 const VERSIONE = "0.15.3";
@@ -342,6 +343,7 @@ async function avvia() {
     const mappa = preparaMinimappa({ usoSuolo: usoSuolo, strade: strade, terreno: terreno, localita: dettagli.localita, trasporti: trasporti, edifici: edifici, luoghi: luoghi, acqua: acquaDati, ambiente: ambiente, zone: zone });
 
     await mostraStato("Preparazione dei boschi e del verde urbano...");
+    const erba = creaErba(scena, terreno, strade, edifici, ambiente);
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli(), { luoghi: luoghi, ambiente: ambiente });
 
     await caricaModelli3D(function (nome) {
@@ -361,7 +363,7 @@ async function avvia() {
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
+    const mondo = { erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     const bench = creaBenchmark({
@@ -387,6 +389,7 @@ async function avvia() {
     };
     window.__mrw.moto = moto;
     window.__mrw.dettagli = dettagli;
+    window.__mrw.erba = erba;
     window.__mrw.fotoHD = uniformiHD;
     window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
     window.__mrw.terreno = terreno;
@@ -457,6 +460,7 @@ async function avvia() {
       } else {
         aggiornaMoto(moto, tasti, dt, terreno, strade, edifici);
         aggiornaAlberi(alberi, moto.x, moto.z, dt);
+        aggiornaErba(erba, moto.x, moto.z, dt);
         aggiornaTerreno(terrenoMesh, moto.x, moto.z, vero);
         aggiornaTelecamera(moto, terreno, edifici, dt);
       }
@@ -465,7 +469,7 @@ async function avvia() {
       ambiente.sottoCopertura += ((moto.inGalleria ? 1 : 0) - ambiente.sottoCopertura) * Math.min(1, vero * 4);
       aggiornaAmbiente(ambiente, vero, telecamera.position);
       precipitazioni.aggiorna(telecamera, window.innerHeight * disegnatore.getPixelRatio());
-      posizionaLuce(ambiente, moto.x, moto.y, moto.z);
+      posizionaLuce(ambiente, moto.x, moto.y, moto.z, -Math.sin(moto.angolo), -Math.cos(moto.angolo));
       aggiornaRiflessi(false);
       riflessiMoto();
       aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);

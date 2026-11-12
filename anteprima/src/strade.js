@@ -1607,6 +1607,60 @@ function aggiungiMarciapiedi(indice, strada, ctx, g, quotaTerreno) {
   void quotaTerreno;
 }
 
+// Banchina: la fascia di terra e ghiaia (50 cm) tra l'asfalto e il prato dove NON c'e' il marciapiede (strade fuori dal centro).
+// Senza, l'asfalto finisce di colpo sull'erba con un bordo netto; con la banchina il bordo e' consumato e sporco come nella realta'.
+function aggiungiBanchine(indice, strada, ctx, g) {
+  const p = strada.p, punti = p.length / 3;
+  const cum = new Float32Array(punti);
+  for (let i = 1; i < punti; i++) cum[i] = cum[i - 1] + Math.hypot(p[i * 3] - p[(i - 1) * 3], p[i * 3 + 2] - p[(i - 1) * 3 + 2]);
+  const lung = cum[punti - 1];
+  if (lung < 3) return;
+  const n = Math.max(2, Math.round(lung / 3));
+  const camp = [];
+  let seg = 0;
+  for (let k = 0; k <= n; k++) {
+    const s = lung * k / n;
+    while (seg < punti - 2 && cum[seg + 1] < s) seg++;
+    const l = cum[seg + 1] - cum[seg];
+    const t = l > 0 ? Math.min(1, Math.max(0, (s - cum[seg]) / l)) : 0;
+    const dx = p[seg * 3 + 3] - p[seg * 3], dz = p[seg * 3 + 5] - p[seg * 3 + 2];
+    const dl = Math.hypot(dx, dz) || 1;
+    camp.push({
+      x: p[seg * 3] + dx * t, y: p[seg * 3 + 1] + (p[seg * 3 + 4] - p[seg * 3 + 1]) * t, z: p[seg * 3 + 2] + dz * t,
+      nx: -dz / dl, nz: dx / dl, w: larghezzaIn(strada, seg) + (larghezzaIn(strada, seg + 1) - larghezzaIn(strada, seg)) * t
+    });
+  }
+  for (const lato of [-1, 1]) {
+    const ok = camp.map(function (c) {
+      const mezza = c.w / 2;
+      const px = c.x + c.nx * lato * (mezza + 0.4), pz = c.z + c.nz * lato * (mezza + 0.4);
+      // dove c'e' il marciapiede (zona abitata e tipo di strada) la banchina non serve
+      if (ctx.edifici && TIPI_CON_MARCIAPIEDE.includes(strada.t) && zonaQuiLocale(ctx.edifici, c.x, c.z) >= 0.07) return false;
+      if (copertoDaAltra(ctx.stradeDati, px, pz, indice, 0.8)) return false;
+      if (ctx.dentro && ctx.dentro(px, pz, c.y + 1)) return false;
+      return true;
+    });
+    for (let k = 0; k < camp.length - 1; k++) {
+      if (!ok[k] || !ok[k + 1]) continue;
+      const a = camp[k], b = camp[k + 1];
+      const base = g.posizioni.length / 3;
+      const i0 = 0.02, e = 0.62;
+      const ya = a.y - 0.012, yb = b.y - 0.012;
+      g.posizioni.push(
+        a.x + a.nx * lato * (a.w / 2 - i0), ya, a.z + a.nz * lato * (a.w / 2 - i0),
+        a.x + a.nx * lato * (a.w / 2 + e), ya - 0.03, a.z + a.nz * lato * (a.w / 2 + e),
+        b.x + b.nx * lato * (b.w / 2 + e), yb - 0.03, b.z + b.nz * lato * (b.w / 2 + e),
+        b.x + b.nx * lato * (b.w / 2 - i0), yb, b.z + b.nz * lato * (b.w / 2 - i0)
+      );
+      g.uv.push(0, k * 3, 1, k * 3, 1, k * 3 + 3, 0, k * 3 + 3);
+      // colore: terra chiara al bordo dell'asfalto, un po' piu' scura e verde verso il prato
+      const v = 0.8 + ((indice * 31 + k * 7) % 10) * 0.012;
+      g.colori.push(0.58 * v, 0.53 * v, 0.44 * v, 0.46 * v, 0.46 * v, 0.34 * v, 0.46 * v, 0.46 * v, 0.34 * v, 0.58 * v, 0.53 * v, 0.44 * v);
+      g.indici.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+  }
+}
+
 function direzioneLocale(a, b) {
   let dx = b[0] - a[0], dz = b[2] - a[2];
   const l = Math.hypot(dx, dz) || 1;
@@ -1737,6 +1791,10 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     map: texturaMarciapiede(anisotropia), roughness: 0.9, vertexColors: true,
     polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, side: THREE.DoubleSide
   });
+  const banchinaMateriale = new THREE.MeshStandardMaterial({
+    vertexColors: true, roughness: 0.97, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, side: THREE.DoubleSide
+  });
+  aggiungiDettaglio(banchinaMateriale, { macchie: 0.35, grana: 0.35, rugosita: 0.1, rilievo: 0.04, scalaRilievo: 7, nome: "banchina" });
   const righeMateriale = new THREE.MeshStandardMaterial({
     color: 0xf2f2ee, roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide
   });
@@ -1777,7 +1835,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     const k = Math.floor(x / 1000) + "," + Math.floor(z / 1000);
     let v = gruppi.get(k);
     if (!v) {
-      v = { asfalto: nuovoNastro(), gallerie: nuovoNastro(), righe: { posizioni: [], indici: [] }, marciapiedi: nuovoNastro() };
+      v = { asfalto: nuovoNastro(), gallerie: nuovoNastro(), righe: { posizioni: [], indici: [] }, marciapiedi: nuovoNastro(), banchine: nuovoNastro() };
       gruppi.set(k, v);
     }
     return v;
@@ -1830,6 +1888,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     if (marciapiedi && !strada.g && !strada.b && strada.w >= 4 && TIPI_CON_MARCIAPIEDE.includes(strada.t)) {
       aggiungiMarciapiedi(indice, strada, ctx, gruppo.marciapiedi, terreno);
     }
+    if (marciapiedi && !strada.g && !strada.b && !stradaVeloce(strada) && strada.w >= 3) aggiungiBanchine(indice, strada, ctx, gruppo.banchine);
   }
   if (marciapiedi || true) {
     strade.incroci2 = costruisciIncroci(incrociDati, {
@@ -1849,7 +1908,14 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     if (strada.tf || strada.tb) frecce += frecceStrada(gruppoIn(strada.p[0], strada.p[2]).righe, strada, indice, strade.tagli.get(indice));
   });
   if (strade.incroci2) strade.incroci2.frecce = frecce;
-  scena.add(creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0));
+  {
+    // parapetti dei ponti: cemento con macchie e grana (non piu' una superficie liscia)
+    const parap = creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0);
+    parap.material.dispose();
+    parap.material = new THREE.MeshStandardMaterial({ color: 0xaaa79e, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
+    aggiungiDettaglio(parap.material, { macchie: 0.35, grana: 0.28, rugosita: 0.15, rilievo: 0.03, scalaRilievo: 6, nome: "parapetto" });
+    scena.add(parap);
+  }
   scena.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
   if (muri.posizioni.length > 0) {
     const muro = creaMesh(muri.posizioni, muri.indici, 0x9a968d, 0);
@@ -1903,7 +1969,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   aggiungiBarriere(strade.barriere, scena);
 
   for (const g of gruppi.values()) {
-    for (const [dati, materiale, ricevi] of [[g.asfalto, asfaltoMateriale, true], [g.gallerie, galleriaMateriale, true], [g.marciapiedi, marciapiedeMateriale, true], [g.righe, righeMateriale, true]]) {
+    for (const [dati, materiale, ricevi] of [[g.asfalto, asfaltoMateriale, true], [g.gallerie, galleriaMateriale, true], [g.marciapiedi, marciapiedeMateriale, true], [g.banchine, banchinaMateriale, true], [g.righe, righeMateriale, true]]) {
       const mesh = meshDa(dati, materiale, ricevi);
       if (mesh) scena.add(mesh);
     }

@@ -12,10 +12,10 @@ const b = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-un
 const centro = JSON.parse(fs.readFileSync(path.join(radice, "dati/terreno.json"), "utf8")).centro_lv95;
 const risultati = [];
 for (const voce of process.argv.slice(4)) {
-  const [x, z, ora, nome] = voce.split(",");
+  const [x, z, ora, nome, meteo] = voce.split(",");
   const p = await b.newPage({ viewport: { width: 800, height: 450 } });
   p.setDefaultTimeout(600000);
-  await p.addInitScript(([x, z, q, o, c]) => { localStorage.setItem("mrw-partenza", JSON.stringify({ x: +x, z: +z, nome: "m", est: c[0] + +x, nord: c[1] - +z })); localStorage.setItem("mrw-qualita", q); localStorage.setItem("mrw-ora", o); localStorage.setItem("mrw-meteo", "sereno"); }, [x, z, qualita, ora, centro]);
+  await p.addInitScript(([x, z, q, o, c, m]) => { localStorage.setItem("mrw-partenza", JSON.stringify({ x: +x, z: +z, nome: "m", est: c[0] + +x, nord: c[1] - +z })); localStorage.setItem("mrw-qualita", q); localStorage.setItem("mrw-ora", o); localStorage.setItem("mrw-meteo", m || "sereno"); }, [x, z, qualita, ora, centro, meteo]);
   await p.goto("http://localhost:" + server.address().port + "/index.html");
   await p.waitForFunction(() => document.getElementById("caricamento").style.display === "none");
   await p.waitForFunction(() => window.__mrw && window.__mrw.fotogrammi > 10);

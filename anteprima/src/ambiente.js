@@ -344,11 +344,25 @@ export function aggiornaAmbiente(amb, dt, posizioneCamera) {
   for (const f of amb.osservatori) f(amb);
 }
 
-// Ombre che seguono la moto (il sole sta sulla direzione della luce)
-export function posizionaLuce(amb, x, y, z) {
+// Ombre che seguono la moto (il sole sta sulla direzione della luce).
+// Due accorgimenti per le ombre mentre si guida:
+//  1) il rettangolo delle ombre e' spostato AVANTI (verso dove guarda la moto), perche' la strada davanti conta piu' di quella dietro;
+//  2) il centro si aggancia alla griglia dei pixel della mappa delle ombre (nello spazio della luce): senza questo i bordi
+//     delle ombre "brulicano" a ogni movimento (shadow shimmering).
+const _r = new THREE.Vector3(), _u = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _p = new THREE.Vector3();
+export function posizionaLuce(amb, x, y, z, avantiX, avantiZ) {
   const d = amb.direzioneLuce;
-  amb.sole.target.position.set(x, y, z);
-  amb.sole.position.set(x + d.x * 120, y + d.y * 120, z + d.z * 120);
+  const area = amb.sole.shadow.camera.right || 40;
+  const cx = x + (avantiX || 0) * area * 0.32, cz = z + (avantiZ || 0) * area * 0.32;
+  _r.crossVectors(_up, d).normalize();
+  _u.crossVectors(d, _r).normalize();
+  const texel = 2 * area / Math.max(1, amb.sole.shadow.mapSize.x);
+  _p.set(cx, y, cz);
+  const pr = _p.dot(_r), pu = _p.dot(_u);
+  const sr = Math.round(pr / texel) * texel, su = Math.round(pu / texel) * texel;
+  _p.addScaledVector(_r, sr - pr).addScaledVector(_u, su - pu);
+  amb.sole.target.position.copy(_p);
+  amb.sole.position.set(_p.x + d.x * 120, _p.y + d.y * 120, _p.z + d.z * 120);
 }
 
 export function impostaOra(amb, ora) {

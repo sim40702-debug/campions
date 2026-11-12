@@ -2,6 +2,7 @@
 // Il terreno si vede solo da sopra: dentro la montagna si vede solo il tubo della galleria.
 
 import * as THREE from "three";
+import { aggiungiDettaglio } from "./superfici.js";
 import { quotaTerreno, dentroArea } from "./terreno.js";
 
 const ALTEZZA_GALLERIA = 5;
@@ -146,9 +147,10 @@ export function aggiungiOpere(strade, scena, terreno) {
     }
   }
 
-  const cemento = new THREE.MeshLambertMaterial({ color: 0x8e8d87, side: THREE.DoubleSide });
-  const cementoChiaro = new THREE.MeshLambertMaterial({ color: 0xb3b0a8, side: THREE.DoubleSide });
-  const cementoInterno = new THREE.MeshLambertMaterial({ color: 0x7a7974, emissive: 0x24241f, side: THREE.DoubleSide });   // un po' di luce propria: dentro non e' nero pece
+  // cemento vero: macchie di colore, grana, rilievo e una patina piu' scura (gallerie, portali, cornici, pile dei ponti)
+  const cemento = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0x9a988f, roughness: 0.94, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.42, grana: 0.3, rugosita: 0.18, rilievo: 0.045, scalaRilievo: 5, nome: "portali" });
+  const cementoChiaro = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0xbab7ae, roughness: 0.9, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.3, grana: 0.22, rugosita: 0.15, rilievo: 0.03, scalaRilievo: 6, nome: "cornici" });
+  const cementoInterno = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0x7e7d78, emissive: 0x24241f, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.35, grana: 0.25, rugosita: 0.1, rilievo: 0.03, scalaRilievo: 5, nome: "galleria_int" });   // un po' di luce propria: dentro non e' nero pesto
   for (const [posizioni, materiale] of [[tubo, cementoInterno], [portali, cemento], [cornici, cementoChiaro]]) {
     if (posizioni.length === 0) continue;
     const geometria = new THREE.BufferGeometry();
