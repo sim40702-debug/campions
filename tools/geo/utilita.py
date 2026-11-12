@@ -190,7 +190,8 @@ def chiedi_overpass(query, percorso):
     for giro in range(1, 4):
         for indirizzo in server:
             try:
-                risposta = requests.post(indirizzo, data={"data": query}, timeout=900,
+                print("  chiedo a " + indirizzo.split("/")[2] + "...", flush=True)
+                risposta = requests.post(indirizzo, data={"data": query}, timeout=(20, config.OVERPASS_ATTESA_S),
                                          headers={"User-Agent": config.NOME_PROGRAMMA})
                 if risposta.status_code != 200:
                     print("  " + indirizzo.split("/")[2] + " risponde " + str(risposta.status_code) + ", provo un altro server")
