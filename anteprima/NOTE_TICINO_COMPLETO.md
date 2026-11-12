@@ -7,4 +7,10 @@ Non sostituisce l'anteprima normale: si installa accanto, con un altro nome ("MR
 - Passando da una regione all'altra c'è un breve caricamento.
 - Lo stato vero di ogni regione (completa o no) è scritto in `stato.json` nella pre-release `ticino-completo-dati`.
 
+### Novità della 0.16.0-ticino.2
+
+- **Molta meno memoria**: edifici e strade si costruiscono solo vicino alla moto e si tolgono quando sono lontani. Nel Mendrisiotto il gioco usava 2,5 GB (e poteva chiudersi caricando): ora circa 570 MB.
+- Provata la partenza e la guida in tutte le 19 regioni con i dati veri (Chiasso, Lugano, Bellinzona, Biasca, Airolo, Olivone, Bosco Gurin, Sonogno...): vedi `docs/sprint-T1/SPRINT_REPORT.md`.
+- Non ancora provata su un Mac o un PC veri.
+
 Dati: © OpenStreetMap contributors (ODbL) · Ufficio federale di topografia swisstopo (swissALTI3D, SWISSIMAGE).

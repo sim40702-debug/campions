@@ -1,7 +1,7 @@
 {
   "name": "moto-racing-world-anteprima-ticino",
   "productName": "MOTO RACING WORLD - Ticino completo",
-  "version": "0.16.0-ticino.1",
+  "version": "0.16.0-ticino.2",
   "description": "Tutto il Canton Ticino a regioni (branch feature/ticino-completo) con dati swisstopo e OpenStreetMap",
   "main": "main.js",
   "author": "Simone",

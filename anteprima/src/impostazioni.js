@@ -6,6 +6,7 @@
 import { impostaAlberi } from "./alberi.js";
 import { impostaDettaglioTerreno } from "./terreno.js";
 import { impostaEdifici } from "./edifici.js";
+import { impostaStrade } from "./strade.js";
 import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, impostaMeteoRealistico, testoOra, descrizioneMomento } from "./ambiente.js";
 
 // pixel = rapporto di pixel; raggioAlberi/densitaAlberi = boschi; visibilita = fino a dove si vede (m);
@@ -94,6 +95,8 @@ export function applicaQualita(chiave, mondo) {
   mondo.ambiente.qualitaNuvole = q.nuvole && preferenze.nuvole;
   if (mondo.precipitazioni) mondo.precipitazioni.imposta(q.gocce);
   impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta, q.areaOmbre);
+  // le strade si disegnano fino a poco piu' di meta' della visibilita' (oltre sono un filo e c'e' la foschia)
+  if (mondo.strade) impostaStrade(mondo.strade, q.visibilita * 0.55);
   impostaAlberi(mondo.alberi, q.raggioAlberi, q.densitaAlberi);
   impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno, q.visibilita);
   salvaQualita(chiave);

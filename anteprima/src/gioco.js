@@ -6,20 +6,20 @@ import { Sky } from "three/addons/objects/Sky.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { caricaModelli3D } from "./modelli3d.js";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
-import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino } from "./strade.js";
+import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino, preparaStradeVicine, aggiornaStrade } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
 import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
-import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
+import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, preparaEdificiVicini, dentroEdificio } from "./edifici.js";
 import { creaLuoghi } from "./luoghi.js";
 import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.15.2";
+const VERSIONE = "0.16.0-ticino.2";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -315,6 +315,13 @@ async function avvia() {
     aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, terreno: terreno, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
     aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
     aggiungiOpere(strade, scena, terreno);
+    // Terreno, strade ed edifici si costruiscono a pezzi vicino alla moto: dopo uno spostamento improvviso
+    // (partenza, tasto R, scelta sulla mappa) si prepara subito quello che sta attorno al punto di arrivo
+    const preparaVicinanze = function (x, z) {
+      preparaTerrenoVicino(terrenoMesh, x, z);
+      preparaStradeVicine(strade, x, z, 1500);
+      preparaEdificiVicini(edifici, x, z, 1200);
+    };
     aggiungiDighe(await caricaDighe(), scena, terreno);   // la diga della Verzasca
 
     await mostraStato("Treni, funicolari e teleferiche...");
@@ -362,17 +369,17 @@ async function avvia() {
       }
     }
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
-    preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
+    preparaVicinanze(moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni };
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, strade: strade, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     const bench = creaBenchmark({
       disegnatore: disegnatore, telecamera: telecamera, moto: moto, ambiente: ambiente, edifici: edifici, luoghi: luoghi,
       strade: strade, terreno: terreno, versione: VERSIONE, qualita: qualitaSalvata,
       mettiSullaStrada: function (m, x, z) { mettiSullaStrada(m, strade, x, z); },
-      preparaVicino: function (x, z) { preparaTerrenoVicino(terrenoMesh, x, z); },
+      preparaVicino: function (x, z) { preparaVicinanze(x, z); },
       riflessi: aggiornaRiflessi, alberi: alberi
     });
     window.__mrw = window.__mrw || {};
@@ -387,7 +394,7 @@ async function avvia() {
     window.__mrw.edifici = edifici;
     window.__mrw.vaiA = function (x, z) {
       mettiSullaStrada(moto, strade, x, z);
-      preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
+      preparaVicinanze(moto.x, moto.z);
       telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
     };
     window.__mrw.moto = moto;
@@ -409,7 +416,7 @@ async function avvia() {
     preparaGarage(moto);
     preparaPartenza(moto, mappa, function (m, x, z) {
       mettiSullaStrada(m, strade, x, z);
-      preparaTerrenoVicino(terrenoMesh, m.x, m.z);
+      preparaVicinanze(m.x, m.z);
     });
     aggiornaRiflessi(true);
     // Mappa di tutto il cantone (tasto K o pulsante "Ticino"): scegli una partenza in qualsiasi regione
@@ -472,6 +479,7 @@ async function avvia() {
       posizionaLuce(ambiente, moto.x, moto.y, moto.z);
       aggiornaRiflessi(false);
       aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);
+      aggiornaStrade(strade, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero);
       aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);

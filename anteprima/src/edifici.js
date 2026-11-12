@@ -833,6 +833,12 @@ function tettoADueFalde(gruppi, gruppoTegole, det, e, colMuro, colTetto, seme, r
 }
 
 // Crea tutte le mesh degli edifici. Ritorna l'oggetto da passare a aggiornaEdifici.
+// TICINO COMPLETO: gli edifici NON si costruiscono piu' tutti all'avvio (in una regione come il Mendrisiotto
+// sono 94'000 e riempivano la memoria). Si dividono in pezzi da 500 m e ogni pezzo si costruisce solo quando
+// la moto e' abbastanza vicina; i pezzi lontani si tolgono dalla memoria (anche da quella della scheda video).
+const RAGGIO_COSTRUZIONE_MAX = 6000;   // metri: oltre non si costruisce nemmeno con la vista piu' lunga
+const MARGINE_TOGLI = 1200;            // metri: un pezzo si toglie solo quando e' cosi' tanto oltre il raggio
+
 export function aggiungiEdifici(edifici, scena, contesto) {
   const ctx = {
     edifici: edifici,
@@ -845,20 +851,53 @@ export function aggiungiEdifici(edifici, scena, contesto) {
   analizzaZone(edifici);
   const materiali = creaMateriali(contesto.notte, contesto.anisotropia || 8, contesto.ambiente);
 
-  for (let i = 0; i < edifici.lista.length; i++) {
-    costruisciEdificio(i, edifici.lista[i], ctx);
-  }
-
   const mappaMateriali = {};
   for (const nome of Object.keys(materiali.facciate)) mappaMateriali[nome] = materiali.facciate[nome];
   mappaMateriali.liscio = materiali.liscio;
   mappaMateriali.sasso = materiali.sasso;
   for (const nome of Object.keys(materiali.tetti)) mappaMateriali[nome] = materiali.tetti[nome];
 
-  const pezzi = [];
-  for (const [chiave, gruppi] of ctx.pezzi) {
-    const [px, pz] = chiave.split(",").map(Number);
-    const sistema = new THREE.Group();
+  // quali edifici stanno in ogni pezzo da 500 m (solo i numeri: costa pochissimo)
+  const daFare = new Map();
+  for (let i = 0; i < edifici.lista.length; i++) {
+    const e = edifici.lista[i];
+    if (e.p.length < 6) continue;
+    const chiave = Math.floor(e.cx / PEZZO) + "," + Math.floor(e.cz / PEZZO);
+    let pezzo = daFare.get(chiave);
+    if (!pezzo) {
+      const [px, pz] = chiave.split(",").map(Number);
+      pezzo = { indici: [], x: (px + 0.5) * PEZZO, z: (pz + 0.5) * PEZZO, gruppo: null, dettagli: [], lavoro: null };
+      daFare.set(chiave, pezzo);
+    }
+    pezzo.indici.push(i);
+  }
+
+  edifici.sistema = {
+    scena: scena, ctx: ctx, materiali: materiali, mappaMateriali: mappaMateriali, daFare: Array.from(daFare.values()),
+    pezzi: [], dettagli: [], raggioVista: 8000, raggioDettaglio: 500, attesa: 0, ombre: true, areaOmbre: 40
+  };
+  return edifici.sistema;
+}
+
+// Costruisce muri, tetti e dettagli di un pezzo da 500 m
+// Il lavoro si puo' fare a rate: ci si ferma quando l'orologio passa "scadenza" e si riprende alla chiamata dopo
+// (cosi' guidando non c'e' mai un fotogramma lungo). Ritorna true quando il pezzo e' finito.
+function costruisciPezzoEdifici(s, pezzo, scadenza) {
+  const ctx = s.ctx;
+  if (!pezzo.lavoro) pezzo.lavoro = { prossimo: 0, pezzi: new Map(), dettagli: new Map() };
+  const lavoro = pezzo.lavoro;
+  ctx.pezzi = lavoro.pezzi;
+  ctx.dettagli = lavoro.dettagli;
+  while (lavoro.prossimo < pezzo.indici.length) {
+    const i = pezzo.indici[lavoro.prossimo];
+    costruisciEdificio(i, ctx.edifici.lista[i], ctx);
+    lavoro.prossimo++;
+    if (performance.now() > scadenza && lavoro.prossimo < pezzo.indici.length) return false;
+  }
+  pezzo.lavoro = null;
+
+  const sistema = new THREE.Group();
+  for (const gruppi of ctx.pezzi.values()) {
     for (const nome of Object.keys(gruppi)) {
       const g = gruppi[nome];
       if (g.posizioni.length === 0) continue;
@@ -870,19 +909,20 @@ export function aggiungiEdifici(edifici, scena, contesto) {
       geometria.computeVertexNormals();
       geometria.computeBoundingSphere();
       liberaDopoCaricamento(geometria);
-      const mesh = new THREE.Mesh(geometria, mappaMateriali[nome]);
+      const mesh = new THREE.Mesh(geometria, s.mappaMateriali[nome]);
       mesh.name = nome;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.matrixAutoUpdate = false;
       sistema.add(mesh);
     }
-    sistema.userData.centro = new THREE.Vector2((px + 0.5) * PEZZO, (pz + 0.5) * PEZZO);
-    scena.add(sistema);
-    pezzi.push(sistema);
   }
+  sistema.userData.centro = new THREE.Vector2(pezzo.x, pezzo.z);
+  s.scena.add(sistema);
+  s.pezzi.push(sistema);
+  pezzo.gruppo = sistema;
 
-  const pezziDettaglio = [];
+  pezzo.dettagli = [];
   for (const [chiave, g] of ctx.dettagli) {
     if (g.posizioni.length === 0) continue;
     const [px, pz] = chiave.split(",").map(Number);
@@ -892,28 +932,84 @@ export function aggiungiEdifici(edifici, scena, contesto) {
     geometria.computeVertexNormals();
     geometria.computeBoundingSphere();
     liberaDopoCaricamento(geometria);
-    const mesh = new THREE.Mesh(geometria, materiali.dettagli);
+    const mesh = new THREE.Mesh(geometria, s.materiali.dettagli);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
     mesh.userData.centro = new THREE.Vector2((px + 0.5) * PEZZO_DET, (pz + 0.5) * PEZZO_DET);
-    scena.add(mesh);
-    pezziDettaglio.push(mesh);
+    mesh.visible = false;   // i dettagli si accendono solo vicino (aggiornaEdifici)
+    s.scena.add(mesh);
+    s.dettagli.push(mesh);
+    pezzo.dettagli.push(mesh);
   }
-
-  edifici.sistema = { pezzi: pezzi, dettagli: pezziDettaglio, raggioVista: 8000, raggioDettaglio: 500, attesa: 0, ombre: true, areaOmbre: 40 };
-  return edifici.sistema;
+  ctx.pezzi = new Map();
+  ctx.dettagli = new Map();
+  return true;
 }
 
-// Ogni tanto: nasconde i pezzi lontani (culling per distanza), mostra i dettagli solo vicino e
-// fa proiettare l'ombra solo ai pezzi che possono cadere nella mappa delle ombre (il resto non costa nulla).
+// Toglie un pezzo lontano: libera la memoria (anche quella della scheda video)
+function togliPezzoEdifici(s, pezzo) {
+  s.scena.remove(pezzo.gruppo);
+  for (const m of pezzo.gruppo.children) m.geometry.dispose();
+  s.pezzi.splice(s.pezzi.indexOf(pezzo.gruppo), 1);
+  for (const m of pezzo.dettagli) {
+    s.scena.remove(m);
+    m.geometry.dispose();
+    s.dettagli.splice(s.dettagli.indexOf(m), 1);
+  }
+  pezzo.gruppo = null;
+  pezzo.dettagli = [];
+}
+
+function raggioCostruzione(s) {
+  return Math.min(s.raggioVista, RAGGIO_COSTRUZIONE_MAX) + PEZZO;
+}
+
+// Costruisce i pezzi entro "raggio" metri (dal piu' vicino), per al massimo "millisecondi"; toglie quelli lontani.
+// Ritorna quanti pezzi restano da costruire entro il raggio.
+function costruisciVicini(s, x, z, raggio, millisecondi) {
+  const scadenza = performance.now() + millisecondi;
+  const vicini = [];
+  for (const pezzo of s.daFare) {
+    const d = Math.hypot(pezzo.x - x, pezzo.z - z);
+    if (pezzo.gruppo === null) {
+      // un pezzo cominciato si finisce per primo (distanza -1)
+      if (d < raggio) vicini.push([pezzo.lavoro ? -1 : d, pezzo]);
+      else if (pezzo.lavoro) pezzo.lavoro = null;   // cominciato ma ormai lontano: si lascia perdere
+    } else if (d > raggioCostruzione(s) + MARGINE_TOGLI) {
+      togliPezzoEdifici(s, pezzo);
+    }
+  }
+  vicini.sort(function (a, b) { return a[0] - b[0]; });
+  let fatti = 0;
+  for (const voce of vicini) {
+    if (!costruisciPezzoEdifici(s, voce[1], scadenza)) break;
+    fatti++;
+    if (performance.now() > scadenza) break;
+  }
+  return vicini.length - fatti;
+}
+
+// All'avvio e dopo uno spostamento improvviso (partenza, tasto R): tutto quello che sta entro "raggio" metri, subito
+export function preparaEdificiVicini(edifici, x, z, raggio) {
+  const s = edifici.sistema;
+  if (!s) return;
+  costruisciVicini(s, x, z, Math.min(raggio, raggioCostruzione(s)), Infinity);
+  s.attesa = 0;
+}
+
+// Ogni tanto: costruisce un pezzo vicino che manca, toglie quelli lontani, nasconde i pezzi fuori dalla vista
+// (culling per distanza), mostra i dettagli solo vicino e fa proiettare l'ombra solo ai pezzi che possono cadere
+// nella mappa delle ombre (il resto non costa nulla).
 // Anche i particolari piccoli (zoccoli, cornicioni, vetrine) spariscono oltre 1.4 km: da lontano non si distinguono.
 export function aggiornaEdifici(edifici, x, z, dt) {
   const s = edifici.sistema;
   if (!s) return;
   s.attesa -= dt;
   if (s.attesa > 0) return;
-  s.attesa = 0.3;
+  // pochi millisecondi alla volta: guidando non si deve sentire. Se ne mancano ancora si riprova subito.
+  const mancano = costruisciVicini(s, x, z, raggioCostruzione(s), 4);
+  s.attesa = mancano > 0 ? 0 : 0.3;
   const raggioOmbra = s.areaOmbre + 380;   // 380 m = mezza diagonale di un pezzo da 500 m
   for (const g of s.pezzi) {
     const d = Math.hypot(g.userData.centro.x - x, g.userData.centro.y - z);
