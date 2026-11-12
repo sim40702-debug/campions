@@ -1,0 +1,62 @@
+[
+ {
+  "id": "R_2712_1074",
+  "ok": true,
+  "caricamento_s": 53.6,
+  "strade": 16936,
+  "edifici": 90881,
+  "motoSuStrada": true,
+  "motoNaN": false,
+  "quota": 326,
+  "nomeStrada": "Via Vignalunga",
+  "sagome": null,
+  "heapMB": 601,
+  "chiamate": 1285,
+  "triangoli": 3729897,
+  "texture": 92,
+  "geometrie": 336,
+  "fotogrammi": 13,
+  "centro": [
+   2720000,
+   1082000
+  ],
+  "errori": [],
+  "richiesteFallite": [
+   "404 dati/foto/foto_x2_y4.jpg",
+   "404 dati/foto/foto_x2_y5.jpg",
+   "404 dati/foto/foto_x2_y6.jpg",
+   "404 dati/foto/foto_x3_y6.jpg",
+   "404 dati/foto/foto_x2_y7.jpg"
+  ]
+ },
+ {
+  "id": "R_2712_1090",
+  "ok": true,
+  "caricamento_s": 34.1,
+  "strade": 8481,
+  "edifici": 66957,
+  "motoSuStrada": true,
+  "motoNaN": false,
+  "quota": 638,
+  "nomeStrada": "Ul Praa Lungh",
+  "sagome": null,
+  "heapMB": 478,
+  "chiamate": 2229,
+  "triangoli": 3580267,
+  "texture": 137,
+  "geometrie": 556,
+  "fotogrammi": 18,
+  "centro": [
+   2720000,
+   1098000
+  ],
+  "errori": [],
+  "richiesteFallite": [
+   "404 dati/foto/foto_x8_y4.jpg",
+   "404 dati/foto/foto_x9_y4.jpg",
+   "404 dati/foto/foto_x8_y5.jpg",
+   "404 dati/foto/foto_x9_y5.jpg",
+   "404 dati/foto/foto_x8_y6.jpg"
+  ]
+ }
+]

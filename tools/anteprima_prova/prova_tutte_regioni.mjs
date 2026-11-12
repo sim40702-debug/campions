@@ -23,7 +23,7 @@ const server = http.createServer((q, s) => {
     s.writeHead(200, { "Content-Type": TIPI[path.extname(f)] || "application/octet-stream" }); s.end(d);
   });
 }).listen(0);
-const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info"] });
+const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info", "--js-flags=--expose-gc"] });   // expose-gc: con FORZA_GC=1 si libera la spazzatura prima di misurare la memoria JS
 const risultati = [];
 for (const id of regioni) {
   attuale = id;
@@ -41,13 +41,14 @@ for (const id of regioni) {
     await p.waitForFunction(() => document.getElementById("caricamento").style.display === "none");
     const caricamentoS = (Date.now() - t0) / 1000;
     await p.waitForFunction(() => window.__mrw && window.__mrw.strade && window.__mrw.fotogrammi > 4);
-    const dati = await p.evaluate(async () => {
+    const dati = await p.evaluate(async (FORZA_GC) => {
       const m = window.__mrw;
       m.moto.velocita = 0;
       window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowUp", key: "ArrowUp" }));
       const f0 = m.fotogrammi;
       await new Promise((r) => { const t = setInterval(() => { if (m.fotogrammi > f0 + 6) { clearInterval(t); r(); } }, 200); });
       window.dispatchEvent(new KeyboardEvent("keyup", { code: "ArrowUp", key: "ArrowUp" }));
+      if (window.gc && FORZA_GC) { window.gc(); await new Promise((r) => setTimeout(r, 500)); window.gc(); }
       const i = m.disegnatore.info;
       const nan = [m.moto.x, m.moto.y, m.moto.z].some((v) => !Number.isFinite(v));
       return {
@@ -57,7 +58,7 @@ for (const id of regioni) {
         chiamate: i.render.calls, triangoli: i.render.triangles, texture: i.memory.textures, geometrie: i.memory.geometries,
         fotogrammi: m.fotogrammi, centro: m.terreno.info.centro_lv95
       };
-    });
+    }, process.env.FORZA_GC === "1");
     esito = { id, ok: errori.length === 0 && !dati.motoNaN && dati.fotogrammi > 6, caricamento_s: +caricamentoS.toFixed(1), ...dati, errori: errori.slice(0, 3), richiesteFallite: Array.from(new Set(mancanti)).slice(0, 5) };
   } catch (e) {
     esito = { id, ok: false, errore: e.message.slice(0, 200), errori: errori.slice(0, 3) };

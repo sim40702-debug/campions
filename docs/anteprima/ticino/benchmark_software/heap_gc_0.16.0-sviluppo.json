@@ -1,0 +1,50 @@
+[
+ {
+  "id": "R_2712_1074",
+  "ok": true,
+  "caricamento_s": 63.4,
+  "strade": 16936,
+  "edifici": 90881,
+  "motoSuStrada": true,
+  "motoNaN": false,
+  "quota": 326,
+  "nomeStrada": "Via Vignalunga",
+  "sagome": 57,
+  "heapMB": 755,
+  "chiamate": 1374,
+  "triangoli": 3856023,
+  "texture": 96,
+  "geometrie": 352,
+  "fotogrammi": 14,
+  "centro": [
+   2720000,
+   1082000
+  ],
+  "errori": [],
+  "richiesteFallite": []
+ },
+ {
+  "id": "R_2712_1090",
+  "ok": true,
+  "caricamento_s": 37.5,
+  "strade": 8481,
+  "edifici": 66957,
+  "motoSuStrada": true,
+  "motoNaN": false,
+  "quota": 638,
+  "nomeStrada": "Ul Praa Lungh",
+  "sagome": 48,
+  "heapMB": 577,
+  "chiamate": 2304,
+  "triangoli": 3742455,
+  "texture": 127,
+  "geometrie": 575,
+  "fotogrammi": 17,
+  "centro": [
+   2720000,
+   1098000
+  ],
+  "errori": [],
+  "richiesteFallite": []
+ }
+]

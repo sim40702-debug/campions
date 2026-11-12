@@ -1,64 +1,80 @@
-# Ticino completo + Fase 4 → 0.16.0 (in preparazione, NON pubblicata)
+# Ticino completo + Fasi 2–4 → 0.16.0: report di validazione
 
-Ramo `claude/brave-turing-mztbtd`. Nessun push, tag o release fatto in questa attività.
-**Tutte le misure sono senza scheda video** (grafica software SwiftShader): gli FPS non dicono nulla di un PC o Mac vero. Nessuna prova su Mac/Windows veri.
+**La 0.16.0 NON è pubblicata e NON è dichiarata completa.** Nessun tag, nessuna GitHub Release. Tutte le misure sono in **grafica software** (CPU, SwiftShader): gli FPS non dicono nulla di un PC o Mac vero. Nessuna prova su GPU hardware, su Windows o su Mac.
 
-## 1. Il lavoro dei collaboratori (trovato)
-Era già su `origin/main` (0.15.5) e nel ramo `feature/ticino-completo`, autori Simone e nathansalvade:
-- **Valle Verzasca** (0.15.0–0.15.2): rustici in sasso, diga di Contra, strade/ponti/muri secondo OSM, area 16×32 km.
-- **Ticino completo** (0.15.3–0.15.5, sprint T1): `tools/geo/cantone.py`, `src/regioni.js`, `regioni_main.js`, `src/cantone.js`, `src/sfondo.js`; edifici e strade costruiti a pezzi vicino alla moto (BUG-009); mappa del cantone (tasto K); montagne lontane.
-- **Dati veri** nella pre-release `ticino-completo-dati`: 19 regioni da 24×24 km (cuore 16 km + 4 km di margine), 1,93 GB, terreno swissALTI3D (griglia 3,94 m), foto SWISSIMAGE a 2 m, strade/edifici/laghi/fiumi OSM (ODbL). Nessun dato sintetico.
+Legenda: **[M]** misurato qui · **[S]** stima di calcolo · **[–]** non fatto/non misurato.
 
-## 2. Analisi tecnica (misurata da me, `tools/geo/verifica_cantone.py`, risultati in `verifica_cantone.json`)
-Scaricate e controllate tutte le 19 regioni.
-| Controllo | Esito |
+## 1. Attività completate
+| Attività | Dove |
 |---|---|
-| 19 regioni presenti, file completi, `terreno.bin` della grandezza giusta, foto 2 m di ogni pezzo che tocca il cantone | OK |
-| Area del confine (griglia 100 m) | 2 814,9 km² (dichiarati 2 812,2) |
-| Punti del cantone senza terreno vero / senza foto 2 m | 0 / 0 |
-| Punti fuori da ogni cuore | 1 cella da 100 m (E 2728050, N 1084550), dentro l'area di una regione: il gioco usa il margine, non è un buco |
-| Cuciture del terreno (50 coppie, 639 485 punti, esclusi 300 m dal bordo) | media 0,008 m, 99,9 % sotto 0,5 m, max 1,4 m |
-| Cuciture delle strade: punti in comune | 100 % (1 578 057 punti) alla stessa posizione |
-| Quota delle strade normali nei punti in comune | media 0,005 m, 99,9 % sotto 0,46 m, max 7,3 m |
-| Edifici nella sovrapposizione | 255 722 / 255 721 |
-| **Limite noto**: ponti e gallerie lunghi tagliati dal bordo regione | 3 561 punti su 47 252 con scarto > 1 m, fino a 52,8 m (tunnel del San Gottardo, gallerie Verzasca). Causa: la quota è interpolata sulla parte di opera dentro la regione. Non corretto (richiede di rifare il passo 7 su tutte le regioni). Al passaggio la moto si rimette sulla strada della regione nuova. |
+| Merge di `main` (0.15.5, Ticino completo dei collaboratori) con le Fasi 2–4, conflitti risolti | commit `cf615ea`, `016050f` (storia riscritta dai metadati, vedi 7) |
+| Foto HD 0,5 m per regione: `passo9` regionale e parallelo, pacchetto `hd_<regione>` facoltativo, download in secondo piano nel gioco | `tools/geo/passo9_foto_dettaglio.py`, `cantone.py`, `anteprima/regioni_main.js`, `regioni.js` |
+| Tasselli HD generati con dati veri per tutte le 19 regioni (7 296 tasselli, 2,1 GB) **solo locali, non caricati** | – |
+| Riconciliazione globale delle quote di ponti e gallerie tra regioni | `tools/geo/riconcilia_opere.py` (+ passo nel workflow) |
+| LOD lontano: sagome delle città e strade principali tra i dettagli e la nebbia | `anteprima/src/lontano.js`, profili in `impostazioni.js` |
+| Download dei pacchetti con **ripresa** (HTTP Range) e controllo di integrità | `anteprima/regioni_main.js` |
+| Verifica automatica di tutto il cantone | `tools/geo/verifica_cantone.py` |
+| Analisi pacchetti HD, procedura per il PC Windows | `ANALISI_PACCHETTI_HD.md`, `PROVA_WINDOWS_GPU.md` |
+| Workflow dati e release aggiornati (**non eseguiti**) | `.github/workflows/` |
 
-## 3. Cosa è stato integrato/modificato
-- Merge di `main` (0.15.5) nel ramo Fasi 2–4: conflitti risolti in `NOTE_RELEASE.md`, `package.json`, `gioco.js`, `interfaccia.js`, `opere.js`, `strade.js`, `stile.css` (commit `fe83593`, `a11eb64`). Mantenute le funzioni di entrambe le parti (tombini Fase 4 dentro la costruzione a pezzi di T1).
-- **Foto HD 0,5 m per regione**: `passo9_foto_dettaglio.py` ora accetta `MRW_CARTELLA_DATI`, lavora in parallelo (6 thread, ritenta 3 volte) e nelle regioni fa solo cuore + 2 km. `cantone.py chiudi` crea il pacchetto **facoltativo** `hd_<regione>.tar.gz` (non allarga il pacchetto base). Il gioco lo scarica **in secondo piano** solo con Media/Alta/Ultra (`regioni_main.js`, IPC `regioni-scarica-hd`, `regioni.js: richiediFotoHD`), lo controlla (indice + tutti i tasselli), lo carica senza riavviare. Senza pacchetto/internet non cambia nulla.
-- Workflow `ticino-completo.yml` (passo 9 per regione, pacchetti HD pubblicati) e `release-anteprima.yml` (Locarno con HD nell'app). **Non eseguiti.**
-- Nessuna seconda pipeline geografica: stessi passi 1–9 e stesse coordinate LV95.
-
-## 4. Copertura
-Tutto il cantone (19/19 regioni, 0 km² di terreno senza dati dentro il confine). Per Locarnese, Vallemaggia, Bellinzonese/Tre Valli, Luganese, Mendrisiotto, Leventina, Blenio, Riviera, Malcantone e zone montane i dati reali ci sono (vedi `stato.json`: 5 719 km di strade nei cuori, 262 549 edifici).
-**Foto HD generate qui con dati veri per tutte le 19 regioni: 7 296 tasselli, circa 2,0 GB** (da 1 MB a 239 MB per regione; Lugano 812 tasselli/239 MB, Locarno 673/189 MB, Mendrisiotto 713/175 MB; le regioni di confine con l'Italia ne hanno meno perché swisstopo non ha foto fuori dalla Svizzera). Sono file locali in questo container: **non sono stati caricati** nella pre-release.
-
-## 5. Zone incomplete / non fatto
-- Gli elementi fatti a mano (dighe, funivie, rustici) esistono solo dove c'erano già (Verzasca); altrove sono generati dai dati OSM.
-- 47 gruppi di strade staccati dalla rete (0,66 % dei km, dati OSM, non inventati).
-- **Nessun LOD semplice per città/strade lontane** (edifici oltre ~6 km e strade oltre ~4 km non si disegnano; resta il paesaggio di sfondo): non fatto.
-- Mondo non unico: al passaggio di regione c'è un ricaricamento (la pagina si ricarica, stessa posizione).
-- Quote di ponti/gallerie ai bordi regione (sopra).
-
-## 6. Miglioramenti grafici/ottimizzazioni (Fasi 2–4, ora in ogni regione)
-Incroci/rotonde/raccordi, frecce `turn:lanes`, foto HD con dissolvenza, foto 2 m per profilo (raggio 3/4,5/6/8 km) con scarico delle lontane, ombre stabili, erba/vegetazione bassa, banchine e cemento dei ponti, atmosfera e fogliame. Dal lavoro T1: edifici/strade a pezzi, mappa grande fluida. I dettagli di ciascuna fase sono nei rispettivi report (`fase2/`, `fase3/`, `fase4/VRAM_STIME.md`).
-
-## 7. Test eseguiti
-| Test | Risultato |
+## 2. Testato e superato [M]
+| Prova | Risultato |
 |---|---|
-| `verifica_cantone.py` sulle 19 regioni | 10 controlli OK, 0 fallimenti, 1 limite noto (sopra) |
-| `prova_quote.mjs` (quote strade, edifici sull'asfalto) sulle 19 regioni con il `strade.js` unito: 67 555 strade, 527 702 edifici | edifici ancora sull'asfalto: **0**; nodi con quote diverse: **10** (in 5 regioni: 2680_1154, 2696_1090, 2696_1122, 2696_1138, 2712_1122/1138, non indagati); scalini max 2,7 m |
+| `verifica_cantone.py` su 19 regioni (dati dopo la riconciliazione) | **11 controlli su 11 OK**: 0 punti senza terreno/foto; strade 100 % combacianti; terreno nelle sovrapposizioni media 0,008 m (max 1,4 m ai bordi); strade normali media 0,005 m; **ponti/gallerie nei punti in comune: 0 su 47 252 con scarto > 1 m (max 0,3 m)**, prima 3 494 con scarto fino a 31,8 m |
+| Riconciliazione in modalità pacchetti (apre i `.tar.gz`, riscrive solo `strade.json`, richiude) | il `strade.json` risultante è identico a quello della modalità su cartelle (2 regioni confrontate byte per byte) |
+| Plausibilità dopo la riconciliazione | gallerie corrette: 12 445 vertici, **0** sopra il terreno; ponti: 4 543 vertici, **0** sotto il terreno; San Gottardo: discesa dritta da 1 147 m (Airolo) a 1 073 m su 16 km |
+| `prova_ticino_regioni.mjs` (Electron dal sorgente, dati veri, server locale): avvio Locarno profilo Alta, partenza a Lugano con download regione, download HD in secondo piano e caricamento senza riavvio, preparazione della regione vicina a 1,5 km dal bordo, passaggio guidando (0 m di scarto), un solo terreno in memoria, nessun errore | **16/16** (eseguito prima del LOD e del nuovo download con ripresa: **da rifare** con il codice attuale) |
+| `prova_ripresa_download.mjs`: connessione che cade a metà → riparte da `Range`; server senza Range → da zero; 404 leggibile; pacchetto troncato rifiutato | **7/7** |
+| `prova_tutte_regioni.mjs` (profilo Media, pagina nuova per regione, dati riconciliati): **tutte le 19 regioni** partono senza errori, moto sulla strada, nessun NaN | **19/19** (caricamento 14,6–67 s, 3,0–4,2 M triangoli, 199–2 402 chiamate) |
+| `prova_quote.mjs` (quote strade, edifici sull'asfalto) sulle 19 regioni | 0 edifici sull'asfalto; 10 nodi con quote diverse (sotto) |
 | `prova_luoghi.mjs` | OK |
-| **Electron dal sorgente, dati veri, server locale con gli stessi pacchetti** (`prova_ticino_regioni.mjs`): avvio Locarno profilo Alta; partenza a Lugano con download regione (107 s); download HD in secondo piano, apertura e controllo, HD caricati senza riavvio (4 tasselli in memoria); preparazione della regione nord a 1,5 km dal bordo e passaggio guidando a R_2712_1106 nello stesso punto (0 m), un solo terreno in memoria; nessun errore in console | **16 prove riuscite, 0 fallite** |
-| Benchmark profili (Fase 4, ramo **prima** del merge, 800×450, 60 s, software) | Bassa 0,8 fps / 11 s; Media 0,5 / 16 s; Alta 0,5 / 14 s; Ultra 0,3 / 16 s; heap JS 150–163 MB; confronto utile solo tra versioni, non FPS veri |
 
-**Non misurato**: benchmark per profilo sul build **dopo** il merge; VRAM reale (`VRAM_STIME.md` sono stime di calcolo); prestazioni su GPU; scaricamento da GitHub vero (provato solo con un server locale); build Mac/Windows impacchettato; screenshot nuovi oltre a `lugano_alta*.png` e `dopo_passaggio.png` del test (non copiati nel repo).
+### Nodi stradali con quote diverse (10) [M]
+Indagati: 9 differiscono di 0,02–0,03 m (arrotondamenti nei nodi condivisi, A2 e un nodo in Val Bedretto); **1** di 0,91 m a una testa di ponte (Via Europa, Ponte Tresa). Non corretti: sono sotto la soglia del test (3 m) e non visibili.
 
-## 8. Problemi e limiti
-Vedi sezioni 2 e 5. Inoltre: il pacchetto HD ha dimensioni elevate (fino a 239 MB per regione, ~2 GB in tutto): il caricamento di tutte le regioni HD su GitHub è una decisione tua (spazio e tempo di download).
+### Benchmark: build unito contro 0.15.5 [M, grafica software]
+Stesso computer (4 core, 16 GB), regione di Locarno, 800×450, 40 s per profilo, 1 esecuzione per profilo (rumorosa: i picchi p95 dipendono dalla CPU condivisa). `benchmark_software/`.
+| Profilo | FPS 0.15.5 → 0.16.0 dev | Chiamate | Triangoli | Caricamento |
+|---|---|---|---|---|
+| Bassa | 0,7 → 0,7 | 981 → 996 (+1,5 %) | 2,99 → 3,03 M (+1,3 %) | 20,1 → 25,1 s |
+| Media | 0,7 → 0,5 | 1 597 → 1 701 (+6,5 %) | 3,70 → 3,91 M (+5,7 %) | 18,8 → 30,5 s |
+| Alta | 0,3 → 0,4 | 1 791 → 1 893 (+5,7 %) | 4,57 → 4,79 M (+4,8 %) | 22,6 → 27,0 s |
+| Ultra | 0,4 → 0,3 | 1 789 → 1 897 (+6,0 %) | 4,81 → 5,03 M (+4,6 %) | 24,0 → 31,7 s |
+Memoria JavaScript con spazzatura liberata (Lugano/Mendrisiotto, Media): **577 / 755 MB contro 478 / 601 MB** della 0.15.5 (+21 % / +25 %); caricamento 37,5 / 63,4 s contro 34,1 / 53,6 s. (Senza liberare la spazzatura la misura è molto più alta e inaffidabile: 2–3 GB.)
+**Lettura onesta:** il build nuovo è un po' più pesante (circa +5 % di chiamate e triangoli, +100–150 MB di heap JS, caricamento più lungo). È coerente con le funzioni aggiunte (incroci, erba, HD, LOD lontano) ma **non so quanta parte sia "ingiustificata"**: gli FPS software non rispondono. Il giudizio sulle prestazioni spetta alla prova su GPU vera.
 
-## 9. Commit
-Ramo `claude/brave-turing-mztbtd`, 20 commit locali non pubblicati sopra `origin/claude/brave-turing-mztbtd` (82daa0a): ultimo `bce4fca`; merge `fe83593`, `a11eb64`. I commit hanno l'email dell'utente come committer (GitHub li mostrerebbe "Unverified": da sistemare prima del push).
+### LOD lontano [M, software]
+Lugano, punto di vista a 7 km, stesso stato del terreno, acceso/spento: Bassa spento per profilo; Media +3 chiamate, +0,7 k triangoli (58 sagome); Alta +3 / +2,5 k (205); Ultra +22 chiamate / +15 k triangoli / +343 sagome; 80 836 vertici di strade principali (1 chiamata); nessun errore. **L'effetto visivo non è dimostrato**: nelle immagini di prova le sagome non si distinguono dagli edifici veri e dalla nebbia (la fascia utile è ~0,4–4 km, oltre il limite degli edifici veri a 6,5 km e prima della nebbia a 7–11 km).
 
-## 10. Stato per la 0.16.0
-Pronto nel codice e provato in Electron (dati veri, grafica software). Per pubblicare restano: (1) benchmark per profilo del build unito e prova su un PC/Mac vero; (2) decisione sul caricamento dei pacchetti `hd_*` (2 GB) e sul rilancio del workflow dati; (3) sistemare l'autore dei commit e fare il push; (4) alzare/confermare la versione (`package.json` e `gioco.js` sono già 0.16.0) e aggiornare i testi. Tag e release non creati.
+## 3. Da testare sul tuo PC Windows (nessun risultato esiste) [–]
+Procedura in `PROVA_WINDOWS_GPU.md`. Servono: benchmark per profilo con GPU, VRAM reale, confronto con la 0.15.5, giudizio visivo su LOD lontano e su WebP/JPEG delle foto HD, download reale da GitHub, build Mac/Windows impacchettato, rifare `prova_ticino_regioni.mjs` con il codice attuale. **Non dichiarare superata questa prova senza un risultato vero.**
+
+## 4. Problemi geografici
+**Risolto (nei dati locali, non ancora nei dati pubblicati):** le gallerie e i ponti che attraversano il bordo di una regione avevano quote diverse nelle due regioni (3 494 punti con scarto > 1 m, fino a 31,8 m; il "52 m" detto prima contava anche strade sopra/sotto le opere nello stesso punto, ora confrontate per tipo). **Causa**: il passo 7 calcola la linea dritta tra gli ingressi sul pezzo ritagliato dalla regione e tratta il taglio come un ingresso; in più nelle reti di gallerie (San Gottardo e cunicoli) le giunzioni venivano agganciate al terreno in superficie. **Soluzione unica per tutta la pipeline** (`riconcilia_opere.py`): si ricostruiscono le opere intere unendo i pezzi di tutte le regioni; gli ingressi veri sono i capi non sul bordo dei dati; la **linea principale** (percorso più lungo tra ingressi) decide le quote delle giunzioni e i rami laterali si adattano; poi ponte mai sotto il terreno e galleria ≥ 7 m sotto (rampa 80 m dagli ingressi), liscio come nel passo 7; **una sola quota per vertice** in tutte le regioni. Non forza niente sul terreno. Tocca 36 reti (110 segmenti, 10 170 vertici, 16 regioni); il resto è invariato.
+**Ancora presente:**
+- I dati **pubblicati** hanno ancora le quote vecchie: serve rilanciare il workflow dati (passo nuovo nel job `pubblica`, che ora scarica anche le regioni non rifatte). **Non eseguito.**
+- Fedeltà: la regola nuova ricostruisce le quote con il terreno a 4 m (`terreno.bin`), il passo 7 usava quello a 2 m; per le 36 reti corrette le quote possono differire di qualche decimetro dal calcolo del passo 7 (non misurato opera per opera). Un ponte o una galleria che ha una copertura determinata dal terreno vicino a un lago può cambiare più di un metro.
+- Dove il capo di un'opera è tagliato dal limite dei dati scaricati (per esempio il lato nord del San Gottardo) la quota resta piatta da quel lato, come prima, ma uguale in tutte le regioni.
+- 1 testa di ponte con 0,91 m di scalino (Via Europa); 47 gruppi di strade staccati dalla rete (0,66 % dei km); elementi fatti a mano solo in Verzasca.
+- Al passaggio di regione c'è ancora un ricaricamento della pagina (non un mondo unico).
+- Non verificato **visivamente** il passaggio su un ponte o dentro una galleria lunga in nessuna regione (verificati solo i numeri).
+
+## 5. Pacchetti HD: decisione tecnica consigliata
+(Dettagli in `ANALISI_PACCHETTI_HD.md`.) 2 108 MB in 19 pacchetti (7–249 MB). Compressione: −8 % senza perdita, −31 % con WebP q70 (qualità non verificata a occhio). GitHub Releases: file fino a 2 GiB, `Range` funzionante (206 misurato). **Consiglio:** non renderli obbligatori e non caricarli ora; dopo la prova su PC vero, caricarli come `hd_R_*.tar.gz` ricompressi senza perdita nella pre-release dei dati (facoltativi, in secondo piano, ora con ripresa); come passo successivo un archivio per regione con indice e richieste `Range` per scaricare solo i tasselli vicini. **Non caricati.**
+
+## 6. LOD e vegetazione
+Fatto: sagome delle città (celle da 250 m: superficie, altezza e base medie, un solo InstancedMesh) e strade principali come linee (spente dallo shader dove ci sono le strade vere); attivi in Media/Alta/Ultra, spenti in Bassa; si ricalcolano ogni 120 m. Già presente e non modificato: edifici a pezzi da 500 m costruiti entro min(vista, 6 km)+500 m e scaricati oltre +1,2 km; strade a pezzi da 1 km; foto 2 m per profilo con scarico; foto HD 2×2 con dissolvenza.
+**Non fatto:** LOD della vegetazione (oltre 0,45–1,6 km gli alberi sono solo colore del terreno: una chioma a bassa definizione costerebbe chiamate e triangoli non misurati); città delle regioni vicine (oltre il bordo si vede solo il rilievo); distanza di rendering configurabile dall'utente (resta per profilo).
+
+## 7. Stato del ramo remoto
+`origin/claude/brave-turing-mztbtd` = `e24f508` + questo report. Per consentire il push ho riscritto autore e committer dei **10 commit locali non ancora pubblicati** (tutti già con la stessa identità sul remoto dopo il push; nessun commit pubblicato è stato riscritto; backup locale `backup-prima-riscrittura-autori`). **Errore mio:** i commit `0075b5c`, `a947158`, `874ea9f` sono stati pubblicati con la tua email come autore/committer (le variabili d'ambiente prevalgono sulla configurazione); da `fd709c9` in poi l'identità è `Claude <noreply@anthropic.com>`. Correggerli richiede un force-push che non ho fatto.
+`main` non è toccato; nessun tag.
+
+## 8. Stato della preparazione alla 0.16.0
+**Codice: pronto per essere provato su una GPU vera; release: NON pronta.** Mancano:
+1. Prova su PC Windows con scheda video (prestazioni, VRAM, confronto con la 0.15.5) e giudizio sul costo di +5 % chiamate/triangoli.
+2. Rilancio del workflow dati con la riconciliazione e verifica dei dati pubblicati con `verifica_cantone.py`.
+3. Rifare le prove Electron (`prova_ticino_regioni.mjs`) con il codice attuale e provare il download reale da GitHub, il build Mac/Windows.
+4. Decisione sui pacchetti HD (consigliata dopo il punto 1).
+5. Decisione sull'autore dei tre commit pubblicati con la tua email.
+6. Rivedere visivamente LOD lontano e passaggi su ponti/gallerie.
