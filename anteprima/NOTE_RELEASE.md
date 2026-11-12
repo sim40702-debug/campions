@@ -3,7 +3,21 @@
 Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.0) – Valle Verzasca
+### Novità di questa versione (0.15.2) – Valle Verzasca: case, diga e strade rifatte
+
+- **Rustici al posto dei palazzi**: nella valle (e nei monti sopra i 650 m) le case erano palazzi di 5–6 piani con il tetto piatto. Ora sono case basse di **sasso a vista** (alcune intonacate), con poche finestre piccole, **tetto a due falde in piode** su qualsiasi pianta e comignolo di sasso. I muri partono dal terreno vero sotto ogni lato: a monte si vede un piano, a valle due.
+- **Ruderi**: i ruderi di OpenStreetMap (prima non c'erano) sono muri bassi di sasso senza tetto.
+- **Chiese e oratori** con il tetto a falde sulla pianta vera (prima a piramide o piatto) e alti il giusto.
+- **Diga della Verzasca (Contra)**: adesso c'è, un muro di cemento alto oltre 200 m dal coronamento alla roccia, con il camminamento e i parapetti. Il **Lago di Vogorno è pieno**, 4 m sotto il coronamento: prima era disegnato 53 m più in basso.
+- **Strade larghe il giusto**: la cantonale della valle ha due corsie da 3 m; le stradine laterali sono a una corsia (3,6–4 m invece di 5).
+- **Righe, marciapiedi e fondo come nella realtà** (dati OpenStreetMap, su tutta la mappa): niente righe dove non ci sono, niente marciapiedi nei nuclei della valle, **acciottolato** e **sterrato** dove la strada non è asfaltata.
+- **Ponti**: cordolo di cemento e **ringhiera d'acciaio** al posto del muro pieno; **parapetto di sasso** sui ponti stretti.
+- **Muri di sostegno e muretti di sasso**: i muri sotto la strada sono di sasso (prima grigio piatto) e le stradine di valle hanno il muretto dal lato del vuoto. I **guardrail** compaiono anche dove il burrone inizia oltre la banchina (prima mancavano quasi ovunque).
+- **Gallerie**: le due gallerie corte della strada della valle (76 e 78 m) tornano dentro la montagna (prima il terreno veniva scavato e il tubo restava all'aperto); banchine di cemento tra l'asfalto e le pareti di tutte le gallerie.
+- **Paravalanghe di Aquino** (sotto Brione): strada coperta con soletta, muro a monte e pilastri verso valle, non più una galleria.
+- Non ancora sistemato: i fiumi larghi nei tratti ripidi (per esempio a Gerra e sotto Corippo) sono ancora disegnati a grandi lastre azzurre.
+
+### Novità della 0.15.0 – Valle Verzasca
 
 - **Tutta la Valle Verzasca si può esplorare**, in moto e in macchina: la mappa va da Ascona fino alle creste sopra Sonogno (16 × 32 km invece di 16 × 12).
 - **Strada della valle completa**, collegata al resto della rete: da Gordola e Tenero alla **diga della Verzasca** e al **Lago di Vogorno**, poi **Vogorno, Corippo, Lavertezzo**, **Brione, Gerra, Frasco e Sonogno**, con la strada per **Mergoscia**, la Val d'Osura e le strade laterali.

@@ -1067,11 +1067,33 @@ export async function caricaStrade() {
   preparaRete(dati.strade);
   larghezzaRaccordi(dati.strade);
   // i sottopassi corti (meno di 80 m) hanno la volta piu' bassa di una galleria vera: 4.2 m invece di 5
+  // Vale solo per i sottopassi VERI, cioe' dove sopra passa un'altra strada: una galleria corta scavata nella roccia
+  // (le due da 76 e 78 m della strada della Verzasca) resta una galleria, con la montagna sopra. Prima anche per loro
+  // il terreno veniva abbassato in una trincea e il tubo restava all'aperto.
+  const grigliaPrima = costruisciGriglia(dati.strade);
   for (const strada of dati.strade) {
     if (!strada.g) continue;
     let lunga = 0;
     for (let i = 3; i < strada.p.length; i += 3) lunga += Math.hypot(strada.p[i] - strada.p[i - 3], strada.p[i + 2] - strada.p[i - 1]);
-    if (lunga < 80) strada.alta = 4.2;
+    if (lunga >= 80) continue;
+    let sopra = false;
+    const p = strada.p, n = p.length / 3;
+    for (let i = 2; i < n - 2 && !sopra; i++) {
+      const x = p[i * 3], z = p[i * 3 + 2];
+      for (const [o, j] of grigliaPrima.get(Math.floor(x / CELLA) + "," + Math.floor(z / CELLA)) || []) {
+        const altra = dati.strade[o];
+        if (altra === strada || altra.g) continue;
+        const q = altra.p;
+        const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+        const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+        if (lungo < 0.01) continue;
+        // solo se il punto cade DENTRO il pezzo dell'altra strada: la strada che continua dopo l'imbocco non conta
+        const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+        if (t < 0 || t > 1) continue;
+        if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) < altra.w / 2 + 1.5) { sopra = true; break; }
+      }
+    }
+    if (sopra) strada.alta = 4.2;
   }
   const quote = sistemaQuote(dati.strade);
   const gradoStrade = stessoPiano(dati.strade, costruisciGriglia(dati.strade), quote);

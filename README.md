@@ -50,6 +50,7 @@ Le novità di ogni versione e le istruzioni per il primo avvio (Mac non firmato,
 - **Garage**: moto e una macchina da drift, con fisica (aderenza, derapate, impennate, cadute e danni).
 - **Giorno e notte, meteo** (sereno, nuvole, nebbia, pioggia, neve) e qualità grafica da Bassa a Ultra 4K.
 - **Minimappa e mappa grande** con ricerca dei luoghi, nomi delle zone (Locarnese, Valle Verzasca, bassa Valle Maggia) e scelta del punto di partenza.
+- **Valle Verzasca com'è davvero**: rustici di sasso con i tetti in piode, ruderi, la **diga di Contra** con il Lago di Vogorno pieno, stradine a una corsia con muretti di sasso, acciottolato nei nuclei, paravalanghe.
 - **Valle Verzasca**: la strada della valle da Gordola e dalla diga della Verzasca a Vogorno, Corippo, Lavertezzo, Brione, Gerra, Frasco e Sonogno, con Mergoscia e le strade laterali; entrando nella valle compare il suo nome.
 
 Non ci sono ancora: avversari, multiplayer, il resto del Ticino (l'angolo di Leventina che entra nel rettangolo della mappa è solo paesaggio, senza strade).
@@ -61,7 +62,7 @@ Non ci sono ancora: avversari, multiplayer, il resto del Ticino (l'angolo di Lev
 | [`anteprima/`](anteprima/) | L'anteprima giocabile: pagina, codice del gioco (`src/`), app Electron. Vedi [`anteprima/LEGGIMI.md`](anteprima/LEGGIMI.md) |
 | [`tools/geo/`](tools/geo/) | Script Python che scaricano i dati (swisstopo, OpenStreetMap) e li preparano. Vedi [`tools/geo/LEGGIMI.md`](tools/geo/LEGGIMI.md) |
 | [`tools/moto/`](tools/moto/) | Script Blender che creano i modelli 3D di moto, auto e alberi |
-| [`tools/anteprima_prova/`](tools/anteprima_prova/) | Prove automatiche dell'anteprima (screenshot, quote delle strade, benchmark) |
+| [`tools/anteprima_prova/`](tools/anteprima_prova/) | Prove automatiche dell'anteprima (screenshot, anche "dalla sella" con `vista_strada.mjs`, quote delle strade, benchmark) |
 | [`unreal/`](unreal/) | Progetto Unreal Engine 5. Vedi [`docs/GUIDA_UNREAL.md`](docs/GUIDA_UNREAL.md) e [`docs/unreal/`](docs/unreal/) |
 | [`docs/`](docs/) | Stima, backlog, bug, licenze, piani e report degli sprint |
 

@@ -162,21 +162,33 @@ export function aggiungiOpere(strade, scena, terreno) {
 
     if (strada.g) {
       const alta = strada.alta || ALTEZZA_GALLERIA;   // i sottopassi corti sono piu' bassi (vedi strade.js)
-      let prima = sezione(p, 0, strada.w, alta);
-      for (let i = 1; i < punti; i++) {
+      // Dove comincia davvero la roccia? In OpenStreetMap la galleria e' spesso disegnata qualche metro piu' lunga
+      // della montagna che c'e' nel modello del terreno: li' il tubo restava all'aperto, sospeso sopra il pendio.
+      // Il tubo (e il portale) cominciano dal primo punto coperto dal terreno, al massimo 40 m dopo il capo.
+      let primo = 0, ultimo = punti - 1;
+      if (!strada.alta) {
+        const coperto = function (i) { return quotaTerreno(terreno, p[i * 3], p[i * 3 + 2]) >= p[i * 3 + 1] + alta - 1; };
+        let fatta = 0;
+        while (primo < punti - 3 && fatta < 40 && !coperto(primo)) { fatta += Math.hypot(p[primo * 3 + 3] - p[primo * 3], p[primo * 3 + 5] - p[primo * 3 + 2]); primo++; }
+        fatta = 0;
+        while (ultimo > primo + 2 && fatta < 40 && !coperto(ultimo)) { fatta += Math.hypot(p[ultimo * 3] - p[ultimo * 3 - 3], p[ultimo * 3 + 2] - p[ultimo * 3 - 1]); ultimo--; }
+        if (!coperto(primo) || !coperto(ultimo)) { primo = 0; ultimo = punti - 1; }   // mai coperta: resta com'era
+      }
+      let prima = sezione(p, primo, strada.w, alta);
+      for (let i = primo + 1; i <= ultimo; i++) {
         const ora = sezione(p, i, strada.w, alta);
         // il tubo: un quadrilatero per ogni tratto dell'anello (pareti e volta ad arco); il pavimento e' la strada
         for (let k = 0; k < ora.anello.length - 1; k++) {
           quad(tubo, prima.anello[k], ora.anello[k], prima.anello[k + 1], ora.anello[k + 1]);
         }
         // pavimento: le due banchine tra l'asfalto e le pareti (prima li' non c'era niente: si vedeva il vuoto)
-        const ultimo = ora.anello.length - 1;
-        quad(tubo, prima.anello[0], ora.anello[0], prima.anello[ultimo], ora.anello[ultimo]);
+        const fine = ora.anello.length - 1;
+        quad(tubo, prima.anello[0], ora.anello[0], prima.anello[fine], ora.anello[fine]);
         if (i % OGNI_QUANTI_PUNTI_LUCE === 0) luci.push(ora.centro);
         prima = ora;
       }
       // Portali solo dove la galleria finisce davvero (non al bordo della mappa)
-      for (const [indice, verso] of [[0, -1], [punti - 1, 1]]) {
+      for (const [indice, verso] of [[primo, -1], [ultimo, 1]]) {
         const x = p[indice * 3], z = p[indice * 3 + 2];
         if (dentroArea(terreno, x, z, 3)) {
           aggiungiPortale(portali, cornici, sezione(p, indice, strada.w, alta), verso, terreno);

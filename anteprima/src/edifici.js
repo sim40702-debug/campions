@@ -611,7 +611,9 @@ function costruisciRustico(e, ctx, gruppi, det, r, rnd, seme) {
     const ax = p[k * 2], az = p[k * 2 + 1], bx = p[j * 2], bz = p[j * 2 + 1];
     const lungo = Math.hypot(bx - ax, bz - az);
     if (lungo < 0.3) continue;
-    const base = Math.min(suolo[k], suolo[j], e.h - 0.6) - 0.6;
+    // il muro scende 3 m sotto il terreno: da lontano il terreno e' disegnato con meno punti e senza questo
+    // margine le case sembravano sospese
+    const base = Math.min(suolo[k], suolo[j], e.h - 0.6) - 3;
     let altoA = e.h, altoB = e.h;
     if (rudere) {
       // muri sbrecciati: ogni spigolo ha la sua altezza

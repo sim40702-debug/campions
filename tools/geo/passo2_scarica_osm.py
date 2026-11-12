@@ -154,7 +154,7 @@ def main():
 
         print("9) Dighe del pilota...")
         try:
-            opere = utilita.chiedi_overpass(query_opere(), utilita.file_osm("opere", True))
+            opere = utilita.chiedi_overpass(query_opere(), utilita.file_osm("opere", True), giri=1)
             print("   Elementi scaricati: " + str(len(opere.get("elements", []))))
         except RuntimeError as errore:
             # la diga e' un di piu': senza di lei il gioco funziona lo stesso, quindi non si ferma la release
