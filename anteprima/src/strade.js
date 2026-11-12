@@ -138,16 +138,48 @@ function sistemaQuote(lista) {
     }
   }
   const veloci = variabili.filter(function (c) { return c.veloce; });
+  // I conti si fanno su tabelle di numeri (non sugli oggetti uno per uno): stessi calcoli nello stesso ordine,
+  // quindi stesse quote di prima, ma molto piu' in fretta (era il passo piu' lento del caricamento: 13 secondi
+  // sui 16 delle strade).
+  for (let i = 0; i < variabili.length; i++) variabili[i].numero = i;
   const giri = function (quanti, elenco, omega) {
-    for (let giro = 0; giro < quanti; giro++) {
-      for (const c of elenco) {
-        const v = c.vicini;
-        if (v.length === 0) continue;
-        let somma = c.peso * c.y0, peso = c.peso;
-        for (let k = 0; k < v.length; k++) { somma += c.forze[k] * v[k].y; peso += c.forze[k]; }
-        c.y += (somma / peso - c.y) * omega;   // sovra-rilassamento: converge prima
+    // quote di TUTTI i punti (i vicini possono essere fuori dall'elenco)
+    const y = new Float64Array(variabili.length);
+    for (let i = 0; i < variabili.length; i++) y[i] = variabili[i].y;
+    // per ogni punto dell'elenco: dove cominciano i suoi vicini nella tabella
+    let totale = 0;
+    for (const c of elenco) totale += c.vicini.length;
+    const chi = new Int32Array(elenco.length);
+    const inizio = new Int32Array(elenco.length + 1);
+    const vicino = new Int32Array(totale);
+    const forza = new Float64Array(totale);
+    const peso0 = new Float64Array(elenco.length);
+    const base = new Float64Array(elenco.length);   // peso * quota dei dati
+    let posto = 0;
+    for (let e = 0; e < elenco.length; e++) {
+      const c = elenco[e];
+      chi[e] = c.numero;
+      inizio[e] = posto;
+      peso0[e] = c.peso;
+      base[e] = c.peso * c.y0;
+      for (let k = 0; k < c.vicini.length; k++) {
+        vicino[posto] = c.vicini[k].numero;
+        forza[posto] = c.forze[k];
+        posto++;
       }
     }
+    inizio[elenco.length] = posto;
+    for (let giro = 0; giro < quanti; giro++) {
+      for (let e = 0; e < elenco.length; e++) {
+        const da = inizio[e], a = inizio[e + 1];
+        if (a === da) continue;
+        let somma = base[e], peso = peso0[e];
+        for (let k = da; k < a; k++) { somma += forza[k] * y[vicino[k]]; peso += forza[k]; }
+        const io = chi[e];
+        y[io] += (somma / peso - y[io]) * omega;   // sovra-rilassamento: converge prima
+      }
+    }
+    for (let e = 0; e < elenco.length; e++) elenco[e].y = y[chi[e]];
   };
   giri(260, variabili, 1.6);
   if (veloci.length > 0) {

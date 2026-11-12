@@ -504,6 +504,17 @@ export function preparaCantone(regioni, moto, terreno) {
     finestra.style.display = "none";
   }
 
+  // Il mouse manda molti movimenti per ogni fotogramma: la mappa si ridisegna una volta sola per fotogramma
+  let disegnoChiesto = false;
+  function chiediDisegno() {
+    if (disegnoChiesto) return;
+    disegnoChiesto = true;
+    requestAnimationFrame(function () {
+      disegnoChiesto = false;
+      disegna();
+    });
+  }
+
   // --- mouse: trascina, rotellina, clic ---
   let trascina = null;
   tela.addEventListener("pointerdown", function (e) {
@@ -517,7 +528,7 @@ export function preparaCantone(regioni, moto, terreno) {
       if (Math.abs(dx) + Math.abs(dy) > 4) trascina.mosso = true;
       vista.est = trascina.est - dx / vista.scala;
       vista.nord = trascina.nord + dy / vista.scala;
-      disegna();
+      chiediDisegno();
     }
     if (dati) {
       const p = aMappa(e.clientX * rapporto, e.clientY * rapporto);
@@ -543,7 +554,7 @@ export function preparaCantone(regioni, moto, terreno) {
     const dopo = aMappa(px, py);
     vista.est += prima[0] - dopo[0];
     vista.nord += prima[1] - dopo[1];
-    disegna();
+    chiediDisegno();
   }
   tela.addEventListener("wheel", function (e) {
     e.preventDefault();

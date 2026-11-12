@@ -112,10 +112,36 @@ export function costruisciModello3D(nome) {
     formaDentro.translate(0, 0.06, 0);
     const arancio = new THREE.MeshBasicMaterial({ color: 0xff6a12, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
     const giallo = new THREE.MeshBasicMaterial({ color: 0xfff0a0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+    // Dove finiscono i due scarichi lo si misura sul modello: il fondello d'acciaio dei silenziatori e' la
+    // parte d'acciaio piu' indietro (nel file la moto guarda verso +X, quindi "indietro" = X piu' piccola)
+    telaio.updateMatrixWorld(true);
+    const punto = new THREE.Vector3();
     for (const lato of [1, -1]) {
-      // uscita del terminale nel file della moto: 0.15 m dietro il perno, 0.805 m sopra, 0.165 m di lato
+      const punti = [];
+      telaio.traverse(function (oggetto) {
+        if (!oggetto.isMesh || !oggetto.material || oggetto.material.name !== "Acciaio") return;
+        const posizioni = oggetto.geometry.attributes.position;
+        for (let i = 0; i < posizioni.count; i++) {
+          punto.fromBufferAttribute(posizioni, i);
+          oggetto.localToWorld(punto);
+          telaio.worldToLocal(punto);
+          if (punto.z * lato > 0.05) punti.push(punto.x, punto.y, punto.z);
+        }
+      });
+      let dietro = Infinity;
+      for (let i = 0; i < punti.length; i += 3) dietro = Math.min(dietro, punti[i]);
+      // centro del fondello: media dei punti entro 1.2 cm dal piu' arretrato
+      let sommaY = 0, sommaZ = 0, quanti = 0;
+      for (let i = 0; i < punti.length; i += 3) {
+        if (punti[i] < dietro + 0.012) {
+          sommaY += punti[i + 1];
+          sommaZ += punti[i + 2];
+          quanti++;
+        }
+      }
+      if (quanti === 0) continue;   // modello senza scarichi d'acciaio: niente fiamme
       const fiamma = new THREE.Group();
-      fiamma.position.set(-0.155, 0.807, -0.165 * lato);
+      fiamma.position.set(dietro - 0.02, sommaY / quanti, sommaZ / quanti);
       fiamma.rotation.z = Math.PI / 2 - 0.3;   // punta indietro e un po' in su, come il silenziatore
       fiamma.add(new THREE.Mesh(forma, arancio));
       fiamma.add(new THREE.Mesh(formaDentro, giallo));

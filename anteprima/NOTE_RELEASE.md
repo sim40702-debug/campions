@@ -3,7 +3,15 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.4) – impennate e fiammelle
+### Novità di questa versione (0.15.5) – mappa fluida e caricamento più corto
+
+- **Mappa grande (tasto N) fluida**: la mappa si disegna una volta su un'immagine più grande dello schermo e mentre la trascini o fai zoom si sposta solo quella; prima a ogni movimento del mouse venivano ridisegnate tutte le strade e le case della regione.
+- **Con una mappa aperta (N o K) il mondo 3D dietro non viene più disegnato**: tutta la potenza va alla mappa.
+- **Mappa del cantone (K)**: si ridisegna una volta per fotogramma invece che a ogni movimento del mouse.
+- **Caricamento più corto**: il calcolo delle quote delle strade (il passo più lento) è stato riscritto e dà le stesse identiche quote in molto meno tempo.
+- **Fiammelle della SM 450**: ora escono dalla punta dei due scarichi (la posizione viene misurata sul modello; prima erano circa 25 cm troppo in alto).
+
+### Novità della 0.15.4 – impennate e fiammelle
 
 - **Freno dietro in impennata (Spazio)**: tenuto premuto riporta giù la ruota davanti; a colpetti la abbassa un po' alla volta, così si tiene l'impennata senza ribaltarsi. L'impennata sale anche meno di scatto.
 - **Mappa impennate (tasto I, solo sui motard)**: appena si accelera la moto impenna e resta su da sola a un angolo fisso senza ribaltarsi; mollando il gas torna giù piano. Sul cruscotto compare "MAPPA IMPENNATE"; la scelta resta salvata.

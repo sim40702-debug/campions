@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.15.4";
+const VERSIONE = "0.15.5";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -124,6 +124,8 @@ window.addEventListener("resize", function () {
 // --- Tastiera ------------------------------------------------------------------
 const tasti = { su: false, giu: false, sinistra: false, destra: false, frenoDietro: false, pesoDietro: false, pesoAvanti: false };
 let modoTelecamera = 0;   // 0 = dietro, 1 = alta, 2 = casco
+const elMappaGrande = document.getElementById("mappaGrande");
+const elMappaCantone = document.getElementById("mappaCantone");
 let richiestaReset = false;
 let richiestaMappa = false;
 
@@ -562,7 +564,10 @@ async function avvia() {
       const localita = localitaVicina(dettagli, moto.x, moto.z);
       aggiornaInterfaccia(moto, terreno, zona && zona.nome !== localita ? (localita ? localita + " · " + zona.nome : zona.nome) : localita, mappa, ambiente);
       const prima = performance.now();
-      disegnatore.render(scena, telecamera);
+      // Con una mappa grande aperta (N, K) il mondo 3D e' coperto: non lo si disegna, cosi' tutta la
+      // potenza va alla mappa e la si sposta senza scatti
+      const coperto = elMappaGrande.style.display === "block" || elMappaCantone.style.display === "block";
+      if (!coperto) disegnatore.render(scena, telecamera);
       // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)
       const tm = window.__mrw && window.__mrw.tempi;
       if (tm && tm.js.length < 3000) { tm.js.push(prima - inizioFotogramma); tm.render.push(performance.now() - prima); }
