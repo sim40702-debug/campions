@@ -197,8 +197,18 @@ def chiedi_overpass(query, percorso):
                     print("  " + indirizzo.split("/")[2] + " risponde " + str(risposta.status_code) + ", provo un altro server")
                     continue
                 dati = risposta.json()
-                with open(percorso, "w", encoding="utf-8") as file:
+                # Overpass risponde 200 anche quando la richiesta e' scaduta a meta' ("remark": "runtime error...
+                # timed out"): i dati sarebbero incompleti (strade o case mancanti) e resterebbero nella cache.
+                avviso = str(dati.get("remark", ""))
+                if "error" in avviso.lower():
+                    print("  " + indirizzo.split("/")[2] + ": risposta incompleta (" + avviso[:100] + "), provo un altro server")
+                    continue
+                # scrivo in un file temporaneo e poi lo rinomino: se il lavoro viene interrotto a meta'
+                # non resta un JSON rotto che la volta dopo verrebbe preso per "gia' scaricato"
+                temporaneo = percorso.with_name(percorso.name + ".parziale")
+                with open(temporaneo, "w", encoding="utf-8") as file:
                     json.dump(dati, file)
+                temporaneo.replace(percorso)
                 return dati
             except (requests.RequestException, ValueError) as errore:
                 print("  " + indirizzo.split("/")[2] + ": " + str(errore)[:120] + ", provo un altro server")
