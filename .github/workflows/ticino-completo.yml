@@ -254,6 +254,25 @@ jobs:
           gh release download "$TAG_DATI" -D fatte -p "rilievo_*.bin" -p "controllo_*.json" --skip-existing || true
           ls fatte | wc -l
 
+      # Ponti e gallerie che attraversano il bordo di una regione devono avere la STESSA quota in tutte le regioni:
+      # ogni regione li calcola da sola sul pezzo ritagliato, quindi qui (con tutte le regioni insieme) si ricalcolano sulle
+      # opere intere. Servono tutte le 19 regioni anche se se ne e' rifatta una sola: le altre si prendono dalla pre-release.
+      - name: Prendi le regioni non rifatte (servono tutte per le opere a cavallo dei bordi)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG_DATI" -D fatte -p "regione_R_*.tar.gz" --skip-existing || true
+          ls fatte/regione_R_*.tar.gz | wc -l
+
+      - name: Riconcilia ponti e gallerie tra le regioni
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          python -u riconcilia_opere.py --pacchetti ../../fatte --cantone dati/cantone --json ../../fatte/riconciliazione.json 2>&1 | tee riconciliazione.txt
+          cp ../../fatte/riconciliazione.json ../../uscita_riconciliazione.json 2>/dev/null || true
+
       - name: Unisci rilievi e controlli
         working-directory: tools/geo
         shell: bash

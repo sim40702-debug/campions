@@ -258,17 +258,19 @@ def controllo_strade(coppie, risultati):
         if len(pa) == 0 and len(pb) == 0:
             a.libera(); b.libera()
             continue
+        # si confrontano punti dello stesso tipo (strada, ponte, galleria): una strada sopra una galleria o sotto un
+        # ponte passa nello stesso punto (E, N) ma a un'altra quota, ed e' normale
         chiavi_b = {}
         for e, n, q, tipo in pb:
-            chiavi_b[(int(round(e)), int(round(n)))] = q
+            chiavi_b[(int(round(e)), int(round(n)), int(tipo))] = q
         trovati = 0
         for e, n, q, tipo in pa:
-            k = (int(round(e)), int(round(n)))
+            k = (int(round(e)), int(round(n)), int(tipo))
             hit = None
             for de in (0, -1, 1):
                 for dn in (0, -1, 1):
-                    if hit is None and (k[0] + de, k[1] + dn) in chiavi_b:
-                        hit = chiavi_b[(k[0] + de, k[1] + dn)]
+                    if hit is None and (k[0] + de, k[1] + dn, k[2]) in chiavi_b:
+                        hit = chiavi_b[(k[0] + de, k[1] + dn, k[2])]
             if hit is not None:
                 trovati += 1
                 (diff_normali if tipo == 0 else diff_opere).append(abs(hit - q))
