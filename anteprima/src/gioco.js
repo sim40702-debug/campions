@@ -6,39 +6,40 @@ import { Sky } from "three/addons/objects/Sky.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { caricaModelli3D, materialiMoto } from "./modelli3d.js";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
-import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino } from "./strade.js";
-import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
+import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino, preparaStradeVicine, aggiornaStrade } from "./strade.js";
+import { creaMoto, posizionaMoto, aggiornaMoto, haMappaImpennate } from "./moto.js";
 import { motoSalvata, preparaGarage } from "./garage.js";
 import { partenzaSalvata, preparaPartenza } from "./partenza.js";
-import { aggiornaSuono } from "./audio.js";
+import { aggiornaSuono, scoppioInCorso } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
-import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, dentroEdificio } from "./edifici.js";
+import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, preparaEdificiVicini, dentroEdificio } from "./edifici.js";
 import { creaLuoghi } from "./luoghi.js";
 import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 import { creaPostprocesso } from "./postprocesso.js";
-import { caricaFotoHD, uniformiHD } from "./terreno_hd.js";
+import { caricaFotoHD, uniformiHD, eventiStreaming } from "./terreno_hd.js";
 import { creaErba, aggiornaErba } from "./erba.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
-const VERSIONE = "0.15.3";
+const VERSIONE = "0.16.0";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
 import { caricaAcqua, aggiungiAcqua } from "./acqua.js";
-import { aggiungiOpere } from "./opere.js";
+import { aggiungiOpere, caricaDighe, aggiungiDighe } from "./opere.js";
 import { caricaTrasporti, aggiungiTrasporti, aggiornaTrasporti } from "./trasporti.js";
 import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
 import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
 import { aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 import { preparaMinimappa } from "./mappa.js";
 import { creaZone, aggiornaZona } from "./zone.js";
+import { preparaRegioni, aggiornaRegioni, PARTENZA_EST, PARTENZA_NORD } from "./regioni.js";
+import { preparaCantone } from "./cantone.js";
+import { aggiungiSfondo } from "./sfondo.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
-const PARTENZA_EST = 2704700;
-const PARTENZA_NORD = 1114200;
 
 // --- Scena, telecamera, luci ---------------------------------------------------
 const scena = new THREE.Scene();
@@ -144,7 +145,10 @@ window.addEventListener("resize", function () {
 // --- Tastiera ------------------------------------------------------------------
 const tasti = { su: false, giu: false, sinistra: false, destra: false, frenoDietro: false, pesoDietro: false, pesoAvanti: false };
 let modoTelecamera = 0;   // 0 = dietro, 1 = alta, 2 = casco
+const elMappaGrande = document.getElementById("mappaGrande");
+const elMappaCantone = document.getElementById("mappaCantone");
 let richiestaReset = false;
+let richiestaMappa = false;
 
 function cambiaTasto(evento, premuto) {
   const codice = evento.code;
@@ -171,6 +175,7 @@ window.addEventListener("keydown", function (evento) {
   cambiaTasto(evento, true);
   if (evento.code === "KeyC") modoTelecamera = (modoTelecamera + 1) % 3;
   if (evento.code === "KeyR") richiestaReset = true;
+  if (evento.code === "KeyI") richiestaMappa = true;   // mappa impennate (solo motard)
   if (evento.code === "KeyT") {
     // T: ora del giorno (mattino, mezzogiorno, tramonto, notte)
     const tappe = [7.5, 12.5, 18.4, 22.5];
@@ -307,6 +312,8 @@ function aggiornaFaro(moto) {
 // --- Avvio ---------------------------------------------------------------------
 async function avvia() {
   try {
+    // Ticino completo: prima si sceglie (e se serve si scarica) la regione dove si parte
+    const regioni = await preparaRegioni(mostraStato);
     await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
     const zone = creaZone(terreno);   // Locarnese, Valle Verzasca, ... (nomi delle grandi aree)
@@ -318,6 +325,7 @@ async function avvia() {
     adattaTerreno(terreno, strade);   // il terreno segue le strade (prima di disegnarlo)
     await caricaFotoHD();   // foto aeree di dettaglio (facoltative: terreno_hd.js)
     const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
+    await aggiungiSfondo(scena, terreno, regioni);   // montagne lontane delle regioni vicine
 
     await mostraStato("Fiumi e torrenti...");
     const acquaDati = await caricaAcqua();
@@ -330,9 +338,17 @@ async function avvia() {
     const dettagli = await caricaDettagli();
     const luoghi = creaLuoghi(dettagli.localita);
     await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");
-    aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
+    aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, terreno: terreno, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
     aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
     aggiungiOpere(strade, scena, terreno);
+    // Terreno, strade ed edifici si costruiscono a pezzi vicino alla moto: dopo uno spostamento improvviso
+    // (partenza, tasto R, scelta sulla mappa) si prepara subito quello che sta attorno al punto di arrivo
+    const preparaVicinanze = function (x, z) {
+      preparaTerrenoVicino(terrenoMesh, x, z);
+      preparaStradeVicine(strade, x, z, 1500);
+      preparaEdificiVicini(edifici, x, z, 1200);
+    };
+    aggiungiDighe(await caricaDighe(), scena, terreno);   // la diga della Verzasca
 
     await mostraStato("Treni, funicolari e teleferiche...");
     const trasporti = await caricaTrasporti();
@@ -350,6 +366,11 @@ async function avvia() {
       mostraStato("Moto 3D: " + nome + "...");
     });
     const moto = creaMoto(scena, motoSalvata());
+    try {
+      moto.mappaImpennate = localStorage.getItem("mrw-mappa-impennate") === "1";
+    } catch (errore) {
+      moto.mappaImpennate = false;
+    }
     // Partenza: quella scelta l'ultima volta (tasto P), altrimenti Piazza Grande
     let partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     let partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
@@ -358,19 +379,39 @@ async function avvia() {
       partenzaX = scelta.x;
       partenzaZ = scelta.z;
     }
+    if (regioni) {
+      // Ticino completo: la partenza e' in coordinate svizzere (passaggio da un'altra regione o scelta sulla mappa)
+      partenzaX = regioni.partenza.est - terreno.info.centro_lv95[0];
+      partenzaZ = -(regioni.partenza.nord - terreno.info.centro_lv95[1]);
+    }
+    if (Math.abs(partenzaX) > terreno.metaX - 60 || Math.abs(partenzaZ) > terreno.metaZ - 60) {
+      // la partenza non e' in questa regione (per esempio regione non scaricata): si parte dal suo centro
+      partenzaX = 0;
+      partenzaZ = 0;
+    }
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
+    if (regioni && regioni.partenza.daPassaggio && typeof regioni.partenza.angolo === "number") {
+      // arrivo da un'altra regione: stessa direzione e stessa velocita' di prima
+      const punto = puntoStradaVicino(strade, partenzaX, partenzaZ);
+      if (punto) {
+        const avantiX = -Math.sin(regioni.partenza.angolo), avantiZ = -Math.cos(regioni.partenza.angolo);
+        const verso = punto.dx * avantiX + punto.dz * avantiZ < 0 ? -1 : 1;
+        posizionaMoto(moto, punto.x, punto.y, punto.z, punto.dx * verso, punto.dz * verso);
+        moto.velocita = regioni.partenza.velocita || 0;
+      }
+    }
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
-    preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
+    preparaVicinanze(moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
+    const mondo = { erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, strade: strade, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     const bench = creaBenchmark({
       disegnatore: disegnatore, telecamera: telecamera, moto: moto, ambiente: ambiente, edifici: edifici, luoghi: luoghi,
       strade: strade, terreno: terreno, versione: VERSIONE, qualita: qualitaSalvata,
       mettiSullaStrada: function (m, x, z) { mettiSullaStrada(m, strade, x, z); },
-      preparaVicino: function (x, z) { preparaTerrenoVicino(terrenoMesh, x, z); },
+      preparaVicino: function (x, z) { preparaVicinanze(x, z); },
       riflessi: aggiornaRiflessi, alberi: alberi
     });
     window.__mrw = window.__mrw || {};
@@ -379,18 +420,30 @@ async function avvia() {
     window.__mrw.eseguiBenchmark = function (opzioni) { return bench.esegui(opzioni); };
     window.__mrw.benchmarkMarkdown = inMarkdown;
     window.__mrw.mappa = mappa;
+    window.__mrw.regioni = regioni;
     window.__mrw.zone = zone;
     window.__mrw.luoghi = luoghi;
     window.__mrw.edifici = edifici;
     window.__mrw.vaiA = function (x, z) {
       mettiSullaStrada(moto, strade, x, z);
-      preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
+      preparaVicinanze(moto.x, moto.z);
       telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
+    };
+    // per le prove: guida la moto per "secondi" con i tasti dati (60 passi al secondo) e ritorna l'impennata nel tempo
+    window.__mrw.simula = function (premuti, secondi) {
+      const t = Object.assign({ su: false, giu: false, sinistra: false, destra: false, frenoDietro: false, pesoDietro: false, pesoAvanti: false }, premuti);
+      const traccia = [];
+      for (let i = 0; i < Math.round(secondi * 60); i++) {
+        aggiornaMoto(moto, t, 1 / 60, terreno, strade, edifici);
+        if (i % 6 === 0) traccia.push(Math.round(moto.impennata * 100) / 100);
+      }
+      return { impennata: traccia, caduto: moto.caduto, kmh: Math.round(moto.velocita * 3.6) };
     };
     window.__mrw.moto = moto;
     window.__mrw.dettagli = dettagli;
     window.__mrw.erba = erba;
     window.__mrw.fotoHD = uniformiHD;
+    window.__mrw.eventiStreaming = eventiStreaming;
     window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
     window.__mrw.terreno = terreno;
     window.__mrw.strade = strade;
@@ -410,9 +463,12 @@ async function avvia() {
     preparaGarage(moto);
     preparaPartenza(moto, mappa, function (m, x, z) {
       mettiSullaStrada(m, strade, x, z);
-      preparaTerrenoVicino(terrenoMesh, m.x, m.z);
+      preparaVicinanze(m.x, m.z);
     });
     aggiornaRiflessi(true);
+    // Mappa di tutto il cantone (tasto K o pulsante "Ticino"): scegli una partenza in qualsiasi regione
+    preparaCantone(regioni, moto, terreno);
+    const elAvvisoRegione = document.getElementById("avvisoRegione");
 
     const danni = creaDanni();
     const segni = creaSegni(scena);
@@ -442,6 +498,18 @@ async function avvia() {
       const vero = orologio.getDelta();          // tempo vero del fotogramma (per gli FPS)
       const dt = Math.min(vero, 0.05);           // tempo per la fisica (mai troppo grande)
       // R oppure fine di una caduta: si riparte dalla strada piu' vicina
+      if (richiestaMappa) {
+        // tasto I: accende o spegne la mappa impennate (solo sui motard); la scelta resta salvata
+        richiestaMappa = false;
+        if (haMappaImpennate(moto)) {
+          moto.mappaImpennate = !moto.mappaImpennate;
+          try {
+            localStorage.setItem("mrw-mappa-impennate", moto.mappaImpennate ? "1" : "0");
+          } catch (errore) {
+            // senza memoria del browser la scelta vale solo per questa partita
+          }
+        }
+      }
       if (richiestaReset || moto.riparti) {
         mettiSullaStrada(moto, strade, moto.x, moto.z);
         richiestaReset = false;
@@ -473,10 +541,20 @@ async function avvia() {
       aggiornaRiflessi(false);
       riflessiMoto();
       aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);
+      aggiornaStrade(strade, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero);
       aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;
       aggiornaTrasporti(mobili, tempoGioco);
       aggiornaSuono(moto, test.attivo);
+      // Fiammelle allo scarico del 450 a ogni scoppio (ogni volta un po' diverse)
+      const fiamme = moto.modello.userData.fiamme;
+      if (fiamme && fiamme.length > 0) {
+        const accese = scoppioInCorso();
+        for (const fiamma of fiamme) {
+          fiamma.visible = accese && Math.random() < 0.8;
+          if (fiamma.visible) fiamma.scale.set(0.8 + Math.random() * 0.5, 0.6 + Math.random() * 0.9, 0.8 + Math.random() * 0.5);
+        }
+      }
       aggiornaDanni(danni, moto, dt, disegnatore.domElement);
 
       // Segni neri delle gomme: ruota dietro in derapata o frenata forte sull'asfalto
@@ -505,12 +583,23 @@ async function avvia() {
       window.__mrw.fotogrammi = (window.__mrw.fotogrammi || 0) + 1;
       risoluzioneAdattiva(vero, mondo);
       aggiornaFps(vero, disegnatore);
+      // Ticino completo: vicino al bordo della regione si prepara quella vicina e poi ci si passa
+      if (regioni && !bench.attivo && !test.attivo) {
+        const testoRegione = aggiornaRegioni(regioni, terreno.info.centro_lv95[0] + moto.x, terreno.info.centro_lv95[1] - moto.z, moto.angolo, moto.velocita, vero);
+        if (elAvvisoRegione.textContent !== testoRegione) {
+          elAvvisoRegione.textContent = testoRegione;
+          elAvvisoRegione.style.display = testoRegione ? "block" : "none";
+        }
+      }
       // localita' e zona: "Lavertezzo · Valle Verzasca"
       const zona = aggiornaZona(zone, test.attivo ? telecamera.position.x : moto.x, test.attivo ? telecamera.position.z : moto.z, vero);
       const localita = localitaVicina(dettagli, moto.x, moto.z);
       aggiornaInterfaccia(moto, terreno, zona && zona.nome !== localita ? (localita ? localita + " · " + zona.nome : zona.nome) : localita, mappa, ambiente);
       const prima = performance.now();
-      post.disegna(scena, telecamera, ambiente.uniformi.notte.value, tempoGioco, { direzioneSole: ambiente.direzioneSole, grigio: ambiente.mix ? ambiente.mix.grigio : 0 });
+      // Con una mappa grande aperta (N, K) il mondo 3D e' coperto: non lo si disegna, cosi' tutta la
+      // potenza va alla mappa e la si sposta senza scatti
+      const coperto = elMappaGrande.style.display === "block" || elMappaCantone.style.display === "block";
+      if (!coperto) post.disegna(scena, telecamera, ambiente.uniformi.notte.value, tempoGioco, { direzioneSole: ambiente.direzioneSole, grigio: ambiente.mix ? ambiente.mix.grigio : 0 });
       // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)
       const tm = window.__mrw && window.__mrw.tempi;
       if (tm && tm.js.length < 3000) { tm.js.push(prima - inizioFotogramma); tm.render.push(performance.now() - prima); }

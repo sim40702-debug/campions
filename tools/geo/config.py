@@ -41,12 +41,34 @@ ANTEPRIMA_EST_MAX = 2_712_000
 ANTEPRIMA_NORD_MIN = 1_110_000
 ANTEPRIMA_NORD_MAX = 1_142_000
 
+# --- Ticino completo (branch feature/ticino-completo): il cantone a REGIONI ---------------------------------
+# Tutto il cantone non sta in un'area sola (sarebbero 420 milioni di punti di terreno): lo dividiamo in regioni
+# quadrate. Ogni regione ha un "cuore" da 16 x 16 km e un margine di 4 km per lato (quindi 24 x 24 km): i margini
+# si sovrappongono a quelli delle regioni vicine, cosi' passando da una regione all'altra non si arriva mai
+# al bordo del mondo. Tutte le regioni usano le stesse coordinate svizzere (LV95).
+# I passi lavorano su UNA regione alla volta: il rettangolo arriva dalla variabile MRW_AREA
+# ("est_min,est_max,nord_min,nord_max" in metri), impostata da regioni.py e dal workflow di GitHub.
+REGIONE_CUORE_M = 16_000
+REGIONE_MARGINE_M = 4_000
+REGIONI_EST_0 = 2_664_000      # angolo sud-ovest della griglia delle regioni
+REGIONI_NORD_0 = 1_074_000
+REGIONI_COLONNE = 5            # 5 x 16 = 80 km (da 2'664 a 2'744)
+REGIONI_RIGHE = 6              # 6 x 16 = 96 km (da 1'074 a 1'170)
+
+import os as _os
+AREA_DA_FUORI = _os.environ.get("MRW_AREA", "")
+if AREA_DA_FUORI:
+    ANTEPRIMA_EST_MIN, ANTEPRIMA_EST_MAX, ANTEPRIMA_NORD_MIN, ANTEPRIMA_NORD_MAX = [int(v) for v in AREA_DA_FUORI.split(",")]
+
 # Zone dell'anteprima (nomi mostrati nel gioco: minimappa, mappa grande, scritta quando si entra) e parti
 # del rettangolo che sono solo paesaggio (Leventina: niente strade, case, binari). I contorni seguono gli
 # spartiacque veri e si trovano in zone_anteprima.json, creato da crea_zone_anteprima.py.
 def _leggi_zone():
     import json
     percorso = CARTELLA_SCRIPT / "zone_anteprima.json"
+    if AREA_DA_FUORI:
+        # una regione del Ticino completo: le zone (distretti) le scrive regioni.py
+        percorso = CARTELLA_DATI / "zone_regione.json"
     if not percorso.exists():
         return [], []
     dati = json.loads(percorso.read_text(encoding="utf-8"))

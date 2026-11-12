@@ -1,4 +1,4 @@
-// Opere stradali: gallerie vere (tubo con luci e portali) e piloni sotto i ponti.
+// Opere stradali: gallerie vere (tubo con luci e portali), piloni sotto i ponti, paravalanghe e dighe.
 // Il terreno si vede solo da sopra: dentro la montagna si vede solo il tubo della galleria.
 
 import * as THREE from "three";
@@ -105,12 +105,56 @@ function aggiungiPortale(posizioni, cornice, s, verso, terreno) {
   }
 }
 
+// Paravalanghe (tunnel=avalanche_protector in OpenStreetMap): la strada resta all'aperto, coperta da una soletta di
+// cemento che appoggia su un muro dal lato della montagna e su una fila di pilastri dal lato della valle.
+const ALTEZZA_PARAVALANGHE = 4.8;
+function aggiungiParavalanghe(strada, terreno, posizioni, pilastri) {
+  const p = strada.p, punti = p.length / 3;
+  // da che lato sta la montagna? dove il terreno a 7 m dal bordo e' piu' alto
+  let somma = 0;
+  const dir = [];
+  for (let i = 0; i < punti; i++) {
+    const a = Math.max(i - 1, 0) * 3, b = Math.min(i + 1, punti - 1) * 3;
+    let dx = p[b] - p[a], dz = p[b + 2] - p[a + 2];
+    const l = Math.hypot(dx, dz) || 1;
+    dx /= l; dz /= l;
+    dir.push([dx, dz]);
+    const fuori = strada.w / 2 + 7;
+    somma += quotaTerreno(terreno, p[i * 3] - dz * fuori, p[i * 3 + 2] + dx * fuori) - quotaTerreno(terreno, p[i * 3] + dz * fuori, p[i * 3 + 2] - dx * fuori);
+  }
+  const monte = somma >= 0 ? 1 : -1;
+  const meta = strada.w / 2;
+  const pt = function (i, lato, alto) { return [p[i * 3] - dir[i][1] * lato, p[i * 3 + 1] + alto, p[i * 3 + 2] + dir[i][0] * lato]; };
+  const A = ALTEZZA_PARAVALANGHE, S = 0.55;   // luce libera e spessore della soletta
+  const dentro = monte * (meta + 0.7), fuori = -monte * (meta + 1.1);
+  let fatta = 0, prossimo = 0;
+  for (let i = 0; i < punti; i++) {
+    if (i > 0) {
+      fatta += Math.hypot(p[i * 3] - p[i * 3 - 3], p[i * 3 + 2] - p[i * 3 - 1]);
+      const j = i - 1;
+      quad(posizioni, pt(j, dentro, -0.3), pt(i, dentro, -0.3), pt(j, dentro, A), pt(i, dentro, A));          // muro a monte
+      quad(posizioni, pt(j, dentro, A), pt(i, dentro, A), pt(j, fuori, A), pt(i, fuori, A));                  // soffitto
+      quad(posizioni, pt(j, dentro, A + S), pt(i, dentro, A + S), pt(j, fuori, A + S), pt(i, fuori, A + S));  // sopra la soletta
+      quad(posizioni, pt(j, fuori, A - 0.35), pt(i, fuori, A - 0.35), pt(j, fuori, A + S), pt(i, fuori, A + S));   // trave di bordo verso valle
+    }
+    if (fatta >= prossimo || i === punti - 1) {
+      prossimo = fatta + 5;
+      const q = pt(i, -monte * (meta + 0.75), -0.3);
+      pilastri.push([q[0], q[1], q[2], A + 0.3, Math.atan2(-dir[i][1], dir[i][0])]);
+    }
+  }
+  // le due testate (lo spessore della soletta visto arrivando)
+  for (const i of [0, punti - 1]) quad(posizioni, pt(i, dentro, A), pt(i, fuori, A), pt(i, dentro, A + S), pt(i, fuori, A + S));
+}
+
 export function aggiungiOpere(strade, scena, terreno) {
   const tubo = [];
   const portali = [];
   const cornici = [];
   const luci = [];
   const piloni = [];
+  const paravalanghe = [];
+  const pilastri = [];
 
   for (const strada of strade.lista) {
     const p = strada.p;
@@ -119,24 +163,41 @@ export function aggiungiOpere(strade, scena, terreno) {
 
     if (strada.g) {
       const alta = strada.alta || ALTEZZA_GALLERIA;   // i sottopassi corti sono piu' bassi (vedi strade.js)
-      let prima = sezione(p, 0, strada.w, alta);
-      for (let i = 1; i < punti; i++) {
+      // Dove comincia davvero la roccia? In OpenStreetMap la galleria e' spesso disegnata qualche metro piu' lunga
+      // della montagna che c'e' nel modello del terreno: li' il tubo restava all'aperto, sospeso sopra il pendio.
+      // Il tubo (e il portale) cominciano dal primo punto coperto dal terreno, al massimo 40 m dopo il capo.
+      let primo = 0, ultimo = punti - 1;
+      if (!strada.alta) {
+        const coperto = function (i) { return quotaTerreno(terreno, p[i * 3], p[i * 3 + 2]) >= p[i * 3 + 1] + alta - 1; };
+        let fatta = 0;
+        while (primo < punti - 3 && fatta < 40 && !coperto(primo)) { fatta += Math.hypot(p[primo * 3 + 3] - p[primo * 3], p[primo * 3 + 5] - p[primo * 3 + 2]); primo++; }
+        fatta = 0;
+        while (ultimo > primo + 2 && fatta < 40 && !coperto(ultimo)) { fatta += Math.hypot(p[ultimo * 3] - p[ultimo * 3 - 3], p[ultimo * 3 + 2] - p[ultimo * 3 - 1]); ultimo--; }
+        if (!coperto(primo) || !coperto(ultimo)) { primo = 0; ultimo = punti - 1; }   // mai coperta: resta com'era
+      }
+      let prima = sezione(p, primo, strada.w, alta);
+      for (let i = primo + 1; i <= ultimo; i++) {
         const ora = sezione(p, i, strada.w, alta);
         // il tubo: un quadrilatero per ogni tratto dell'anello (pareti e volta ad arco); il pavimento e' la strada
         for (let k = 0; k < ora.anello.length - 1; k++) {
           quad(tubo, prima.anello[k], ora.anello[k], prima.anello[k + 1], ora.anello[k + 1]);
         }
+        // pavimento: le due banchine tra l'asfalto e le pareti (prima li' non c'era niente: si vedeva il vuoto)
+        const fine = ora.anello.length - 1;
+        quad(tubo, prima.anello[0], ora.anello[0], prima.anello[fine], ora.anello[fine]);
         if (i % OGNI_QUANTI_PUNTI_LUCE === 0) luci.push(ora.centro);
         prima = ora;
       }
       // Portali solo dove la galleria finisce davvero (non al bordo della mappa)
-      for (const [indice, verso] of [[0, -1], [punti - 1, 1]]) {
+      for (const [indice, verso] of [[primo, -1], [ultimo, 1]]) {
         const x = p[indice * 3], z = p[indice * 3 + 2];
         if (dentroArea(terreno, x, z, 3)) {
           aggiungiPortale(portali, cornici, sezione(p, indice, strada.w, alta), verso, terreno);
         }
       }
     }
+
+    if (strada.pv && !strada.g) aggiungiParavalanghe(strada, terreno, paravalanghe, pilastri);
 
     if (strada.b && !strada.riemp) {
       for (let i = OGNI_QUANTI_PUNTI_PILONE; i < punti - 2; i += OGNI_QUANTI_PUNTI_PILONE) {
@@ -151,7 +212,7 @@ export function aggiungiOpere(strade, scena, terreno) {
   const cemento = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0x9a988f, roughness: 0.94, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.42, grana: 0.3, rugosita: 0.18, rilievo: 0.045, scalaRilievo: 5, nome: "portali" });
   const cementoChiaro = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0xbab7ae, roughness: 0.9, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.3, grana: 0.22, rugosita: 0.15, rilievo: 0.03, scalaRilievo: 6, nome: "cornici" });
   const cementoInterno = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0x7e7d78, emissive: 0x24241f, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.35, grana: 0.25, rugosita: 0.1, rilievo: 0.03, scalaRilievo: 5, nome: "galleria_int" });   // un po' di luce propria: dentro non e' nero pesto
-  for (const [posizioni, materiale] of [[tubo, cementoInterno], [portali, cemento], [cornici, cementoChiaro]]) {
+  for (const [posizioni, materiale] of [[tubo, cementoInterno], [portali, cemento], [cornici, cementoChiaro], [paravalanghe, cementoChiaro]]) {
     if (posizioni.length === 0) continue;
     const geometria = new THREE.BufferGeometry();
     geometria.setAttribute("position", new THREE.Float32BufferAttribute(posizioni, 3));
@@ -185,5 +246,143 @@ export function aggiungiOpere(strade, scena, terreno) {
     colonne.computeBoundingSphere();
     scena.add(colonne);
   }
-  return { luci: luci.length, piloni: piloni.length };
+  if (pilastri.length > 0) {
+    const forma = new THREE.BoxGeometry(0.45, 1, 0.45);
+    forma.translate(0, 0.5, 0);
+    const colonne = new THREE.InstancedMesh(forma, cementoChiaro, pilastri.length);
+    pilastri.forEach(function ([x, y, z, altezza, angolo], i) {
+      matrice.makeRotationY(angolo);
+      matrice.scale(new THREE.Vector3(1, altezza, 1));
+      matrice.setPosition(x, y, z);
+      colonne.setMatrixAt(i, matrice);
+    });
+    colonne.computeBoundingSphere();
+    colonne.castShadow = true;
+    scena.add(colonne);
+  }
+  return { luci: luci.length, piloni: piloni.length, paravalanghe: paravalanghe.length > 0 ? 1 : 0 };
+}
+
+// --- Dighe ------------------------------------------------------------------------------------------------
+// La diga di Contra (Valle Verzasca): 220 m di cemento che chiudono il Lago di Vogorno. Nel modello del terreno
+// c'e' solo a pezzi (e' un muro sottile), quindi si costruisce qui dal contorno di OpenStreetMap: un muro
+// verticale dal coronamento fino alla roccia, il camminamento in cima e i due parapetti.
+export async function caricaDighe() {
+  try {
+    const risposta = await fetch("dati/opere.json");
+    if (!risposta.ok) return [];
+    return (await risposta.json()).dighe || [];
+  } catch (errore) {
+    return [];   // dati vecchi senza opere.json: il gioco funziona lo stesso
+  }
+}
+
+// Cemento a vista di una diga: riprese di getto orizzontali, giunti verticali, colature scure. Copre 16 x 16 m.
+function texturaCementoDiga() {
+  const L = 512;
+  const c = document.createElement("canvas");
+  c.width = L;
+  c.height = L;
+  const g = c.getContext("2d");
+  let seme = 4242;
+  const rnd = function () { seme = (seme * 1664525 + 1013904223) >>> 0; return seme / 4294967296; };
+  g.fillStyle = "#b4b1a8";
+  g.fillRect(0, 0, L, L);
+  for (let i = 0; i < 60; i++) {   // getti di colore un po' diverso
+    const v = 150 + Math.floor(rnd() * 50);
+    g.fillStyle = "rgba(" + v + "," + v + "," + (v - 6) + ",0.2)";
+    g.fillRect(Math.floor(rnd() * 4) * 128, Math.floor(rnd() * 8) * 64, 128, 64);
+  }
+  for (let i = 0; i < 16000; i++) {
+    const v = 120 + Math.floor(rnd() * 110);
+    g.fillStyle = "rgba(" + v + "," + v + "," + (v - 5) + ",0.22)";
+    g.fillRect(rnd() * L, rnd() * L, 1 + rnd() * 2, 1 + rnd() * 2);
+  }
+  g.fillStyle = "rgba(40,40,38,0.3)";
+  for (let y = 0; y < L; y += 64) g.fillRect(0, y, L, 2);      // riprese di getto: una ogni 2 m
+  g.fillStyle = "rgba(30,30,28,0.42)";
+  g.fillRect(0, 0, 3, L);                                      // giunto verticale: uno ogni 16 m
+  for (let i = 0; i < 22; i++) {                               // colature d'acqua e muschio
+    const x = rnd() * L, w = 3 + rnd() * 14;
+    const gr = g.createLinearGradient(0, 0, 0, L);
+    gr.addColorStop(0, "rgba(35,38,32," + (0.1 + rnd() * 0.22) + ")");
+    gr.addColorStop(1, "rgba(35,38,32,0.05)");
+    g.fillStyle = gr;
+    g.fillRect(x, 0, w, L);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+export function aggiungiDighe(dighe, scena, terreno) {
+  if (!dighe || dighe.length === 0) return 0;
+  const pos = [], uv = [];
+  const tri = function (a, b, c, ua, ub, uc) {
+    pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+    uv.push(ua[0], ua[1], ub[0], ub[1], uc[0], uc[1]);
+  };
+  for (const diga of dighe) {
+    const p = diga.p, n = p.length / 2;
+    if (n < 3) continue;
+    const cima = diga.cima;
+    // verso del contorno (per sapere da che parte e' "fuori")
+    let area = 0;
+    for (let k = 0; k < n; k++) { const j = (k + 1) % n; area += p[k * 2] * p[j * 2 + 1] - p[j * 2] * p[k * 2 + 1]; }
+    const verso = Math.sign(area) || 1;
+    // contorno con un punto almeno ogni 5 m: per ognuno la quota della roccia ai piedi del muro
+    const giro = [];
+    let fatta = 0;
+    for (let k = 0; k < n; k++) {
+      const j = (k + 1) % n;
+      const ax = p[k * 2], az = p[k * 2 + 1], bx = p[j * 2], bz = p[j * 2 + 1];
+      const lungo = Math.hypot(bx - ax, bz - az);
+      if (lungo < 0.05) continue;
+      const nx = verso * (bz - az) / lungo, nz = -verso * (bx - ax) / lungo;
+      const passi = Math.max(1, Math.ceil(lungo / 5));
+      for (let q = 0; q < passi; q++) {
+        const t = q / passi;
+        const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+        let sotto = quotaTerreno(terreno, x, z);
+        for (const d of [4, 9, 16, 24]) sotto = Math.min(sotto, quotaTerreno(terreno, x + nx * d, z + nz * d));
+        giro.push({ x: x, z: z, nx: nx, nz: nz, u: (fatta + lungo * t) / 16, sotto: Math.min(sotto - 6, cima - 2) });
+      }
+      fatta += lungo;
+    }
+    const m = giro.length;
+    for (let i = 0; i < m; i++) {
+      const a = giro[i], b = giro[(i + 1) % m];
+      const ub = i + 1 === m ? fatta / 16 : b.u;
+      // muro: dal coronamento fino alla roccia
+      const a1 = [a.x, cima, a.z], b1 = [b.x, cima, b.z], a0 = [a.x, a.sotto, a.z], b0 = [b.x, b.sotto, b.z];
+      tri(a0, b0, b1, [a.u, a.sotto / 16], [ub, b.sotto / 16], [ub, cima / 16]);
+      tri(a0, b1, a1, [a.u, a.sotto / 16], [ub, cima / 16], [a.u, cima / 16]);
+      // parapetto: 1.1 m, appena dentro il bordo
+      const o = -0.25;
+      const pa = [a.x + a.nx * o, cima, a.z + a.nz * o], pb = [b.x + b.nx * o, cima, b.z + b.nz * o];
+      const qa = [pa[0], cima + 1.1, pa[2]], qb = [pb[0], cima + 1.1, pb[2]];
+      tri(pa, pb, qb, [a.u, 0], [ub, 0], [ub, 0.07]);
+      tri(pa, qb, qa, [a.u, 0], [ub, 0.07], [a.u, 0.07]);
+    }
+    // camminamento del coronamento
+    const contorno = [];
+    for (let k = 0; k < n; k++) contorno.push(new THREE.Vector2(p[k * 2], p[k * 2 + 1]));
+    for (const t of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+      const v = t.map(function (k) { return [contorno[k].x, cima, contorno[k].y]; });
+      tri(v[0], v[1], v[2], [v[0][0] / 16, v[0][2] / 16], [v[1][0] / 16, v[1][2] / 16], [v[2][0] / 16, v[2][2] / 16]);
+    }
+  }
+  if (pos.length === 0) return 0;
+  const geometria = new THREE.BufferGeometry();
+  geometria.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geometria.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  geometria.computeVertexNormals();
+  geometria.computeBoundingSphere();
+  const mesh = new THREE.Mesh(geometria, new THREE.MeshStandardMaterial({ map: texturaCementoDiga(), roughness: 0.93, metalness: 0, side: THREE.DoubleSide }));
+  mesh.receiveShadow = true;
+  mesh.castShadow = true;
+  scena.add(mesh);
+  return dighe.length;
 }

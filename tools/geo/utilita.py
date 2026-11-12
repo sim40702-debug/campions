@@ -179,7 +179,7 @@ def scarica_tanti(elenco, quanti_insieme=12):
     return nuovi
 
 
-def chiedi_overpass(query, percorso):
+def chiedi_overpass(query, percorso, giri=3):
     # Manda una richiesta a Overpass (OpenStreetMap) e salva la risposta in JSON.
     # Se un server non risponde (errore 429, 502, 504...) prova il prossimo.
     if percorso.exists():
@@ -187,7 +187,8 @@ def chiedi_overpass(query, percorso):
         with open(percorso, encoding="utf-8") as file:
             return json.load(file)
     server = [config.OVERPASS_URL] + config.OVERPASS_RISERVA
-    for giro in range(1, 4):
+    # giri = quante volte si riprova tutto l'elenco dei server (1 per i dati di cui si puo' fare a meno)
+    for giro in range(1, giri + 1):
         for indirizzo in server:
             try:
                 print("  chiedo a " + indirizzo.split("/")[2] + "...", flush=True)
@@ -212,6 +213,8 @@ def chiedi_overpass(query, percorso):
                 return dati
             except (requests.RequestException, ValueError) as errore:
                 print("  " + indirizzo.split("/")[2] + ": " + str(errore)[:120] + ", provo un altro server")
+        if giro == giri:
+            break
         print("  Nessun server ha risposto (giro " + str(giro) + "), aspetto " + str(60 * giro) + " secondi...")
         time.sleep(60 * giro)
     raise RuntimeError("Overpass non risponde. Riprova piu' tardi.")

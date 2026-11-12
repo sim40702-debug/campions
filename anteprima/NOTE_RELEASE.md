@@ -1,9 +1,51 @@
 ## MOTO RACING WORLD – Anteprima Ticino
 
-Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
+Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.3) – Incroci veri e grafica nuova
+### Novità di questa versione (0.15.5) – mappa fluida e caricamento più corto
+
+- **Mappa grande (tasto N) fluida**: la mappa si disegna una volta su un'immagine più grande dello schermo e mentre la trascini o fai zoom si sposta solo quella; prima a ogni movimento del mouse venivano ridisegnate tutte le strade e le case della regione.
+- **Con una mappa aperta (N o K) il mondo 3D dietro non viene più disegnato**: tutta la potenza va alla mappa.
+- **Mappa del cantone (K)**: si ridisegna una volta per fotogramma invece che a ogni movimento del mouse.
+- **Caricamento più corto**: il calcolo delle quote delle strade (il passo più lento) è stato riscritto e dà le stesse identiche quote in molto meno tempo.
+- **Fiammelle della SM 450**: ora escono dalla punta dei due scarichi (la posizione viene misurata sul modello; prima erano circa 25 cm troppo in alto).
+
+### Novità della 0.15.4 – impennate e fiammelle
+
+- **Freno dietro in impennata (Spazio)**: tenuto premuto riporta giù la ruota davanti; a colpetti la abbassa un po' alla volta, così si tiene l'impennata senza ribaltarsi. L'impennata sale anche meno di scatto.
+- **Mappa impennate (tasto I, solo sui motard)**: appena si accelera la moto impenna e resta su da sola a un angolo fisso senza ribaltarsi; mollando il gas torna giù piano. Sul cruscotto compare "MAPPA IMPENNATE"; la scelta resta salvata.
+- **MRW SM 450**: quando scoppietta in rilascio escono le fiammelle dai due scarichi.
+
+### Novità della 0.15.3 – TUTTO IL CANTON TICINO
+
+- **Tutto il cantone**: da Chiasso ad Airolo, da Bosco Gurin a Olivone. 19 regioni da 24 × 24 km, 3 692 km di strade, 262 549 edifici, 1 007 località, 78 laghi.
+- **Pulsante "Ticino" (tasto K)**: mappa di tutto il cantone con rilievo, confine, distretti e strade principali; si cerca qualsiasi località e si sceglie la partenza dove si vuole.
+- **Le regioni si scaricano da sole** (68–118 MB l'una) quando ci si entra o si sceglie una partenza: serve internet. Dentro l'app c'è già la regione di Locarno. Dal pannello si vede lo spazio usato e si possono eliminare.
+- **Guidando si passa da una regione all'altra**: vicino al bordo il gioco prepara la regione vicina e riparte nello stesso punto, con la stessa direzione e velocità (c'è un breve caricamento).
+- **Molta meno memoria**: edifici e strade si costruiscono solo vicino alla moto e si tolgono quando sono lontani (a Chiasso da 2,5 GB a circa 570 MB).
+- **Da sapere**: provata in tutte le 19 regioni con i dati veri, ma **non ancora su un Mac o un PC veri**. Se qualcosa non va, la 0.15.2 resta scaricabile dalla pagina Releases. Dettagli e limiti: `docs/sprint-T1/SPRINT_REPORT.md`.
+
+### Novità della 0.15.2 – Valle Verzasca: case, diga e strade rifatte
+
+- **Rustici al posto dei palazzi**: nella valle (e nei monti sopra i 650 m) le case erano palazzi di 5–6 piani con il tetto piatto. Ora sono case basse di **sasso a vista** (alcune intonacate), con poche finestre piccole, **tetto a due falde in piode** su qualsiasi pianta e comignolo di sasso. I muri partono dal terreno vero sotto ogni lato: a monte si vede un piano, a valle due.
+- **Ruderi**: i ruderi di OpenStreetMap (prima non c'erano) sono muri bassi di sasso senza tetto.
+- **Chiese e oratori** con il tetto a falde sulla pianta vera (prima a piramide o piatto) e alti il giusto.
+- **Diga della Verzasca (Contra)**: adesso c'è, un muro di cemento alto oltre 200 m dal coronamento alla roccia, con il camminamento e i parapetti. Il **Lago di Vogorno è pieno**, 4 m sotto il coronamento: prima era disegnato 53 m più in basso.
+- **Strade larghe il giusto**: la cantonale della valle ha due corsie da 3 m; le stradine laterali sono a una corsia (3,6–4 m invece di 5).
+- **Righe, marciapiedi e fondo come nella realtà** (dati OpenStreetMap, su tutta la mappa): niente righe dove non ci sono, niente marciapiedi nei nuclei della valle, **acciottolato** e **sterrato** dove la strada non è asfaltata.
+- **Ponti**: cordolo di cemento e **ringhiera d'acciaio** al posto del muro pieno; **parapetto di sasso** sui ponti stretti.
+- **Muri di sostegno e muretti di sasso**: i muri sotto la strada sono di sasso (prima grigio piatto) e le stradine di valle hanno il muretto dal lato del vuoto. I **guardrail** compaiono anche dove il burrone inizia oltre la banchina (prima mancavano quasi ovunque).
+- **Gallerie**: le due gallerie corte della strada della valle (76 e 78 m) tornano dentro la montagna (prima il terreno veniva scavato e il tubo restava all'aperto); banchine di cemento tra l'asfalto e le pareti di tutte le gallerie.
+- **Paravalanghe di Aquino** (sotto Brione): strada coperta con soletta, muro a monte e pilastri verso valle, non più una galleria.
+- Non ancora sistemato: i fiumi larghi nei tratti ripidi (per esempio a Gerra e sotto Corippo) sono ancora disegnati a grandi lastre azzurre.
+
+### Novità della 0.15.1 – aggiornamento sicuro su Mac
+
+- **Su Mac l'aggiornamento non può più rovinare l'app**: prima la versione vecchia veniva cancellata subito; se il Mac bloccava la copia della nuova a metà, restava un'app senza i dati ("Mancano i dati del terreno"). Ora la nuova viene copiata accanto, controllata (dati del terreno compresi) e solo dopo prende il posto della vecchia. Se qualcosa non va, la vecchia resta intatta e si apre il .dmg da trascinare in Applicazioni.
+- Se mancano i dati del terreno, il messaggio dice cosa fare (riscaricare l'ultima versione da GitHub).
+
+### Novità del ramo grafica (anteprima 0.15.3 del ramo Fasi 2–4) – Incroci veri e grafica nuova
 
 **Strade e incroci (il lavoro principale)**
 - **Ogni incrocio ha la sua forma**, calcolata dalle strade vere di OpenStreetMap che ci arrivano: incroci a 3, 4, 5 e più vie ed entrate delle rotonde. Tra due strade vicine l'angolo non è più vivo ma ha un **raccordo circolare** tangente ai due bordi (raggio da 3,5 a 9 m secondo la larghezza), come nei cordoli veri. Niente più "dischi" di asfalto e buchi tra le strade.

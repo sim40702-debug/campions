@@ -87,12 +87,66 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
     return [(x - vista.cx) * vista.scala + dimensioni.w / 2, (z - vista.cz) * vista.scala + dimensioni.h / 2];
   };
 
+  // --- Mappa veloce -------------------------------------------------------------------------
+  // Ridisegnare tutte le strade e le case a ogni movimento del mouse costa troppo (in una regione ci sono
+  // 17'000 strade): la mappa si disegna UNA volta su una tela nascosta piu' grande dello schermo, e mentre
+  // la si trascina o la si ingrandisce si sposta solo quell'immagine. Si ridisegna davvero solo quando si
+  // esce dal bordo dell'immagine o ci si ferma dopo uno zoom.
+  const telaNascosta = document.createElement("canvas");
+  const penNascosta = telaNascosta.getContext("2d");
+  const MARGINE = 0.5;   // l'immagine nascosta e' piu' larga dello schermo di meta' schermo per lato
+  let immagine = null;   // { cx, cz, scala, w, h, dpr, palette, semplice }
+  let ultimoZoom = 0;    // quando e' stato l'ultimo zoom (millisecondi)
+  let attesaNitida = null;
+
+  function disegnaImmagine(semplice) {
+    // mentre ci si muove l'immagine nascosta e' meno fitta (1 punto per pixel): si disegna piu' in fretta
+    const dpr = semplice ? 1 : dimensioni.dpr;
+    const w = Math.round(dimensioni.w * (1 + MARGINE * 2)), h = Math.round(dimensioni.h * (1 + MARGINE * 2));
+    if (telaNascosta.width !== Math.round(w * dpr) || telaNascosta.height !== Math.round(h * dpr)) {
+      telaNascosta.width = Math.round(w * dpr);
+      telaNascosta.height = Math.round(h * dpr);
+    }
+    penNascosta.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mappa.disegnaVista(penNascosta, vista.cx, vista.cz, vista.scala, w, h, { semplice: semplice });
+    immagine = { cx: vista.cx, cz: vista.cz, scala: vista.scala, w: w, h: h, dpr: dpr, palette: mappa.palette, semplice: semplice };
+  }
+
   function disegna() {
     adattaTela();
     pen.setTransform(dimensioni.dpr, 0, 0, dimensioni.dpr, 0, 0);
     mappa.palette = mappa.ambiente && mappa.ambiente.uniformi.notte.value > 0.5 ? "notte" : "giorno";
-    // mentre si trascina o si ingrandisce, niente nomi delle strade (piu' veloce)
-    mappa.disegnaVista(pen, vista.cx, vista.cz, vista.scala, dimensioni.w, dimensioni.h, { semplice: trascinando });
+    const inMovimento = trascinando || performance.now() - ultimoZoom < 180;
+
+    // l'immagine nascosta va ancora bene? (stessa scala, stessi colori, e lo schermo ci sta dentro)
+    let buona = immagine !== null && immagine.palette === mappa.palette &&
+      immagine.w === Math.round(dimensioni.w * (1 + MARGINE * 2)) && immagine.h === Math.round(dimensioni.h * (1 + MARGINE * 2));
+    if (buona) {
+      const fuoriX = Math.abs(vista.cx - immagine.cx) * immagine.scala > dimensioni.w * MARGINE;
+      const fuoriZ = Math.abs(vista.cz - immagine.cz) * immagine.scala > dimensioni.h * MARGINE;
+      if (fuoriX || fuoriZ) buona = false;
+      // durante lo zoom si ingrandisce l'immagine che c'e' (un po' sfocata), finche' non si esagera
+      const rapporto = vista.scala / immagine.scala;
+      if (rapporto !== 1 && (!inMovimento || rapporto > 2.5 || rapporto < 0.4)) buona = false;
+      // fermi: serve l'immagine completa (con i nomi delle strade e nitida)
+      if (!inMovimento && immagine.semplice) buona = false;
+    }
+    if (!buona) disegnaImmagine(inMovimento);
+
+    // copia dell'immagine nascosta sullo schermo, spostata (e se serve ingrandita)
+    const rapporto = vista.scala / immagine.scala;
+    const [ix, iz] = aSchermo(immagine.cx, immagine.cz);
+    pen.fillStyle = "#1b2330";
+    pen.fillRect(0, 0, dimensioni.w, dimensioni.h);
+    pen.imageSmoothingEnabled = true;
+    pen.drawImage(telaNascosta, ix - immagine.w * rapporto / 2, iz - immagine.h * rapporto / 2, immagine.w * rapporto, immagine.h * rapporto);
+
+    // dopo uno zoom o uno spostamento: appena ci si ferma si ridisegna nitida
+    if (inMovimento && !trascinando) {
+      clearTimeout(attesaNitida);
+      attesaNitida = setTimeout(ridisegna, 200);
+    }
+
     // bordo del mondo
     const [bx0, bz0] = aSchermo(-metaX, -metaZ);
     const [bx1, bz1] = aSchermo(metaX, metaZ);
@@ -341,6 +395,7 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
     evento.preventDefault();
     // zoom verso il punto sotto il mouse
     const [x, z] = daSchermo(evento.clientX, evento.clientY);
+    ultimoZoom = performance.now();
     const fattore = Math.exp(-evento.deltaY * 0.0015);
     vista.scala *= fattore;
     vista.scala = Math.max(scalaMinima() * 0.9, Math.min(5, vista.scala));
@@ -351,6 +406,7 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
   }, { passive: false });
 
   function zoomCentro(f) {
+    ultimoZoom = performance.now();
     vista.scala *= f;
     limita();
     ridisegna();

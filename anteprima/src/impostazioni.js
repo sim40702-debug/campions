@@ -8,6 +8,7 @@ import { impostaDettaglioTerreno } from "./terreno.js";
 import { impostaFotoHD } from "./terreno_hd.js";
 import { impostaErba } from "./erba.js";
 import { impostaEdifici } from "./edifici.js";
+import { impostaStrade } from "./strade.js";
 import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, impostaMeteoRealistico, testoOra, descrizioneMomento } from "./ambiente.js";
 
 // pixel = rapporto di pixel; raggioAlberi/densitaAlberi = boschi; visibilita = fino a dove si vede (m);
@@ -15,10 +16,10 @@ import { ELENCO_METEO, impostaOra, impostaMeteo, impostaCiclo, impostaMeteoReali
 // alla moto hanno le ombre; dettagli = distanza (m) dei dettagli delle case (balconi, comignoli, impianti);
 // vistaCitta' = distanza (m) degli edifici; nuvole/ombreCitta = nuvole e ombre degli edifici
 export const QUALITA = {
-  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024, areaOmbre: 26, dettagli: 150, vistaCitta: 3500, nuvole: false, ombreCitta: false, gocce: 2500, ombreAttive: false, terrenoPieno: 350, fotoHD: 0, erba: 0, densitaErba: 0 },
-  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048, areaOmbre: 40, dettagli: 320, vistaCitta: 6500, nuvole: true, ombreCitta: true, gocce: 5000, ombreAttive: true, terrenoPieno: 650, fotoHD: 170, erba: 30, densitaErba: 0.7 },
-  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096, areaOmbre: 55, dettagli: 520, vistaCitta: 8500, nuvole: true, ombreCitta: true, gocce: 8000, ombreAttive: true, terrenoPieno: 900, fotoHD: 215, erba: 40, densitaErba: 1 },
-  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096, areaOmbre: 75, dettagli: 800, vistaCitta: 10500, nuvole: true, ombreCitta: true, gocce: 12000, ombreAttive: true, terrenoPieno: 1000, fotoHD: 240, erba: 55, densitaErba: 1.3 }
+  bassa: { nome: "Bassa", pixel: 0.75, raggioAlberi: 450, densitaAlberi: 0.45, visibilita: 3500, terreno: 0.7, ombre: 1024, areaOmbre: 26, dettagli: 150, vistaCitta: 3500, nuvole: false, ombreCitta: false, gocce: 2500, ombreAttive: false, terrenoPieno: 350, fotoHD: 0, raggioFoto2m: 3000, erba: 0, densitaErba: 0 },
+  media: { nome: "Media", pixel: 1.0, raggioAlberi: 900, densitaAlberi: 1.0, visibilita: 7000, terreno: 1.2, ombre: 2048, areaOmbre: 40, dettagli: 320, vistaCitta: 6500, nuvole: true, ombreCitta: true, gocce: 5000, ombreAttive: true, terrenoPieno: 650, fotoHD: 170, raggioFoto2m: 4500, erba: 30, densitaErba: 0.7 },
+  alta: { nome: "Alta", pixel: 1.5, raggioAlberi: 1300, densitaAlberi: 1.3, visibilita: 9000, terreno: 1.8, ombre: 4096, areaOmbre: 55, dettagli: 520, vistaCitta: 8500, nuvole: true, ombreCitta: true, gocce: 8000, ombreAttive: true, terrenoPieno: 900, fotoHD: 215, raggioFoto2m: 6000, erba: 40, densitaErba: 1 },
+  ultra: { nome: "Ultra 4K", pixel: 0, raggioAlberi: 1600, densitaAlberi: 1.5, visibilita: 11000, terreno: 2.4, ombre: 4096, areaOmbre: 75, dettagli: 800, vistaCitta: 10500, nuvole: true, ombreCitta: true, gocce: 12000, ombreAttive: true, terrenoPieno: 1000, fotoHD: 240, raggioFoto2m: 8000, erba: 55, densitaErba: 1.3 }
 };
 
 const CHIAVE = "mrw-qualita";
@@ -101,8 +102,10 @@ export function applicaQualita(chiave, mondo) {
   mondo.ambiente.qualitaNuvole = q.nuvole && preferenze.nuvole;
   if (mondo.precipitazioni) mondo.precipitazioni.imposta(q.gocce);
   impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta, q.areaOmbre);
+  // le strade si disegnano fino a poco piu' di meta' della visibilita' (oltre sono un filo e c'e' la foschia)
+  if (mondo.strade) impostaStrade(mondo.strade, q.visibilita * 0.55);
   impostaAlberi(mondo.alberi, q.raggioAlberi, q.densitaAlberi);
-  impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno, q.visibilita);
+  impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno, q.visibilita, q.raggioFoto2m);
   impostaErba(mondo.erba, q.erba, q.densitaErba);
   impostaFotoHD(q.fotoHD, mondo.disegnatore.capabilities.getMaxAnisotropy());
   salvaQualita(chiave);

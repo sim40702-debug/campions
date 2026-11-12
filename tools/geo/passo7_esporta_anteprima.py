@@ -13,6 +13,7 @@
 #   dettagli.json semafori, stop, precedenze, lampioni, strisce, localita' (Sprint D2)
 #   uso_suolo.json parchi, giardini, prati, cimiteri e zone residenziali/commerciali/industriali (per la mappa)
 #   acqua.json    fiumi, torrenti, stagni (Sprint C1)
+#   opere.json    dighe (contorno e quota del coronamento)
 #   ferrovie.json binari e funicolari; funivie.json teleferiche e seggiovie (Sprint F1)
 #
 # Sprint F1: strade lisce agganciate agli incroci, terreno spianato sotto le strade,
@@ -117,7 +118,48 @@ def poligono_osm(elemento):
 
 TIPI_CHIESA = {"church", "chapel", "cathedral", "basilica"}
 TIPI_CAMPANILE = {"bell_tower", "tower", "campanile"}
-TIPI_SENZA_MURI = {"roof", "carport", "construction", "ruins"}
+TIPI_SENZA_MURI = {"roof", "carport", "construction"}
+
+# --- Rustici: le case di sasso delle valli -----------------------------------------------------------------
+# In OpenStreetMap quasi tutti gli edifici della Valle Verzasca sono "building=yes" senza piani ne' altezza.
+# Con la regola generale (2 piani sopra il punto PIU' ALTO del terreno, tetto piatto) un rustico di 40 m2 su un
+# pendio diventava una torre di 15 m. Nelle valli (zona "Valle Verzasca") e in quota (monti e alpi) un edificio
+# piccolo e senza altre indicazioni e' un rustico: muri bassi di sasso (o intonacati), tetto a due falde in piode.
+ZONE_RUSTICHE = {"Valle Verzasca", "Vallemaggia", "Valle di Blenio", "Leventina"}   # valli con i rustici in sasso
+QUOTA_RUSTICI_M = 650        # sopra questa quota i nuclei sono rustici anche fuori dalle valli
+AREA_MASSIMA_RUSTICO_M2 = 700     # sopra: capannoni, scuole, alberghi grandi (regola generale)
+TIPI_RUSTICO = {"yes", "house", "detached", "residential", "hut", "cabin", "barn", "stable", "cowshed",
+                "farm", "farm_auxiliary", "shed", "semidetached_house", "garage", "garages", "ruins"}
+TIPI_ANNESSO = {"shed", "garage", "garages", "barn", "stable", "cowshed", "farm_auxiliary", "hut", "cabin"}
+# Forma del tetto scritta in OSM (roof:shape) -> numero nei dati (0 = non detta)
+FORME_TETTO = {"gabled": 1, "pitched": 1, "saltbox": 1, "gambrel": 1, "hipped": 2, "half-hipped": 2,
+               "pyramidal": 2, "flat": 3, "skillion": 4, "lean_to": 4}
+
+
+def e_rudere(tag):
+    return tag.get("building") == "ruins" or tag.get("ruins") in ("yes", "building", "house") or tag.get("historic") == "ruins"
+
+
+def altezza_rustico(tag, superficie, ident):
+    # Altezza del muro fino alla gronda, sopra il terreno MEDIO sotto la casa. Dai piani di OSM se ci sono,
+    # altrimenti dalla superficie: una stalla piccola ha un piano, un rustico due, una casa grande due e mezzo.
+    piani = numero(tag.get("building:levels", ""))
+    if piani and 0 < piani <= 4:
+        return piani * 2.6 + 0.4
+    variazione = ((ident * 2654435761) % 1000) / 1000 - 0.5      # da -0.5 a 0.5, sempre uguale per la stessa casa
+    if tag.get("building") in TIPI_ANNESSO or superficie < 20:
+        base = 2.5
+    elif superficie < 38:
+        base = 3.7
+    elif superficie < 75:
+        base = 5.0
+    elif superficie < 130:
+        base = 5.6
+    elif superficie < 260:
+        base = 6.6
+    else:
+        base = 8.2      # case grandi, ristoranti, alberghi dei paesi: tre piani bassi
+    return base + variazione * 0.8
 
 
 def poligoni_edifici(percorso, zona):
@@ -145,8 +187,23 @@ def poligoni_edifici(percorso, zona):
     return risultato
 
 
-def esporta_edifici(lista, suolo, centro_est, centro_nord):
+def zone_rustiche():
+    # Le zone (valli) dove gli edifici piccoli sono rustici: un solo poligono in LV95, oppure None
+    forme = [Polygon(voce["contorno"]).buffer(0) for voce in getattr(config, "ZONE_ANTEPRIMA", [])
+             if voce["nome"] in ZONE_RUSTICHE]
+    return unary_union(forme) if forme else None
+
+
+def esporta_edifici(lista, suolo, centro_est, centro_nord, valli=None):
+    # Campi di ogni edificio:
+    #   p  contorno (x, z);  b  quota del piede (punto piu' basso del terreno);  h  quota della gronda
+    #   c  colore (0-5);  t  1 = tetto a falde;  k  0 casa, 1 chiesa, 2 campanile, 3 rudere (muri bassi, niente tetto)
+    #   s  (solo se c'e') 1 = rustico di sasso, 2 = rustico intonacato
+    #   r  (solo se c'e') forma del tetto scritta in OSM: 1 due falde, 2 padiglione/piramide, 3 piatto, 4 una falda
+    #   o  (solo se c'e') 1 = colmo di traverso (roof:orientation=across)
     edifici = []
+    rustici = 0
+    ruderi = 0
     for poligono, tag, ident in lista:
         anello = list(poligono.exterior.coords)[:-1]
         if len(anello) < 3:
@@ -157,23 +214,71 @@ def esporta_edifici(lista, suolo, centro_est, centro_nord):
             genere = 1
         elif tipo in TIPI_CAMPANILE or tag.get("man_made") in ("tower", "campanile") or tag.get("tower:type") == "bell_tower":
             genere = 2
+        elif e_rudere(tag):
+            genere = 3
         else:
             genere = 0
         altezza = altezza_edificio(tag, poligono.area)
         if genere == 2 and numero(tag.get("height", "")) is None:
             altezza = 24   # campanile: se OSM non dice l'altezza
+        cima = max(sotto) + altezza
+        forma_tetto = FORME_TETTO.get(tag.get("roof:shape", ""), 0)
+        tegole = tipo in TIPI_TETTO_A_TEGOLE or genere in (1, 2)
+
+        # rustico? (vedi sopra)
+        stile = 0
+        media = sum(sotto) / len(sotto)
+        in_valle = valli is not None and valli.contains(poligono.centroid)
+        if genere == 3:
+            # rudere: restano i muri, alti da 1 a 2 metri
+            cima = media + 1.0 + ((ident * 2654435761) % 1000) / 1000 * 1.1
+            cima = max(cima, max(sotto) + 0.5)
+            stile = 1
+            tegole = False
+            ruderi = ruderi + 1
+        elif (genere == 0 and (in_valle or media >= QUOTA_RUSTICI_M) and tipo in TIPI_RUSTICO
+              and poligono.area <= AREA_MASSIMA_RUSTICO_M2 and numero(tag.get("height", "")) is None
+              and (numero(tag.get("building:levels", "")) or 0) <= 3 and forma_tetto != 3):
+            # gronda sopra il terreno medio; a monte il muro resta alto almeno 2 m
+            cima = max(media + altezza_rustico(tag, poligono.area, ident), max(sotto) + 2.0)
+            # di sasso a vista quasi tutti i piccoli, intonacate piu' spesso le case grandi
+            sorte = ((ident * 40503) % 1000) / 1000
+            materiale = tag.get("building:material", "")
+            if materiale in ("stone", "granite", "gneiss"):
+                stile = 1
+            elif materiale in ("plaster", "concrete", "brick"):
+                stile = 2
+            else:
+                soglia = 0.92 if poligono.area < 60 else (0.75 if poligono.area < 120 else (0.5 if poligono.area < 260 else 0.2))
+                stile = 1 if sorte < soglia else 2
+            tegole = True
+            rustici = rustici + 1
+        elif genere == 1 and (in_valle or media >= QUOTA_RUSTICI_M) and numero(tag.get("height", "")) is None \
+                and numero(tag.get("building:levels", "")) is None:
+            # chiese e oratori delle valli: piccoli, non 14 m di muro sopra il punto piu' alto
+            piccola = poligono.area < 90
+            cima = max(media + (4.2 if piccola else (6.5 if poligono.area < 260 else 9.0)), max(sotto) + 2.6)
+
         piatta = []
         for e, n in anello:
             piatta.append(round(e - centro_est, 1))
             piatta.append(round(-(n - centro_nord), 1))
-        edifici.append({
+        voce = {
             "p": piatta,
             "b": round(min(sotto) - 0.5, 1),
-            "h": round(max(sotto) + altezza, 1),
+            "h": round(cima, 1),
             "c": ident % 6,
-            "t": 1 if tipo in TIPI_TETTO_A_TEGOLE or genere > 0 else 0,
+            "t": 1 if tegole else 0,
             "k": genere,
-        })
+        }
+        if stile:
+            voce["s"] = stile
+        if forma_tetto:
+            voce["r"] = forma_tetto
+        if tag.get("roof:orientation") == "across":
+            voce["o"] = 1
+        edifici.append(voce)
+    print("   rustici: " + str(rustici) + ", ruderi: " + str(ruderi))
     return edifici
 
 
@@ -226,7 +331,50 @@ def esporta_dettagli(percorso, zona, centro_est, centro_nord):
 LARGHEZZA_CORSO_ACQUA = {"river": 14, "canal": 6, "stream": 2.5}
 
 
-def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord):
+# --- Dighe -----------------------------------------------------------------------------------------------------
+BORDO_LIBERO_DIGA_M = 4.0     # il lago pieno sta 4 m sotto il coronamento (Contra: coronamento 474 m, invaso 470 m)
+
+
+def esporta_dighe(percorso, vero, zona, centro_est, centro_nord):
+    # Le dighe disegnate in OpenStreetMap come contorno (la diga di Contra, in Valle Verzasca): per il gioco servono
+    # il contorno e la quota del coronamento. Il modello del terreno contiene la diga solo a pezzi (un muro di 7 m
+    # in una griglia di 4 m): il coronamento e' la quota piu' alta che si trova dentro il contorno.
+    # Ritorna (elenco per il gioco, elenco di (poligono LV95, quota del coronamento)).
+    dighe = []
+    forme = []
+    for elemento in utilita.leggi_json(percorso).get("elements", []):
+        tag = elemento.get("tags", {})
+        if elemento.get("type") != "way" or (tag.get("waterway") != "dam" and tag.get("man_made") != "dam"):
+            continue
+        nodi = elemento.get("nodes", [])
+        if len(nodi) < 4 or nodi[0] != nodi[-1]:
+            continue    # solo le dighe con il contorno chiuso: le traverse disegnate come una linea restano terreno
+        poligono = poligono_osm(elemento)
+        if poligono is None or poligono.is_empty or poligono.geom_type != "Polygon" or poligono.area < 400:
+            continue
+        if not zona.contains(poligono):
+            continue
+        min_e, min_n, max_e, max_n = poligono.bounds
+        quote = []
+        for e in np.arange(min_e, max_e, 2.0):
+            for n in np.arange(min_n, max_n, 2.0):
+                if poligono.contains(Point(e, n)):
+                    quote.append(vero.quota(e, n))
+        if len(quote) < 20:
+            continue
+        cima = round(float(np.percentile(quote, 97)), 1)
+        anello = list(poligono.exterior.coords)[:-1]
+        piatta = []
+        for e, n in anello:
+            piatta.append(round(e - centro_est, 1))
+            piatta.append(round(-(n - centro_nord), 1))
+        dighe.append({"n": tag.get("name", ""), "p": piatta, "cima": cima})
+        forme.append((poligono, cima))
+        print("   " + (tag.get("name") or "diga") + ": coronamento a " + str(cima) + " m, contorno di " + str(len(anello)) + " punti")
+    return dighe, forme
+
+
+def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord, dighe=()):
     # Poligoni d'acqua (fiumi larghi, stagni) e corsi d'acqua come linee.
     # Il Lago Maggiore e' gia' nel gioco come superficie piatta: qui lo salto.
     poligoni = []
@@ -256,9 +404,31 @@ def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord):
         poligono = poligono_osm(elemento)
         if poligono is None or poligono.is_empty:
             continue
-        if poligono.area > 5_000_000 or tag.get("water") == "lake" and poligono.area > 1_000_000:
-            continue   # Lago Maggiore
+        grande = poligono.area > 5_000_000 or tag.get("water") == "lake" and poligono.area > 1_000_000
         poligono = poligono.intersection(zona)
+        if grande:
+            # Lago grande. Il Lago Maggiore (193 m) e' gia' nel gioco come superficie piatta: lo salto.
+            # Gli altri (Lago di Lugano 271 m, laghi alpini e bacini: Ritom, Luzzone, Sambuco, Naret...) diventano
+            # una superficie piatta alla quota della loro riva (la mediana, cosi' un punto sbagliato non conta).
+            if poligono.is_empty:
+                continue
+            parti_lago = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
+            for parte in parti_lago:
+                if parte.geom_type != "Polygon" or parte.area < 2000:
+                    continue
+                riva = sorted(suolo.quota(e, n) for e, n in parte.exterior.coords)
+                livello = riva[len(riva) // 2]
+                if livello < 196.5:
+                    continue   # Lago Maggiore
+                parte = parte.simplify(3)
+                if parte.is_empty or parte.geom_type != "Polygon":
+                    continue
+                poligoni.append({
+                    "o": locali(list(parte.exterior.coords)[:-1]),
+                    "f": [locali(list(buco.coords)[:-1]) for buco in parte.interiors if buco.length > 60],
+                    "piatto": round(livello + 0.2, 2),
+                })
+            continue
         parti = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
         for parte in parti:
             if parte.geom_type != "Polygon" or parte.area < 20:
@@ -269,6 +439,11 @@ def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord):
             # Stagni e laghetti: superficie piatta alla quota piu' bassa della riva
             riva = [suolo.quota(e, n) for e, n in parte.exterior.coords]
             piatto = round(min(riva) + 0.2, 2) if tag.get("water") in ("pond", "lake", "reservoir") else None
+            # Lago artificiale chiuso da una diga: il livello e' quello del lago PIENO, poco sotto il coronamento.
+            # (Nel modello del terreno il Lago di Vogorno e' mezzo vuoto, 53 m sotto: il gioco lo disegnava cosi'.)
+            for forma, cima in dighe:
+                if parte.area > 20_000 and parte.distance(forma) < 30:
+                    piatto = round(cima - BORDO_LIBERO_DIGA_M, 2)
             poligoni.append({
                 "o": locali(list(parte.exterior.coords)[:-1]),
                 "f": [locali(list(buco.coords)[:-1]) for buco in parte.interiors],
@@ -379,17 +554,59 @@ def esporta_zone(giocabile, centro_est, centro_nord):
     return zone
 
 
-def larghezza_strada(tag):
-    # 1) larghezza scritta in OSM  2) corsie x 3.3 m  3) valore di base
+# Nelle valli le strade laterali sono a una corsia sola: senza larghezza ne' corsie in OSM valgono queste
+LARGHEZZE_VALLE = {"tertiary": 5.6, "unclassified": 4.0, "residential": 3.6, "living_street": 3.4, "tertiary_link": 4.5}
+# Fondo della strada (surface) -> lettera nei dati: "c" acciottolato / lastre di pietra, "t" sterrato
+FONDI = {"cobblestone": "c", "unhewn_cobblestone": "c", "sett": "c", "paving_stones": "c",
+         "dirt": "t", "ground": "t", "gravel": "t", "fine_gravel": "t", "unpaved": "t", "compacted": "t", "earth": "t"}
+
+
+def larghezza_strada(tag, in_valle=False):
+    # 1) larghezza scritta in OSM  2) corsie  3) valore di base (piu' stretto nelle valli e senza righe)
     try:
-        return max(3.0, min(25.0, float(tag["width"].replace("m", "").strip())))
+        # sotto 2.6 m non e' una strada per veicoli: in OSM a volte "width" e' solo sbagliato (0.8 m a Vogorno)
+        return max(2.6, min(25.0, float(tag["width"].replace("m", "").strip())))
     except (KeyError, ValueError):
         pass
+    tipo = tag.get("highway")
     try:
-        return int(tag["lanes"]) * 3.3
+        corsie = int(tag["lanes"])
+        if corsie < 1 or corsie > 8:
+            raise ValueError   # "lanes=0" in OpenStreetMap (un errore, visto vicino a Como): vale la larghezza di base
+        # la cantonale della valle ha due corsie da 3 m (carreggiata di 6 m), non da 3.3
+        return corsie * (3.0 if in_valle and corsie == 2 and tipo == "tertiary" else 3.3)
     except (KeyError, ValueError):
         pass
-    return LARGHEZZE.get(tag.get("highway"), 5)
+    if (in_valle or tag.get("lane_markings") == "no") and tipo in LARGHEZZE_VALLE:
+        return LARGHEZZE_VALLE[tipo] if in_valle else min(LARGHEZZE[tipo], LARGHEZZE_VALLE[tipo] + 0.6)
+    return LARGHEZZE.get(tipo, 5)
+
+
+def particolari_strada(tag, in_valle, larghezza):
+    # Quello che OpenStreetMap dice in piu' sulla strada (solo i campi che servono al gioco):
+    #   m = 0  niente righe sull'asfalto (lane_markings=no, o stradina di valle a una corsia)
+    #   mp = 0 / 1  marciapiede no / si' (sidewalk)
+    #   sf = "c" acciottolato, "t" sterrato
+    #   pv = 1  paravalanghe: strada coperta, aperta verso valle (non e' una galleria nella montagna)
+    #   vl = 1  strada di valle (zona rustica): muretti di sasso al posto dei guardrail sulle stradine
+    voce = {}
+    if in_valle:
+        voce["vl"] = 1
+    segni = tag.get("lane_markings")
+    if segni == "no" or (segni is None and in_valle and larghezza < 5.5):
+        voce["m"] = 0
+    marciapiede = tag.get("sidewalk") or tag.get("sidewalk:both")
+    lati = [tag.get("sidewalk:left"), tag.get("sidewalk:right")]
+    if marciapiede in ("both", "left", "right", "yes") or "yes" in lati:
+        voce["mp"] = 1
+    elif marciapiede in ("no", "none") or (in_valle and marciapiede is None):
+        voce["mp"] = 0      # nei nuclei della valle non ci sono marciapiedi
+    fondo = FONDI.get(tag.get("surface", ""))
+    if fondo:
+        voce["sf"] = fondo
+    if tag.get("tunnel") == "avalanche_protector":
+        voce["pv"] = 1
+    return voce
 
 
 def pezzi_di_linea(geometria):
@@ -463,7 +680,10 @@ def main():
     pezzi = vie.raccogli_pezzi(utilita.leggi_json(percorso_strade).get("elements", []), giocabile, trasforma,
                                lambda tag: "highway" in tag)
     vie.calcola_profili(pezzi, vero, giocabile)
-    vie.limita_larghezze(pezzi, vie_edifici, larghezza_strada)
+    valli = zone_rustiche()
+    for pezzo in pezzi:
+        pezzo["valle"] = valli is not None and valli.contains(pezzo["linea"].interpolate(0.5, normalized=True))
+    vie.limita_larghezze(pezzi, vie_edifici, lambda pezzo: larghezza_strada(pezzo["tag"], pezzo["valle"]))
 
     pezzi_ferrovia = []
     percorso_trasporti = utilita.file_osm("trasporti", True)
@@ -490,6 +710,7 @@ def main():
             "g": pezzo["galleria"],
             "p": locali_3d(pezzo, centro_est, centro_nord, SOPRA_TERRENO_M),
         }
+        voce.update(particolari_strada(tag, pezzo["valle"], pezzo["larghezza"]))
         if tag.get("junction") in ("roundabout", "circular"):
             voce["j"] = "roundabout"   # rotonda: nel gioco ha l'isola centrale e il cordolo
         # numero di corsie e senso unico veri di OpenStreetMap: li usa la grafica delle righe e degli incroci (0.15.3)
@@ -558,7 +779,7 @@ def main():
     suolo = vie.Griglia(ridotte, est_min, nord_max, config.PASSO_M * 2)
 
     print("5) Edifici...")
-    edifici = esporta_edifici(lista_edifici, suolo, centro_est, centro_nord)
+    edifici = esporta_edifici(lista_edifici, suolo, centro_est, centro_nord, zone_rustiche())
     edifici, ritagliati, tolti = anteprima_edifici.stacca_dalle_strade(edifici, strade)
     print("   case staccate dall'asfalto: " + str(ritagliati) + " ritagliate, " + str(tolti) + " tolte (quasi tutte sulla strada)")
     scrivi("edifici.json", {"edifici": edifici})
@@ -588,7 +809,12 @@ def main():
     print("8) Fiumi, torrenti e stagni...")
     percorso_acqua = utilita.file_osm("acqua", True)
     if percorso_acqua.exists():
-        acqua = esporta_acqua(percorso_acqua, suolo, zona, centro_est, centro_nord)
+        dighe, forme_dighe = [], []
+        percorso_opere = utilita.file_osm("opere", True)
+        if percorso_opere.exists():
+            dighe, forme_dighe = esporta_dighe(percorso_opere, vero, giocabile, centro_est, centro_nord)
+        scrivi("opere.json", {"dighe": dighe})
+        acqua = esporta_acqua(percorso_acqua, suolo, zona, centro_est, centro_nord, forme_dighe)
         scrivi("acqua.json", acqua)
         print("   superfici d'acqua: " + str(len(acqua["poligoni"])) + ", corsi d'acqua: " + str(len(acqua["fiumi"])))
 

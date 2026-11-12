@@ -116,6 +116,53 @@ export function costruisciModello3D(nome) {
   const telaio = pezzo(modello, "Telaio");
   telaio.position.copy(pernoDietro);
   moto.add(telaio);
+  // Fiammelle agli scarichi del 450 (si accendono per un attimo quando scoppietta in rilascio)
+  const fiamme = [];
+  if (nome === "SM450") {
+    const forma = new THREE.ConeGeometry(0.03, 0.22, 10);
+    forma.translate(0, 0.11, 0);   // la base sta sull'uscita dello scarico, la punta va indietro
+    const formaDentro = new THREE.ConeGeometry(0.016, 0.12, 8);
+    formaDentro.translate(0, 0.06, 0);
+    const arancio = new THREE.MeshBasicMaterial({ color: 0xff6a12, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+    const giallo = new THREE.MeshBasicMaterial({ color: 0xfff0a0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+    // Dove finiscono i due scarichi lo si misura sul modello: il fondello d'acciaio dei silenziatori e' la
+    // parte d'acciaio piu' indietro (nel file la moto guarda verso +X, quindi "indietro" = X piu' piccola)
+    telaio.updateMatrixWorld(true);
+    const punto = new THREE.Vector3();
+    for (const lato of [1, -1]) {
+      const punti = [];
+      telaio.traverse(function (oggetto) {
+        if (!oggetto.isMesh || !oggetto.material || oggetto.material.name !== "Acciaio") return;
+        const posizioni = oggetto.geometry.attributes.position;
+        for (let i = 0; i < posizioni.count; i++) {
+          punto.fromBufferAttribute(posizioni, i);
+          oggetto.localToWorld(punto);
+          telaio.worldToLocal(punto);
+          if (punto.z * lato > 0.05) punti.push(punto.x, punto.y, punto.z);
+        }
+      });
+      let dietro = Infinity;
+      for (let i = 0; i < punti.length; i += 3) dietro = Math.min(dietro, punti[i]);
+      // centro del fondello: media dei punti entro 1.2 cm dal piu' arretrato
+      let sommaY = 0, sommaZ = 0, quanti = 0;
+      for (let i = 0; i < punti.length; i += 3) {
+        if (punti[i] < dietro + 0.012) {
+          sommaY += punti[i + 1];
+          sommaZ += punti[i + 2];
+          quanti++;
+        }
+      }
+      if (quanti === 0) continue;   // modello senza scarichi d'acciaio: niente fiamme
+      const fiamma = new THREE.Group();
+      fiamma.position.set(dietro - 0.02, sommaY / quanti, sommaZ / quanti);
+      fiamma.rotation.z = Math.PI / 2 - 0.3;   // punta indietro e un po' in su, come il silenziatore
+      fiamma.add(new THREE.Mesh(forma, arancio));
+      fiamma.add(new THREE.Mesh(formaDentro, giallo));
+      fiamma.visible = false;
+      telaio.add(fiamma);
+      fiamme.push(fiamma);
+    }
+  }
   const forcellone = pezzo(modello, "Forcellone");
   forcellone.position.copy(pernoDietro);
   moto.add(forcellone);
@@ -142,7 +189,7 @@ export function costruisciModello3D(nome) {
 
   moto.userData = {
     ruotaDavanti: ruotaDavanti, ruotaDietro: ruotaDietro, sterzo: sterzo,
-    rDav: m.rDav, rDie: m.rDie, passo: m.passo, pilota: pilota, postoPilota: bacino.clone()
+    rDav: m.rDav, rDie: m.rDie, passo: m.passo, pilota: pilota, postoPilota: bacino.clone(), fiamme: fiamme
   };
   return moto;
 }

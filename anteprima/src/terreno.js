@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { creaMaterialeAcqua } from "./onde.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
 import { aggiungiDettaglio } from "./superfici.js";
-import { aggiungiFotoHD, aggiornaFotoHD } from "./terreno_hd.js";
+import { aggiungiFotoHD, aggiornaFotoHD, eventiStreaming } from "./terreno_hd.js";
 import { usoQui } from "./uso_suolo.js";
 import { liberaDopoCaricamento } from "./memoria.js";
 
@@ -52,10 +52,14 @@ function materialeTerreno(ambiente) {
   return aggiungiMeteo(m, ambiente, { neve: 1, bagnato: 0.8 });
 }
 
+// Se manca un file dei dati l'app e' installata male (es. aggiornamento interrotto): dico cosa fare
+const COME_RIMEDIARE = " — L'installazione e' incompleta: scarica di nuovo l'ultima versione da GitHub" +
+  " (pagina Releases di sim40702-debug/swissgass) e installala sopra a questa.";
+
 export async function caricaTerreno() {
   const rispostaInfo = await fetch("dati/terreno.json");
   if (!rispostaInfo.ok) {
-    throw new Error("Mancano i dati del terreno: " + (await rispostaInfo.text()));
+    throw new Error("Mancano i dati del terreno: " + (await rispostaInfo.text()) + COME_RIMEDIARE);
   }
   const info = await rispostaInfo.json();
   // I dati vecchi (fino alla 0.7) erano quadrati: "punti" e "lato_m"
@@ -66,7 +70,7 @@ export async function caricaTerreno() {
 
   const rispostaBin = await fetch("dati/terreno.bin");
   if (!rispostaBin.ok) {
-    throw new Error("Mancano i dati del terreno: " + (await rispostaBin.text()));
+    throw new Error("Mancano i dati del terreno: " + (await rispostaBin.text()) + COME_RIMEDIARE);
   }
   const valori = new Uint16Array(await rispostaBin.arrayBuffer());
 
@@ -322,35 +326,20 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
   return {
     terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0, pieno: 1000, lavoro: null,
     caricatore: new THREE.TextureLoader(), anisotropia: disegnatore ? disegnatore.capabilities.getMaxAnisotropy() : 1,
-    raggioFoto: 8500, fotoCaricate: 0
+    raggioFoto: 6000, fotoCaricate: 0, foto2mInCorso: 0
   };
 }
 
-// Foto aeree SWISSIMAGE: si caricano per i pezzi entro "raggioFoto" e si tolgono oltre raggioFoto + 3 km
+// Foto aeree SWISSIMAGE: si caricano per i pezzi entro "raggioFoto" e si tolgono oltre raggioFoto + 1.5 km
 // (la differenza evita di caricare e togliere di continuo la stessa foto). Senza foto restano i colori calcolati.
 function gestisciFoto(terrenoMesh, x, z) {
+  const scarico = terrenoMesh.raggioFoto + 1500;
+  // si caricano i pezzi piu' vicini per primi, al massimo 2 alla volta (niente picchi di rete, decodifica e VRAM)
+  let candidati = [];
   for (const p of terrenoMesh.pezzi) {
     const distanza = Math.hypot(p.centroX - x, p.centroZ - z);
-    if (distanza < terrenoMesh.raggioFoto && p.statoFoto === "no") {
-      p.statoFoto = "carico";
-      terrenoMesh.caricatore.load("dati/foto/foto_x" + p.px + "_y" + p.py + ".jpg", function (foto) {
-        if (p.statoFoto !== "carico") {
-          foto.dispose();   // nel frattempo ci si e' allontanati
-          return;
-        }
-        foto.flipY = false;
-        foto.colorSpace = THREE.SRGBColorSpace;
-        foto.anisotropy = terrenoMesh.anisotropia;
-        p.foto = foto;
-        p.statoFoto = "si";
-        p.materiale.map = foto;
-        p.materiale.vertexColors = false;
-        p.materiale.needsUpdate = true;
-        terrenoMesh.fotoCaricate++;
-      }, undefined, function () {
-        p.statoFoto = "manca";   // nessuna foto per questo pezzo: restano i colori calcolati
-      });
-    } else if (distanza > terrenoMesh.raggioFoto + 3000 && (p.statoFoto === "si" || p.statoFoto === "carico")) {
+    if (distanza < terrenoMesh.raggioFoto && p.statoFoto === "no") candidati.push({ p: p, d: distanza });
+    else if (distanza > scarico && (p.statoFoto === "si" || p.statoFoto === "carico")) {
       if (p.foto) {
         p.materiale.map = null;
         p.materiale.vertexColors = true;
@@ -358,16 +347,45 @@ function gestisciFoto(terrenoMesh, x, z) {
         p.foto.dispose();
         p.foto = null;
         terrenoMesh.fotoCaricate--;
+        eventiStreaming.foto2mScaricate++;
       }
       p.statoFoto = "no";
     }
+  }
+  candidati.sort(function (a, b) { return a.d - b.d; });
+  for (const c of candidati) {
+    if (terrenoMesh.foto2mInCorso >= 2) break;
+    const p = c.p;
+    p.statoFoto = "carico";
+    terrenoMesh.foto2mInCorso++;
+    eventiStreaming.foto2mInCorso = terrenoMesh.foto2mInCorso;
+    terrenoMesh.caricatore.load("dati/foto/foto_x" + p.px + "_y" + p.py + ".jpg", function (foto) {
+      terrenoMesh.foto2mInCorso--;
+      if (p.statoFoto !== "carico") {
+        foto.dispose();   // nel frattempo ci si e' allontanati
+        return;
+      }
+      foto.flipY = false;
+      foto.colorSpace = THREE.SRGBColorSpace;
+      foto.anisotropy = terrenoMesh.anisotropia;
+      p.foto = foto;
+      p.statoFoto = "si";
+      p.materiale.map = foto;
+      p.materiale.vertexColors = false;
+      p.materiale.needsUpdate = true;
+      terrenoMesh.fotoCaricate++;
+      eventiStreaming.foto2mCaricate++;
+    }, undefined, function () {
+      terrenoMesh.foto2mInCorso--;
+      p.statoFoto = "manca";   // nessuna foto per questo pezzo: restano i colori calcolati
+    });
   }
 }
 
 // Crea i pezzi dettagliati vicino a (x, z) e toglie quelli lontani.
 // Al massimo un pezzo nuovo alla volta, cosi' il gioco non si blocca.
 export function aggiornaTerreno(terrenoMesh, x, z, dt, sincrono) {
-  aggiornaFotoHD(x, z);
+  aggiornaFotoHD(x, z, dt);
   // un pezzo in costruzione: si avanza per qualche millisecondo per fotogramma (mai piu' di 3 ms)
   const lavoro = terrenoMesh.lavoro;
   if (lavoro) {
@@ -430,10 +448,12 @@ export function preparaTerrenoVicino(terrenoMesh, x, z) {
 }
 
 // Fino a che distanza il terreno usa il dettaglio pieno (menu Impostazioni) e fino a dove servono le foto aeree
-export function impostaDettaglioTerreno(terrenoMesh, fattore, pieno, visibilita) {
+export function impostaDettaglioTerreno(terrenoMesh, fattore, pieno, visibilita, raggioFoto) {
   terrenoMesh.fattore = fattore;
   terrenoMesh.pieno = pieno || 1000;   // entro questa distanza (m) il terreno ha un punto ogni 4 m, oltre ogni 8 m
   // il centro di un pezzo puo' stare 1.4 km piu' in la' del suo bordo: le foto arrivano un po' oltre la visibilita'
-  if (visibilita) terrenoMesh.raggioFoto = visibilita + 1500;
+  // raggio delle foto a 2 m: per profilo (ogni pezzo da 1 km caricato costa circa 5.3 MB di VRAM); senza valore, come prima
+  if (raggioFoto) terrenoMesh.raggioFoto = raggioFoto;
+  else if (visibilita) terrenoMesh.raggioFoto = visibilita + 1500;
   terrenoMesh.attesa = 0;
 }

@@ -5,9 +5,10 @@
 # Si puo' anche avviare a mano: Actions -> Release anteprima Ticino -> Run workflow.
 #
 # 0) "versione": legge la versione e controlla se la release esiste gia'
-# 1) "dati": scarica i dati VERI (swisstopo, OpenStreetMap) ed esegue i passi 1-7
-# 2) "app":  costruisce l'app Electron su un Mac e su un PC Windows
-# 3) "release": pubblica i file nella pagina Releases di GitHub
+# 1) "app":  prende la mappa del cantone e la regione di Locarno dalla pre-release "ticino-completo-dati"
+#            (dati VERI swisstopo e OpenStreetMap, preparati dal workflow "Ticino completo")
+#            e costruisce l'app Electron su un Mac e su un PC Windows
+# 2) "release": pubblica i file nella pagina Releases di GitHub
 
 name: Release anteprima Ticino
 
@@ -16,7 +17,6 @@ on:
     branches: [main]
     paths:
       - "anteprima/**"
-      - "tools/geo/**"
       - ".github/workflows/release-anteprima.yml"
   workflow_dispatch:
 
@@ -44,84 +44,9 @@ jobs:
             echo "nuova=true" >> $GITHUB_OUTPUT
           fi
 
-  dati:
+  app:
     needs: versione
     if: needs.versione.outputs.nuova == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    # Valle Verzasca: la prima volta i download da Overpass possono durare piu' di un'ora
-    timeout-minutes: 150
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      # I download (swisstopo, OpenStreetMap) si salvano SEMPRE, anche se il passo fallisce, scade o viene
-      # annullato: cosi' la volta dopo si riparte da quello che c'e' gia' e non si rifanno le richieste lente
-      # a Overpass. Prima la cache si salvava solo se tutto andava bene: con la Valle Verzasca ogni tentativo
-      # ripartiva da zero e superava il limite di tempo, e la release con la mappa nuova non usciva mai.
-      - name: Riusa i dati gia' scaricati
-        uses: actions/cache/restore@v4
-        with:
-          path: tools/geo/dati/download
-          key: geodati-anteprima-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            geodati-anteprima-
-            geodati-
-
-      - name: Installa le librerie Python
-        run: pip install -r tools/geo/requirements.txt
-
-      - name: Passi 1-8 sull'area dell'anteprima (Locarnese e Valle Verzasca 16 x 32 km)
-        working-directory: tools/geo
-        shell: bash
-        run: |
-          set -o pipefail
-          for passo in passo1_scarica_altimetria passo2_scarica_osm passo3_crea_terreno passo6_verifica_terreno passo7_esporta_anteprima passo8_foto_aeree; do
-            echo "===== $passo =====" | tee -a registro.txt
-            python -u $passo.py --anteprima 2>&1 | tee -a registro.txt
-          done
-
-      - name: Salva i dati scaricati (anche se un passo e' fallito o e' stato annullato)
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: tools/geo/dati/download
-          key: geodati-anteprima-${{ github.run_id }}-${{ github.run_attempt }}
-
-      - name: Se un passo fallisce, scrivi l'errore (visibile anche senza accesso)
-        if: failure()
-        shell: bash
-        run: |
-          echo "::error::$(tail -c 1500 tools/geo/registro.txt | tr '\n' ' ')"
-
-      - name: Riassunto nella pagina del workflow
-        if: always()
-        shell: bash
-        run: |
-          echo '## Registro dei passi (anteprima)' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat tools/geo/registro.txt >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-      - name: Salva il registro
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: registro-pilota
-          path: |
-            tools/geo/registro.txt
-          if-no-files-found: ignore
-
-      - name: Salva i dati per l'anteprima
-        uses: actions/upload-artifact@v4
-        with:
-          name: anteprima-dati
-          path: anteprima/dati
-
-  app:
-    needs: dati
     strategy:
       fail-fast: false
       matrix:
@@ -136,11 +61,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prendi i dati preparati
-        uses: actions/download-artifact@v4
-        with:
-          name: anteprima-dati
-          path: anteprima/dati
+      # Dalla 0.15.3 il gioco e' il TICINO COMPLETO: nell'app ci sono la mappa di tutto il cantone e la regione
+      # di Locarno; le altre regioni il gioco le scarica da solo. I dati li prepara il workflow
+      # "Ticino completo" e stanno nella pre-release "ticino-completo-dati".
+      - name: Prendi la mappa del cantone e la regione di partenza (Locarno)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p scarico anteprima/cantone anteprima/dati
+          gh release download ticino-completo-dati -D scarico -p cantone.tar.gz -p regione_R_2696_1106.tar.gz
+          tar -xzf scarico/cantone.tar.gz -C anteprima/cantone
+          tar -xzf scarico/regione_R_2696_1106.tar.gz -C anteprima/dati
+          ls anteprima/cantone anteprima/dati | head -40
 
       - uses: actions/setup-node@v4
         with:
@@ -175,7 +108,7 @@ jobs:
             exit 1
           fi
           # BUG-008: i file che il gioco importa devono esserci tutti nell'app (non solo sul computer di sviluppo)
-          for file in terzi/three/loaders/GLTFLoader.js terzi/three/objects/Sky.js terzi/three/environments/RoomEnvironment.js \
+          for file in cantone/cantone.json cantone/regioni.json cantone/stato.json dati/terreno.json regioni_main.js terzi/three/loaders/GLTFLoader.js terzi/three/objects/Sky.js terzi/three/environments/RoomEnvironment.js \
                       node_modules/three/build/three.module.js src/gioco.js modelli/SM450_Telaio.glb; do
             if [ "$(find dist -path "*app/$file" | wc -l)" -eq 0 ]; then
               echo "::error::Nell'app manca $file"
@@ -213,25 +146,6 @@ jobs:
           pattern: app-*
           path: uscita
           merge-multiple: true
-
-      - name: Prendi i dati
-        uses: actions/download-artifact@v4
-        with:
-          name: anteprima-dati
-          path: extra/anteprima-dati
-
-      - name: Prendi il registro
-        uses: actions/download-artifact@v4
-        with:
-          name: registro-pilota
-          path: extra/registro-pilota
-
-      - name: Prepara dati e registro per la release
-        shell: bash
-        run: |
-          cd extra/anteprima-dati && zip -r ../../uscita/dati-anteprima.zip . && cd ../..
-          cp extra/registro-pilota/registro.txt uscita/registro-pilota.txt
-          ls -la uscita
 
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
