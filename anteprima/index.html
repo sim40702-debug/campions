@@ -35,6 +35,7 @@
 
   <!-- nome della zona quando ci si entra (Locarnese, Valle Verzasca...) -->
   <div id="avvisoZona"></div>
+  <div id="avvisoRegione"></div>
 
   <div id="contenitoreMini">
     <canvas id="minimappa" width="240" height="240" title="Clic: mappa ruotante / nord in alto. Rotellina: zoom."></canvas>
@@ -52,6 +53,7 @@
   </div>
 
   <div id="aggiorna">
+    <button id="pulsanteCantone" title="Mappa di tutto il Canton Ticino (K)">Ticino</button>
     <button id="pulsantePartenza">Mappa</button>
     <button id="pulsanteGarage">Garage</button>
     <button id="pulsanteMenu">Impostazioni</button>
@@ -135,6 +137,29 @@
     </div>
     <div id="coordMappa">Muovi il mouse sulla mappa</div>
     <div id="scalaMappa"></div>
+  </div>
+
+  <div id="mappaCantone">
+    <canvas id="telaCantone"></canvas>
+    <div id="pannelloCantone">
+      <h2>Canton Ticino</h2>
+      <input id="cercaCantone" type="search" placeholder="Cerca comune, paese, frazione..." autocomplete="off" spellcheck="false">
+      <div id="risultatiCantone"></div>
+      <div id="infoCantone">Clicca sulla mappa o cerca un luogo.</div>
+      <button id="partiCantone" disabled>Parti da qui</button>
+      <div id="statoCantone"></div>
+      <div class="riga">
+        <button id="doveSonoCantone">Dove sono</button>
+        <button id="chiudiCantone">Chiudi (K)</button>
+      </div>
+      <p class="piccolo">Tutto il cantone in coordinate svizzere. I riquadri sono le regioni: quella dove vuoi partire viene scaricata la prima volta (serve internet) e poi resta sul computer. Per la mappa dettagliata della regione in cui sei: tasto P.</p>
+      <p class="piccolo">Dati: © OpenStreetMap contributors · swisstopo</p>
+    </div>
+    <div id="comandiCantone">
+      <button id="zoomPiuCantone">+</button>
+      <button id="zoomMenoCantone">&minus;</button>
+    </div>
+    <div id="coordCantone">Muovi il mouse sulla mappa</div>
   </div>
 
   <div id="risultatoTest" class="finestra">

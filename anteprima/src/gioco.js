@@ -31,10 +31,11 @@ import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from
 import { aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 import { preparaMinimappa } from "./mappa.js";
 import { creaZone, aggiornaZona } from "./zone.js";
+import { preparaRegioni, aggiornaRegioni, PARTENZA_EST, PARTENZA_NORD } from "./regioni.js";
+import { preparaCantone } from "./cantone.js";
+import { aggiungiSfondo } from "./sfondo.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
-const PARTENZA_EST = 2704700;
-const PARTENZA_NORD = 1114200;
 
 // --- Scena, telecamera, luci ---------------------------------------------------
 const scena = new THREE.Scene();
@@ -286,6 +287,8 @@ function aggiornaFaro(moto) {
 // --- Avvio ---------------------------------------------------------------------
 async function avvia() {
   try {
+    // Ticino completo: prima si sceglie (e se serve si scarica) la regione dove si parte
+    const regioni = await preparaRegioni(mostraStato);
     await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
     const zone = creaZone(terreno);   // Locarnese, Valle Verzasca, ... (nomi delle grandi aree)
@@ -296,6 +299,7 @@ async function avvia() {
     const strade = await caricaStrade();
     adattaTerreno(terreno, strade);   // il terreno segue le strade (prima di disegnarlo)
     const terrenoMesh = aggiungiTerreno(terreno, scena, disegnatore, ambiente);
+    await aggiungiSfondo(scena, terreno, regioni);   // montagne lontane delle regioni vicine
 
     await mostraStato("Fiumi e torrenti...");
     const acquaDati = await caricaAcqua();
@@ -336,7 +340,27 @@ async function avvia() {
       partenzaX = scelta.x;
       partenzaZ = scelta.z;
     }
+    if (regioni) {
+      // Ticino completo: la partenza e' in coordinate svizzere (passaggio da un'altra regione o scelta sulla mappa)
+      partenzaX = regioni.partenza.est - terreno.info.centro_lv95[0];
+      partenzaZ = -(regioni.partenza.nord - terreno.info.centro_lv95[1]);
+    }
+    if (Math.abs(partenzaX) > terreno.metaX - 60 || Math.abs(partenzaZ) > terreno.metaZ - 60) {
+      // la partenza non e' in questa regione (per esempio regione non scaricata): si parte dal suo centro
+      partenzaX = 0;
+      partenzaZ = 0;
+    }
     mettiSullaStrada(moto, strade, partenzaX, partenzaZ);
+    if (regioni && regioni.partenza.daPassaggio && typeof regioni.partenza.angolo === "number") {
+      // arrivo da un'altra regione: stessa direzione e stessa velocita' di prima
+      const punto = puntoStradaVicino(strade, partenzaX, partenzaZ);
+      if (punto) {
+        const avantiX = -Math.sin(regioni.partenza.angolo), avantiZ = -Math.cos(regioni.partenza.angolo);
+        const verso = punto.dx * avantiX + punto.dz * avantiZ < 0 ? -1 : 1;
+        posizionaMoto(moto, punto.x, punto.y, punto.z, punto.dx * verso, punto.dz * verso);
+        moto.velocita = regioni.partenza.velocita || 0;
+      }
+    }
     telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
@@ -357,6 +381,7 @@ async function avvia() {
     window.__mrw.eseguiBenchmark = function (opzioni) { return bench.esegui(opzioni); };
     window.__mrw.benchmarkMarkdown = inMarkdown;
     window.__mrw.mappa = mappa;
+    window.__mrw.regioni = regioni;
     window.__mrw.zone = zone;
     window.__mrw.luoghi = luoghi;
     window.__mrw.edifici = edifici;
@@ -387,6 +412,9 @@ async function avvia() {
       preparaTerrenoVicino(terrenoMesh, m.x, m.z);
     });
     aggiornaRiflessi(true);
+    // Mappa di tutto il cantone (tasto K o pulsante "Ticino"): scegli una partenza in qualsiasi regione
+    preparaCantone(regioni, moto, terreno);
+    const elAvvisoRegione = document.getElementById("avvisoRegione");
 
     const danni = creaDanni();
     const segni = creaSegni(scena);
@@ -475,6 +503,14 @@ async function avvia() {
       window.__mrw.fotogrammi = (window.__mrw.fotogrammi || 0) + 1;
       risoluzioneAdattiva(vero, mondo);
       aggiornaFps(vero, disegnatore);
+      // Ticino completo: vicino al bordo della regione si prepara quella vicina e poi ci si passa
+      if (regioni && !bench.attivo && !test.attivo) {
+        const testoRegione = aggiornaRegioni(regioni, terreno.info.centro_lv95[0] + moto.x, terreno.info.centro_lv95[1] - moto.z, moto.angolo, moto.velocita, vero);
+        if (elAvvisoRegione.textContent !== testoRegione) {
+          elAvvisoRegione.textContent = testoRegione;
+          elAvvisoRegione.style.display = testoRegione ? "block" : "none";
+        }
+      }
       // localita' e zona: "Lavertezzo · Valle Verzasca"
       const zona = aggiornaZona(zone, test.attivo ? telecamera.position.x : moto.x, test.attivo ? telecamera.position.z : moto.z, vero);
       const localita = localitaVicina(dettagli, moto.x, moto.z);

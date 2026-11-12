@@ -13,6 +13,8 @@
 #
 # I dati (lavori 1-3) si rifanno solo se il messaggio del commit contiene "[dati]" oppure avviando il workflow
 # a mano con "dati" attivo. Altrimenti si rifa' solo l'app, con i dati gia' pubblicati.
+# Per rifare solo alcune regioni: "[regioni:R_2712_1074,R_2696_1106]" nel messaggio del commit (o il campo
+# "regioni" avviando a mano). Le altre regioni restano quelle gia' pubblicate.
 
 name: Ticino completo
 
@@ -29,6 +31,10 @@ on:
         description: "Rifare anche i dati di tutte le regioni"
         type: boolean
         default: false
+      regioni:
+        description: "Solo queste regioni (per esempio R_2712_1074,R_2696_1106). Vuoto = tutte"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -42,6 +48,7 @@ jobs:
     outputs:
       dati: ${{ steps.d.outputs.dati }}
       numero: ${{ steps.d.outputs.numero }}
+      solo: ${{ steps.d.outputs.solo }}
     steps:
       - uses: actions/checkout@v4
       - id: d
@@ -53,6 +60,12 @@ jobs:
           dati=false
           if [ "${{ inputs.dati }}" = "true" ]; then dati=true; fi
           case "$MESSAGGIO" in *"[dati]"*) dati=true;; esac
+          solo="${{ inputs.regioni }}"
+          nel_messaggio=$(echo "$MESSAGGIO" | grep -o '\[regioni:[A-Z0-9_,]*\]' | head -1 | sed 's/\[regioni://; s/\]//')
+          if [ -n "$nel_messaggio" ]; then solo="$nel_messaggio"; fi
+          if [ -n "$solo" ]; then dati=true; fi
+          echo "solo=$solo" >> $GITHUB_OUTPUT
+          echo "Solo le regioni: ${solo:-tutte}"
           echo "dati=$dati" >> $GITHUB_OUTPUT
           echo "Rifare i dati: $dati"
 
@@ -102,7 +115,11 @@ jobs:
         run: |
           set -o pipefail
           python -u cantone.py regioni 2>&1 | tee -a registro_cantone.txt
-          echo "matrice=$(grep '^MATRICE=' registro_cantone.txt | tail -1 | cut -d= -f2-)" >> $GITHUB_OUTPUT
+          if [ -n "${{ needs.decidi.outputs.solo }}" ]; then
+            echo "matrice=$(python -c "import json,sys; print(json.dumps([r for r in sys.argv[1].split(',') if r]))" "${{ needs.decidi.outputs.solo }}")" >> $GITHUB_OUTPUT
+          else
+            echo "matrice=$(grep '^MATRICE=' registro_cantone.txt | tail -1 | cut -d= -f2-)" >> $GITHUB_OUTPUT
+          fi
           python -u cantone.py panoramica 2>&1 | tee -a registro_cantone.txt
           cp registro_cantone.txt dati/cantone/registro_cantone.txt
 
@@ -225,6 +242,16 @@ jobs:
           path: fatte
           merge-multiple: true
 
+      # Se si sono rifatte solo alcune regioni, i rilievi e i controlli delle altre si riprendono dalla pre-release
+      - name: Riprendi le regioni gia' pubblicate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p fatte
+          gh release download "$TAG_DATI" -D fatte -p "rilievo_*.bin" -p "controllo_*.json" --skip-existing || true
+          ls fatte | wc -l
+
       - name: Unisci rilievi e controlli
         working-directory: tools/geo
         shell: bash
@@ -236,11 +263,10 @@ jobs:
           cat stato.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           mkdir -p ../../uscita
-          cp ../../fatte/registro_*.txt dati/cantone/ 2>/dev/null || true
           tar -czf ../../uscita/cantone.tar.gz -C dati/cantone cantone.json regioni.json rilievo.bin stato.json verifica_strade.json
           cp dati/cantone/stato.json ../../uscita/stato.json
-          cat dati/cantone/registro_*.txt > ../../uscita/registro-regioni.txt 2>/dev/null || true
-          cp ../../fatte/regione_*.tar.gz ../../uscita/
+          for f in ../../fatte/registro_R_*.txt; do [ -f "$f" ] && cp "$f" ../../uscita/; done
+          cp ../../fatte/regione_*.tar.gz ../../fatte/rilievo_*.bin ../../fatte/controllo_*.json ../../uscita/
           ls -la ../../uscita
 
       - name: Pubblica i dati nella pre-release
@@ -303,7 +329,7 @@ jobs:
           cd anteprima/dist
           ls -la
           trovati=$(find . -path "*app/cantone/cantone.json" | wc -l)
-          terzi=$(find . -path "*app/terzi/three/GLTFLoader.js" | wc -l)
+          terzi=$(find . -path "*app/terzi/three/loaders/GLTFLoader.js" | wc -l)
           terreno=$(find . -path "*app/dati/terreno.json" | wc -l)
           echo "cantone: $trovati, terzi: $terzi, terreno: $terreno"
           if [ "$trovati" = "0" ] || [ "$terzi" = "0" ] || [ "$terreno" = "0" ]; then

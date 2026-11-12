@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const aggiornamenti = require("./aggiornamenti.js");
+const regioni = require("./regioni_main.js");
 
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } }
@@ -51,10 +52,39 @@ ipcMain.handle("installa-aggiornamento", async function (evento) {
   });
 });
 
+// --- Regioni del Ticino completo --------------------------------------------------
+ipcMain.handle("regioni-stato", function () {
+  const stato = regioni.stato();
+  stato.megabyte = regioni.megabyteUsati();
+  return stato;
+});
+ipcMain.handle("regioni-imposta", function (evento, id) {
+  return regioni.imposta(id);
+});
+ipcMain.handle("regioni-scarica", async function (evento, id) {
+  try {
+    await regioni.scarica(id, function (avanzamento) {
+      if (!evento.sender.isDestroyed()) evento.sender.send("regioni-avanzamento", avanzamento);
+    });
+    return { ok: true };
+  } catch (errore) {
+    return { ok: false, errore: errore.message };
+  }
+});
+ipcMain.handle("regioni-elimina", function (evento, id) {
+  return regioni.elimina(id);
+});
+
 app.whenReady().then(function () {
+  regioni.pulisci();
   protocol.handle("app", async function (richiesta) {
     const indirizzo = new URL(richiesta.url);
-    const file = path.join(__dirname, decodeURIComponent(indirizzo.pathname));
+    const richiesto = decodeURIComponent(indirizzo.pathname);
+    let file = path.join(__dirname, richiesto);
+    // Ticino completo: i file "dati/..." arrivano dalla regione in uso (dentro l'app o scaricata)
+    if (richiesto.startsWith("/dati/")) {
+      file = path.join(regioni.cartellaDatiAttuale(), richiesto.slice(6));
+    }
     // Se il file non c'e' rispondo "404": cosi' il gioco puo' dire QUALE file manca
     if (!fs.existsSync(file)) {
       console.log("File non trovato: " + file);

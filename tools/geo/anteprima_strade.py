@@ -177,7 +177,7 @@ def limita_larghezze(pezzi, edifici, larghezza_di):
     # Per ogni punto: meta' larghezza <= distanza dalla casa piu' vicina - 0.4 m
     albero = STRtree(edifici) if edifici else None
     for pezzo in pezzi:
-        piena = larghezza_di(pezzo)
+        piena = max(2.6, larghezza_di(pezzo))   # mai zero o negativa (dati sbagliati in OpenStreetMap)
         larghezze = []
         for e, n in pezzo["coordinate"]:
             meta = piena / 2

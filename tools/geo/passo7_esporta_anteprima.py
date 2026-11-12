@@ -571,6 +571,8 @@ def larghezza_strada(tag, in_valle=False):
     tipo = tag.get("highway")
     try:
         corsie = int(tag["lanes"])
+        if corsie < 1 or corsie > 8:
+            raise ValueError   # "lanes=0" in OpenStreetMap (un errore, visto vicino a Como): vale la larghezza di base
         # la cantonale della valle ha due corsie da 3 m (carreggiata di 6 m), non da 3.3
         return corsie * (3.0 if in_valle and corsie == 2 and tipo == "tertiary" else 3.3)
     except (KeyError, ValueError):

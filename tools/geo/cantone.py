@@ -363,6 +363,14 @@ def chiudi(ident):
                 if strada.get("g"):
                     km_gallerie = km_gallerie + lunghezza / 1000
 
+    # edifici nel cuore (quelli nel margine ci sono anche nella regione vicina: non vanno contati due volte)
+    edifici_nel_cuore = 0
+    percorso_edifici = CARTELLA_ANTEPRIMA / "edifici.json"
+    if percorso_edifici.exists():
+        for edificio in utilita.leggi_json(percorso_edifici)["edifici"]:
+            if abs(edificio["p"][0]) <= meta_x and abs(edificio["p"][1]) <= meta_z:
+                edifici_nel_cuore = edifici_nel_cuore + 1
+
     foto = len(list((CARTELLA_ANTEPRIMA / "foto").glob("*.jpg"))) if (CARTELLA_ANTEPRIMA / "foto").exists() else 0
     bytes_dati = sum(f.stat().st_size for f in CARTELLA_ANTEPRIMA.rglob("*") if f.is_file())
     controllo = {
@@ -374,6 +382,7 @@ def chiudi(ident):
         "strade_tratti_nel_cuore": tratti, "strade_km_nel_cuore": round(km, 1),
         "ponti_km": round(km_ponti, 1), "gallerie_km": round(km_gallerie, 1),
         "edifici": conta("edifici.json", "edifici"),
+        "edifici_nel_cuore": edifici_nel_cuore,
         "localita": conta("dettagli.json", "localita"),
         "foto_aeree": foto,
         "dati_MB": round(bytes_dati / 1e6, 1),
@@ -615,7 +624,7 @@ def unisci(cartella):
         "regioni_totali": len(controlli), "regioni_complete": len(fatte),
         "km2_ricostruiti": round(sum(c.get("km2_cantone", 0) for c in fatte), 1),
         "km2_mancanti": round(sum(c.get("km2_cantone", 0) for c in controlli if not c.get("completa")), 1),
-        "edifici": sum(c.get("edifici", 0) for c in fatte),
+        "edifici": sum(c.get("edifici_nel_cuore", 0) for c in fatte),
         "strade_km": round(sum(c.get("strade_km_nel_cuore", 0) for c in fatte), 1),
         "pacchetti_MB": round(sum(c.get("pacchetto_MB", 0) for c in fatte), 1),
         "controlli": controlli,
