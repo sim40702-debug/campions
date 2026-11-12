@@ -1,0 +1,190 @@
+{
+ "macchina": {
+  "sistema": "linux 6.18.44-fc-v378",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "core": 4,
+  "ram_GB": 16,
+  "nodo": "v22.23.4",
+  "data": "2026-11-12T23:11:05.426Z"
+ },
+ "risultati": [
+  {
+   "qualita": "bassa",
+   "caricamento_s": 20.1,
+   "scheda_video": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "grafica_software": true,
+   "risoluzione": "800x450",
+   "pixel_ratio": 0.75,
+   "secondi_misurati": 40,
+   "fotogrammi": 26,
+   "fps_medi": 0.7,
+   "fps_1pc_low_p99": 0.2,
+   "fps_1pc_low_media_peggiori": 0.2,
+   "tempo_fotogramma_ms": {
+    "mediana": 983.3,
+    "p95": 3583.2,
+    "p99": 4483.1,
+    "massimo": 4483.1
+   },
+   "scatti_oltre_33ms": 22,
+   "scatti_oltre_50ms": 22,
+   "memoria_js": {
+    "heapUsatoMB": 452,
+    "heapTotaleMB": 471
+   },
+   "ram_browser_MB": 2032,
+   "vram_nvidia_smi_MB": "non disponibile (serve una scheda NVIDIA con nvidia-smi: altrimenti guarda Gestione attivita' > GPU > memoria dedicata durante la corsa)",
+   "render": {
+    "chiamate": 981,
+    "triangoli": 2992960,
+    "geometrie": 561,
+    "texture": 101,
+    "programmi": 42
+   },
+   "streaming": {
+    "foto2mPezziPresenti": null,
+    "raggioFoto2m": null
+   },
+   "richieste_fallite": [],
+   "erba": null,
+   "ritorni_all_inizio_del_tratto": 0,
+   "errori_console": []
+  },
+  {
+   "qualita": "media",
+   "caricamento_s": 18.8,
+   "scheda_video": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "grafica_software": true,
+   "risoluzione": "800x450",
+   "pixel_ratio": 1,
+   "secondi_misurati": 40,
+   "fotogrammi": 27,
+   "fps_medi": 0.7,
+   "fps_1pc_low_p99": 0.1,
+   "fps_1pc_low_media_peggiori": 0.1,
+   "tempo_fotogramma_ms": {
+    "mediana": 1133.3,
+    "p95": 3833.2,
+    "p99": 10299.6,
+    "massimo": 10299.6
+   },
+   "scatti_oltre_33ms": 21,
+   "scatti_oltre_50ms": 19,
+   "memoria_js": {
+    "heapUsatoMB": 440,
+    "heapTotaleMB": 447
+   },
+   "ram_browser_MB": 2184,
+   "vram_nvidia_smi_MB": "non disponibile (serve una scheda NVIDIA con nvidia-smi: altrimenti guarda Gestione attivita' > GPU > memoria dedicata durante la corsa)",
+   "render": {
+    "chiamate": 1597,
+    "triangoli": 3697844,
+    "geometrie": 689,
+    "texture": 125,
+    "programmi": 44
+   },
+   "streaming": {
+    "foto2mPezziPresenti": null,
+    "raggioFoto2m": null
+   },
+   "richieste_fallite": [],
+   "erba": null,
+   "ritorni_all_inizio_del_tratto": 0,
+   "errori_console": []
+  },
+  {
+   "qualita": "alta",
+   "caricamento_s": 22.6,
+   "scheda_video": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "grafica_software": true,
+   "risoluzione": "800x450",
+   "pixel_ratio": 1,
+   "secondi_misurati": 40,
+   "fotogrammi": 13,
+   "fps_medi": 0.3,
+   "fps_1pc_low_p99": 0.1,
+   "fps_1pc_low_media_peggiori": 0.1,
+   "tempo_fotogramma_ms": {
+    "mediana": 1966.6,
+    "p95": 10349.6,
+    "p99": 10349.6,
+    "massimo": 10349.6
+   },
+   "scatti_oltre_33ms": 12,
+   "scatti_oltre_50ms": 12,
+   "memoria_js": {
+    "heapUsatoMB": 425,
+    "heapTotaleMB": 428
+   },
+   "ram_browser_MB": 2410,
+   "vram_nvidia_smi_MB": "non disponibile (serve una scheda NVIDIA con nvidia-smi: altrimenti guarda Gestione attivita' > GPU > memoria dedicata durante la corsa)",
+   "render": {
+    "chiamate": 1791,
+    "triangoli": 4572920,
+    "geometrie": 706,
+    "texture": 145,
+    "programmi": 44
+   },
+   "streaming": {
+    "foto2mPezziPresenti": null,
+    "raggioFoto2m": null
+   },
+   "richieste_fallite": [
+    "404 dati/foto/foto_x4_y10.jpg"
+   ],
+   "erba": null,
+   "ritorni_all_inizio_del_tratto": 0,
+   "errori_console": []
+  },
+  {
+   "qualita": "ultra",
+   "caricamento_s": 24,
+   "scheda_video": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "grafica_software": true,
+   "risoluzione": "800x450",
+   "pixel_ratio": 2,
+   "secondi_misurati": 40,
+   "fotogrammi": 18,
+   "fps_medi": 0.4,
+   "fps_1pc_low_p99": 0.2,
+   "fps_1pc_low_media_peggiori": 0.2,
+   "tempo_fotogramma_ms": {
+    "mediana": 1033.3,
+    "p95": 6149.7,
+    "p99": 6149.7,
+    "massimo": 6149.7
+   },
+   "scatti_oltre_33ms": 18,
+   "scatti_oltre_50ms": 18,
+   "memoria_js": {
+    "heapUsatoMB": 446,
+    "heapTotaleMB": 453
+   },
+   "ram_browser_MB": 2621,
+   "vram_nvidia_smi_MB": "non disponibile (serve una scheda NVIDIA con nvidia-smi: altrimenti guarda Gestione attivita' > GPU > memoria dedicata durante la corsa)",
+   "render": {
+    "chiamate": 1789,
+    "triangoli": 4807415,
+    "geometrie": 692,
+    "texture": 163,
+    "programmi": 43
+   },
+   "streaming": {
+    "foto2mPezziPresenti": null,
+    "raggioFoto2m": null
+   },
+   "richieste_fallite": [
+    "404 dati/foto/foto_x2_y10.jpg",
+    "404 dati/foto/foto_x4_y10.jpg",
+    "404 dati/foto/foto_x4_y11.jpg",
+    "404 dati/foto/foto_x5_y11.jpg",
+    "404 dati/foto/foto_x6_y11.jpg",
+    "404 dati/foto/foto_x7_y11.jpg",
+    "404 dati/foto/foto_x3_y11.jpg"
+   ],
+   "erba": null,
+   "ritorni_all_inizio_del_tratto": 0,
+   "errori_console": []
+  }
+ ]
+}

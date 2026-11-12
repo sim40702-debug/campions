@@ -1,0 +1,110 @@
+[
+  {
+    "profilo": "bassa",
+    "celleTotali": 1204,
+    "sagomeVisibili": 0,
+    "verticiStrade": 80836,
+    "chiamate": [
+      658,
+      666
+    ],
+    "triangoli": [
+      2708588,
+      2717284
+    ],
+    "geometrie": [
+      551,
+      556
+    ],
+    "texture": [
+      80,
+      80
+    ],
+    "memoriaJS_MB": [
+      2175,
+      654
+    ],
+    "errori": []
+  },
+  {
+    "profilo": "media",
+    "celleTotali": 1204,
+    "sagomeVisibili": 58,
+    "verticiStrade": 80836,
+    "chiamate": [
+      997,
+      1000
+    ],
+    "triangoli": [
+      3780281,
+      3780989
+    ],
+    "geometrie": [
+      779,
+      788
+    ],
+    "texture": [
+      131,
+      133
+    ],
+    "memoriaJS_MB": [
+      634,
+      649
+    ],
+    "errori": []
+  },
+  {
+    "profilo": "alta",
+    "celleTotali": 1204,
+    "sagomeVisibili": 205,
+    "verticiStrade": 80836,
+    "chiamate": [
+      1497,
+      1500
+    ],
+    "triangoli": [
+      4408649,
+      4411121
+    ],
+    "geometrie": [
+      956,
+      959
+    ],
+    "texture": [
+      152,
+      154
+    ],
+    "memoriaJS_MB": [
+      1040,
+      609
+    ],
+    "errori": []
+  },
+  {
+    "profilo": "ultra",
+    "celleTotali": 1204,
+    "sagomeVisibili": 343,
+    "verticiStrade": 80836,
+    "chiamate": [
+      1754,
+      1766
+    ],
+    "triangoli": [
+      4987782,
+      4996863
+    ],
+    "geometrie": [
+      1002,
+      1015
+    ],
+    "texture": [
+      161,
+      163
+    ],
+    "memoriaJS_MB": [
+      621,
+      595
+    ],
+    "errori": []
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "profilo": "ultra",
+    "celleTotali": 1204,
+    "sagomeVisibili": 343,
+    "verticiStrade": 80836,
+    "chiamate": [
+      1805,
+      1827
+    ],
+    "triangoli": [
+      5149733,
+      5164459
+    ],
+    "geometrie": [
+      1072,
+      1089
+    ],
+    "texture": [
+      166,
+      166
+    ],
+    "memoriaJS_MB": [
+      645,
+      661
+    ],
+    "errori": []
+  }
+]
