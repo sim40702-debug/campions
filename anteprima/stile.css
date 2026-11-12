@@ -662,3 +662,249 @@ canvas {
   top: 12px;
   z-index: 20;
 }
+
+/* ==========================================================================
+   Grafica 2026: valori di base e interfaccia ridisegnata.
+   Questo blocco viene dopo il resto e ridisegna HUD, minimappa, menu, garage e caricamento.
+   I valori stanno tutti qui sotto: per cambiare lo stile basta cambiare questi.
+   ========================================================================== */
+:root {
+  --notte: #0e1319;
+  --pannello: rgba(17, 23, 31, 0.86);
+  --pannello-pieno: #151c26;
+  --bordo: rgba(255, 255, 255, 0.12);
+  --bordo-forte: #3a4658;
+  --testo: #e8edf3;
+  --testo-2: #aab4c0;
+  --segnale: #d42a35;
+  --segnale-chiaro: #ff4650;
+  --ambra: #ffd75a;
+  --verde: #5ee08a;
+  --raggio: 8px;
+  --font-testo: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --font-numeri: "Bahnschrift", "Barlow Condensed", "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+  --ombra-pannello: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+body { font-family: var(--font-testo); color: var(--testo); }
+
+/* tasti da tastiera: anello ambra ben visibile sia sul buio sia sul paesaggio chiaro */
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .schedaMoto:focus-visible {
+  outline: 2px solid var(--ambra);
+  outline-offset: 2px;
+}
+
+/* --- Caricamento --- */
+#caricamento {
+  background: radial-gradient(ellipse at 50% 115%, #2a1218 0%, var(--notte) 62%);
+  font-family: var(--font-testo);
+}
+#caricamento h1 {
+  font-family: var(--font-numeri);
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--segnale-chiaro);
+  text-shadow: 0 2px 24px rgba(255, 70, 80, 0.25);
+}
+#caricamento p { color: var(--testo-2); letter-spacing: 1px; }
+#stato { color: var(--testo); font-weight: 500; }
+#barraCarica { width: 360px; height: 6px; background: #243040; }
+#riempimentoCarica { background: var(--segnale-chiaro); border-radius: 3px; }
+#tempoCarica { color: #8d99a8; font-variant-numeric: tabular-nums; }
+
+/* --- HUD: velocita' grande in basso a sinistra --- */
+#hud {
+  left: 32px;
+  bottom: 28px;
+  width: 360px;
+  color: var(--testo);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+#hud::before {
+  content: "";
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 560px;
+  height: 300px;
+  background: radial-gradient(ellipse at 0% 100%, rgba(8, 12, 17, 0.62), rgba(8, 12, 17, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+#velocita {
+  font-family: var(--font-numeri);
+  font-size: 96px;
+  line-height: 0.9;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+#velocita small { font-size: 22px; font-weight: 600; letter-spacing: 2px; color: var(--testo-2); }
+#marcia {
+  min-width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 40px;
+  padding: 0 8px;
+  margin-left: 16px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  background: var(--pannello);
+  font-family: var(--font-numeri);
+  font-size: 30px;
+  vertical-align: 14px;
+  text-shadow: none;
+}
+#localita {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--ambra);
+}
+#strada { font-size: 17px; font-weight: 500; margin: 2px 0 6px; }
+#nomeMoto { font-size: 12px; letter-spacing: 1px; color: var(--testo-2); text-transform: uppercase; }
+#contagiri { width: 100%; max-width: 330px; height: 8px; margin: 6px 0 10px; border-radius: 2px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+#giriBarra { border-radius: 2px; background: var(--verde); transition: width 0.1s linear; }
+#quota, #coordinate, #oraGioco { font-size: 12px; color: var(--testo-2); font-variant-numeric: tabular-nums; line-height: 1.5; }
+#oraGioco { color: var(--testo); margin-top: 0; }
+
+/* --- Nome della zona --- */
+#avvisoZona {
+  font-family: var(--font-numeri);
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.65);
+}
+
+/* --- Minimappa: anello bianco e pulsanti uniformi --- */
+#contenitoreMini { right: 32px; bottom: 28px; }
+#minimappa {
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  background: rgba(17, 23, 31, 0.8);
+}
+#controlliMini { left: -48px; bottom: 0; gap: 6px; }
+#controlliMini button, #comandiMappa button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  background: var(--pannello);
+  color: var(--testo);
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+}
+#controlliMini button:hover, #comandiMappa button:hover { background: #222c3a; border-color: var(--bordo-forte); }
+#controlliMini button.acceso { background: var(--segnale); border-color: var(--segnale); }
+
+/* --- Barre in alto --- */
+#barraMeteo { left: 32px; top: 24px; display: flex; gap: 8px; }
+#menuMeteoAlto, #menuOraAlto, #aggiorna button {
+  height: 40px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  background: var(--pannello);
+  color: var(--testo);
+  font: 500 14px var(--font-testo);
+  transition: background 0.15s, border-color 0.15s;
+}
+#menuMeteoAlto:hover, #menuOraAlto:hover, #aggiorna button:hover { background: #222c3a; border-color: var(--bordo-forte); }
+#aggiorna { right: 32px; top: 24px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+#aggiorna button.nuova { background: var(--segnale); border-color: var(--segnale); color: #fff; }
+#pannelloAggiorna { width: 100%; background: var(--pannello-pieno); border: 1px solid var(--bordo); border-radius: var(--raggio); }
+#barraAggiorna { background: #243040; }
+#riempimentoAggiorna { background: var(--segnale-chiaro); }
+
+/* --- Finestre (impostazioni, comandi, garage, risultati) --- */
+.finestra {
+  min-width: 360px;
+  padding: 28px 32px;
+  border: 1px solid var(--bordo);
+  border-radius: 12px;
+  background: var(--pannello-pieno);
+  box-shadow: var(--ombra-pannello);
+  color: var(--testo);
+  animation: finestraEntra 0.18s ease-out;
+}
+@keyframes finestraEntra { from { opacity: 0; transform: translate(-50%, -48%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+.finestra h2 {
+  margin: 0 0 16px;
+  font-family: var(--font-numeri);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--testo);
+}
+.finestra p { margin: 14px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #8d99a8; }
+.finestra p.piccolo { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 13px; line-height: 1.5; color: var(--testo-2); }
+.finestra button {
+  min-height: 40px;
+  margin: 4px 8px 4px 0;
+  padding: 0 16px;
+  border: 1px solid var(--bordo-forte);
+  border-radius: var(--raggio);
+  background: var(--notte);
+  color: var(--testo);
+  font: 600 14px var(--font-testo);
+  transition: background 0.15s, border-color 0.15s;
+}
+.finestra button:hover { background: #1d2733; border-color: #52627a; }
+.finestra button.scelto { background: var(--segnale); border-color: var(--segnale); color: #fff; }
+.finestra .spunta { display: flex; align-items: center; gap: 10px; min-height: 36px; margin: 2px 0; font-size: 14px; color: var(--testo); }
+.finestra input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--segnale); }
+.finestra input[type="range"] { accent-color: var(--segnale-chiaro); }
+#comandi td:first-child { color: var(--ambra); }
+#comandi td { padding: 5px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+
+/* --- Garage: schede moto --- */
+#listaMoto { grid-template-columns: repeat(3, minmax(210px, 1fr)); gap: 14px; }
+.schedaMoto {
+  padding: 16px 16px 14px;
+  border: 1px solid var(--bordo-forte);
+  border-radius: 10px;
+  background: linear-gradient(160deg, #1c2431, #131a24);
+  transition: border-color 0.15s, transform 0.15s;
+}
+.schedaMoto:hover { border-color: #6c7a8c; transform: translateY(-2px); }
+.schedaMoto.scelta { border: 2px solid var(--segnale); padding: 15px 15px 13px; }
+.schedaMoto h3 { font-family: var(--font-numeri); font-size: 22px; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 6px; }
+.schedaMoto p { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--testo-2); margin: 2px 0; }
+.barra { font-size: 11px; color: var(--testo-2); }
+.barra div { height: 6px; background: #243040; }
+.barra i { background: var(--ambra); }
+
+/* --- Contatori prestazioni --- */
+#testInCorso, #fps { border: 1px solid var(--bordo); background: var(--pannello); border-radius: var(--raggio); left: 32px; }
+
+/* --- Schermi piccoli --- */
+@media (max-width: 900px) {
+  #hud { left: 16px; bottom: 16px; width: 280px; }
+  #velocita { font-size: 72px; }
+  #contenitoreMini { right: 16px; bottom: 16px; }
+  #controlliMini { left: -46px; }
+  #barraMeteo { left: 16px; top: 16px; }
+  #aggiorna { right: 16px; top: 16px; }
+  #avvisoZona { font-size: 30px; letter-spacing: 6px; }
+  #listaMoto { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+  .finestra { min-width: 0; width: calc(100vw - 32px); padding: 20px; }
+}
+@media (max-width: 620px) {
+  #aggiorna button { padding: 0 10px; }
+  #listaMoto { grid-template-columns: 1fr; }
+}
+
+/* chi preferisce meno movimento: niente animazioni decorative */
+@media (prefers-reduced-motion: reduce) {
+  .finestra { animation: none; }
+  #ruotaCarica, #righeCarica { animation-duration: 3s; }
+  #avvisoZona, #riempimentoCarica, #giriBarra { transition: none; }
+}

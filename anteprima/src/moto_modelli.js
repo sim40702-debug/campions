@@ -2,7 +2,7 @@
 // con prestazioni realistiche per la loro categoria.
 
 import * as THREE from "three";
-import { modelloPronto, costruisciModello3D } from "./modelli3d.js";
+import { modelloPronto, costruisciModello3D, registraMaterialeMoto } from "./modelli3d.js";
 
 export const MOTO = {
   sm690: {
@@ -96,9 +96,23 @@ export function accelerazioneMax(scheda) {
 
 // --- Pezzi 3D ---------------------------------------------------------------------
 function materiale(colore, lucido) {
-  return lucido
-    ? new THREE.MeshPhongMaterial({ color: colore, shininess: 80 })
-    : new THREE.MeshLambertMaterial({ color: colore });
+  // PBR come i modelli veri: verniciato lucido con strato trasparente, oppure opaco
+  const m = lucido
+    ? new THREE.MeshPhysicalMaterial({ color: colore, roughness: 0.32, metalness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.12 })
+    : new THREE.MeshStandardMaterial({ color: colore, roughness: 0.8, metalness: 0 });
+  registraMaterialeMoto(m);
+  return m;
+}
+
+function vetroMoto(opacita) {
+  const m = new THREE.MeshPhysicalMaterial({ color: 0x88aacc, roughness: 0.05, metalness: 0.1, transparent: true, opacity: opacita, clearcoat: 1, clearcoatRoughness: 0.03 });
+  registraMaterialeMoto(m);
+  return m;
+}
+function vetroVisiera() {
+  const m = new THREE.MeshPhysicalMaterial({ color: 0x111820, roughness: 0.04, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.03 });
+  registraMaterialeMoto(m);
+  return m;
 }
 
 function scatola(l, a, p, mat, x, y, z) {
@@ -244,7 +258,7 @@ export function costruisciMoto(scheda) {
   // Faro e strumentazione
   if (f === "naked" || f === "stradale") {
     if (f === "stradale") {
-      const cupolino = scatola(0.34, 0.22, 0.04, new THREE.MeshPhongMaterial({ color: 0x88aacc, transparent: true, opacity: 0.45 }), 0, 0.16, -0.1);
+      const cupolino = scatola(0.34, 0.22, 0.04, vetroMoto(0.45), 0, 0.16, -0.1);
       cupolino.rotation.x = -0.35;
       sterzo.add(cupolino);
     }
@@ -314,7 +328,7 @@ export function costruisciMoto(scheda) {
       const cupolino = scatola(0.42, 0.34, 0.5, carena, 0, 0.88, -0.48);
       cupolino.rotation.x = 0.45;
       moto.add(cupolino);
-      const parabrezza = scatola(0.3, 0.18, 0.02, new THREE.MeshPhongMaterial({ color: 0x88aacc, transparent: true, opacity: 0.5 }), 0, 1.08, -0.52);
+      const parabrezza = scatola(0.3, 0.18, 0.02, vetroMoto(0.5), 0, 1.08, -0.52);
       parabrezza.rotation.x = 0.9;
       moto.add(parabrezza);
       for (const lato of [-1, 1]) {
@@ -345,7 +359,7 @@ export function costruisciMoto(scheda) {
   const pilota = new THREE.Group();
   const tuta = materiale(0x24324a);
   const casco = materiale(c.grafica === 0xffffff ? 0xffffff : c.grafica, true);
-  const visiera = new THREE.MeshPhongMaterial({ color: 0x111820, shininess: 120 });
+  const visiera = vetroVisiera();
   const posture = {
     supermotard: { busto: -0.25, spalleZ: -0.05, testaZ: -0.2, avanti: 0.0 },
     enduro: { busto: -0.22, spalleZ: -0.02, testaZ: -0.17, avanti: 0.0 },

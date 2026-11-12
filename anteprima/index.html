@@ -10,7 +10,7 @@
   </script>
 </head>
 <body>
-  <div id="caricamento">
+  <div id="caricamento" role="status" aria-live="polite">
     <h1>MOTO RACING WORLD</h1>
     <p>Anteprima Ticino - Locarnese e Valle Verzasca</p>
     <!-- Ruota che gira e strada che scorre: si muovono anche quando il programma sta lavorando sodo.
@@ -37,18 +37,18 @@
   <div id="avvisoZona"></div>
 
   <div id="contenitoreMini">
-    <canvas id="minimappa" width="240" height="240" title="Clic: mappa ruotante / nord in alto. Rotellina: zoom."></canvas>
+    <canvas id="minimappa" width="240" height="240" role="img" aria-label="Minimappa" title="Clic: mappa ruotante / nord in alto. Rotellina: zoom."></canvas>
     <div id="controlliMini">
-      <button id="miniPiu" title="Ingrandisci">+</button>
-      <button id="miniMeno" title="Riduci">&minus;</button>
-      <button id="miniRuota" title="Mappa che ruota con la moto / nord in alto">&#10227;</button>
-      <button id="miniMappa" title="Mappa grande (P)">&#9974;</button>
+      <button id="miniPiu" title="Ingrandisci" aria-label="Ingrandisci la minimappa">+</button>
+      <button id="miniMeno" title="Riduci" aria-label="Riduci la minimappa">&minus;</button>
+      <button id="miniRuota" aria-label="Minimappa ruotante o nord in alto" title="Mappa che ruota con la moto / nord in alto">&#10227;</button>
+      <button id="miniMappa" aria-label="Apri la mappa grande" title="Mappa grande (P)">&#9974;</button>
     </div>
   </div>
 
-  <div id="barraMeteo">
-    <select id="menuMeteoAlto" title="Meteo"></select>
-    <select id="menuOraAlto" title="Ora del giorno"></select>
+  <div id="barraMeteo" role="group" aria-label="Meteo e ora">
+    <select id="menuMeteoAlto" title="Meteo" aria-label="Meteo"></select>
+    <select id="menuOraAlto" title="Ora del giorno" aria-label="Ora del giorno"></select>
   </div>
 
   <div id="aggiorna">
@@ -63,7 +63,7 @@
     </div>
   </div>
 
-  <div id="menu" class="finestra">
+  <div id="menu" class="finestra" role="dialog" aria-modal="true" aria-label="Impostazioni">
     <h2>Impostazioni</h2>
     <p>Qualità grafica</p>
     <div id="sceltaQualita"></div>
@@ -83,7 +83,7 @@
     <p class="piccolo">Tasti: F = FPS · H = comandi · Esc = questo menu</p>
   </div>
 
-  <div id="comandi" class="finestra">
+  <div id="comandi" class="finestra" role="dialog" aria-modal="true" aria-label="Comandi">
     <h2>Comandi</h2>
     <table>
       <tr><td>Frecce / WASD</td><td>guida (S: freno davanti)</td></tr>
@@ -104,7 +104,7 @@
     <button id="chiudiComandi">Chiudi</button>
   </div>
 
-  <div id="garage" class="finestra">
+  <div id="garage" class="finestra" role="dialog" aria-modal="true" aria-label="Garage">
     <h2>Garage</h2>
     <div id="listaMoto"></div>
     <button id="chiudiGarage">Chiudi</button>
@@ -130,8 +130,8 @@
       <p class="piccolo">Trascina per spostare, rotellina per ingrandire, doppio clic per partire da quel punto. La partenza viene ricordata.</p>
     </div>
     <div id="comandiMappa">
-      <button id="zoomPiu">+</button>
-      <button id="zoomMeno">&minus;</button>
+      <button id="zoomPiu" aria-label="Ingrandisci">+</button>
+      <button id="zoomMeno" aria-label="Riduci">&minus;</button>
     </div>
     <div id="coordMappa">Muovi il mouse sulla mappa</div>
     <div id="scalaMappa"></div>

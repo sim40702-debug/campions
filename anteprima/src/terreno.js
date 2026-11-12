@@ -11,6 +11,7 @@
 import * as THREE from "three";
 import { creaMaterialeAcqua } from "./onde.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
+import { aggiungiDettaglio } from "./superfici.js";
 import { usoQui } from "./uso_suolo.js";
 import { liberaDopoCaricamento } from "./memoria.js";
 
@@ -44,6 +45,7 @@ function materialeTerreno(ambiente) {
         }`);
   };
   m.customProgramCacheKey = function () { return "terreno-grana"; };
+  aggiungiDettaglio(m, { macchie: 0, grana: 0, rugosita: 0.12, rilievo: 0.09, scalaRilievo: 2.2, nome: "terreno" });
   return aggiungiMeteo(m, ambiente, { neve: 1, bagnato: 0.8 });
 }
 

@@ -28,7 +28,7 @@ export function aggiornaInterfaccia(moto, terreno, localita, mappa, ambiente) {
   elMarcia.textContent = moto.velocita < -0.3 ? "R" : (s.marce.length === 1 ? "A" : moto.marcia);
   const quota = (moto.giri - s.minimo) / (s.limitatore - s.minimo);
   elGiri.style.width = Math.round(Math.min(1, Math.max(0, quota)) * 100) + "%";
-  elGiri.style.background = quota > 0.85 ? "#e8323c" : "#7dff9a";
+  elGiri.style.background = quota > 0.85 ? "#ff4650" : "#5ee08a";
   elNomeMoto.textContent = s.nome + " · " + Math.round(moto.giri / 100) * 100 + " giri/min";
   if (moto.suStrada) {
     elStrada.textContent = moto.nomeStrada || "Strada senza nome";

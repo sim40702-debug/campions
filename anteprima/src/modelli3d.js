@@ -40,13 +40,26 @@ export function modelloPronto(nome) {
   return pronti[nome] !== undefined;
 }
 
+// Materiali di moto, macchine e piloti: il gioco li fa riflettere il cielo piu' forte del resto del mondo
+// (vedi riflessiMoto in gioco.js), cosi' vernice, cromature e visiere brillano senza lavare l'asfalto.
+export const materialiMoto = new Set();
+export function registraMaterialeMoto(m) {
+  if (!m) return;
+  if (Array.isArray(m)) { m.forEach(registraMaterialeMoto); return; }
+  m.userData.riflesso = m.userData.riflesso || (m.metalness > 0.5 ? 1.1 : (m.clearcoat > 0 ? 1.6 : (m.roughness > 0.7 ? 0.35 : 0.9)));
+  materialiMoto.add(m);
+}
+
 // Copia di un pezzo, girata come le moto del gioco.
 // Nel file la moto guarda verso +X; nel gioco guarda verso -Z: giro di 90 gradi.
 function pezzo(modello, nome) {
   const copia = modello.pezzi[nome].clone(true);
   copia.rotation.y = Math.PI / 2;
   copia.traverse(function (oggetto) {
-    if (oggetto.isMesh) oggetto.castShadow = true;
+    if (oggetto.isMesh) {
+      oggetto.castShadow = true;
+      registraMaterialeMoto(oggetto.material);
+    }
   });
   return copia;
 }

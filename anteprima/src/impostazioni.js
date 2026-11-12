@@ -65,6 +65,11 @@ export function applicaQualita(chiave, mondo) {
     rapporto = Math.max(rapporto, window.devicePixelRatio);
   }
   mondo.rapportoBase = rapporto;
+  // post-elaborazione (HDR + bagliore + colori): non in qualita' Bassa
+  if (mondo.post) {
+    mondo.post.attivo = chiave !== "bassa";
+    mondo.post.bagliore = chiave === "media" ? 0.8 : 1;
+  }
   mondo.disegnatore.setPixelRatio(rapporto * (mondo.scalaRisoluzione || 1));
   // ombre: spente del tutto in qualita' Bassa (costano molto sui computer piu' deboli)
   mondo.sole.castShadow = q.ombreAttive;

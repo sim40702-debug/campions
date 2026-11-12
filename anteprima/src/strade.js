@@ -1,6 +1,7 @@
 // Strade: legge le strade OpenStreetMap preparate dal passo 7,
 // le disegna come nastri di asfalto e permette di sapere "su che strada sono".
 
+import { aggiungiDettaglio } from "./superfici.js";
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
@@ -1719,6 +1720,11 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     aggiungiMeteo(marciapiedeMateriale, ctx.ambiente, { neve: 0.9, bagnato: 0.9 });
     aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0, bagnato: 0.2 });   // le righe restano sempre bianche e visibili
   }
+
+  // Dettaglio fisico delle superfici: asfalto con macchie di usura, grana e rilievo; cemento dei marciapiedi
+  aggiungiDettaglio(asfaltoMateriale, { macchie: 0.5, grana: 0.3, rugosita: 0.32, rilievo: 0.02, scalaRilievo: 16, nome: "asfalto" });
+  aggiungiDettaglio(galleriaMateriale, { macchie: 0.4, grana: 0.25, rugosita: 0.25, rilievo: 0.015, scalaRilievo: 16, nome: "galleria" });
+  aggiungiDettaglio(marciapiedeMateriale, { macchie: 0.22, grana: 0.16, rugosita: 0.2, rilievo: 0.012, scalaRilievo: 12, nome: "marciapiede" });
 
   // Marciapiedi: serve sapere dove la citta' e' fitta e dove ci sono muri
   let marciapiedi = false;

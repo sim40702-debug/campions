@@ -16,9 +16,9 @@ const PUNTI = [
   { el: -6, sole: 0x8aa2e0, ints: 0.3, cielo: 0x2c3a62, terra: 0x151a22, hemi: 0.6, nebbia: 0x25304e, espo: 1.5, env: 0.25 },
   { el: -1, sole: 0xff8a50, ints: 0.9, cielo: 0x6b6a8a, terra: 0x3a3030, hemi: 0.75, nebbia: 0xc58a78, espo: 1.3, env: 0.3 },
   { el: 5, sole: 0xffb070, ints: 1.7, cielo: 0xa6b4d0, terra: 0x55503a, hemi: 0.95, nebbia: 0xe2b494, espo: 1.2, env: 0.34 },
-  { el: 15, sole: 0xffdcb0, ints: 2.3, cielo: 0xcfe0f6, terra: 0x586338, hemi: 1.1, nebbia: 0xb9d0e8, espo: 1.15, env: 0.36 },
-  { el: 40, sole: 0xfff4e4, ints: 2.6, cielo: 0xdfefff, terra: 0x4a5a3a, hemi: 1.2, nebbia: 0xa9c8e8, espo: 1.1, env: 0.38 },
-  { el: 70, sole: 0xfffaf0, ints: 2.7, cielo: 0xe3f0ff, terra: 0x4a5a3a, hemi: 1.22, nebbia: 0xa4c4e6, espo: 1.08, env: 0.38 }
+  { el: 15, sole: 0xffdcb0, ints: 2.7, cielo: 0xcfe0f6, terra: 0x586338, hemi: 0.95, nebbia: 0xb9d0e8, espo: 1.15, env: 0.36 },
+  { el: 40, sole: 0xfff0d8, ints: 3.0, cielo: 0xd2e6ff, terra: 0x4a5a3a, hemi: 1.0, nebbia: 0xa9c8e8, espo: 1.0, env: 0.42 },
+  { el: 70, sole: 0xfff4e2, ints: 3.1, cielo: 0xd6e8ff, terra: 0x4a5a3a, hemi: 1.02, nebbia: 0xa4c4e6, espo: 0.98, env: 0.42 }
 ];
 
 // Condizioni atmosferiche. nuvole = copertura, nebbia = quanta visibilita' resta, sole = quanta luce diretta,

@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { caricaModelli3D } from "./modelli3d.js";
+import { caricaModelli3D, materialiMoto } from "./modelli3d.js";
 import { caricaTerreno, aggiungiTerreno, quotaTerreno, aggiornaTerreno, preparaTerrenoVicino } from "./terreno.js";
 import { caricaStrade, aggiungiStrade, adattaTerreno, puntoStradaVicino } from "./strade.js";
 import { creaMoto, posizionaMoto, aggiornaMoto } from "./moto.js";
@@ -18,6 +18,8 @@ import { creaLuoghi } from "./luoghi.js";
 import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
+import { creaPostprocesso } from "./postprocesso.js";
+import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
 const VERSIONE = "0.15.0";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
@@ -79,6 +81,12 @@ sole.shadow.normalBias = 0.05;
 // Ora del giorno, cielo con stelle e luna, nuvole, nebbia e meteo
 const ambiente = creaAmbiente(scena, disegnatore, sole, emisfero, telecamera);
 
+// Post-elaborazione (HDR, anti-aliasing, bagliore, colori): vedi postprocesso.js
+const post = creaPostprocesso(disegnatore);
+
+// Fumo delle gomme, polvere e spruzzi dietro la moto
+const particelle = creaParticelle(scena);
+
 // Pioggia e neve (particelle attorno alla telecamera)
 const precipitazioni = creaPrecipitazioni(scena, ambiente);
 
@@ -112,6 +120,17 @@ function aggiornaRiflessi(forza) {
   if (vecchio && vecchio !== scena.environment) vecchio.dispose();
   cieloPiccolo.geometry.dispose();
   cieloPiccolo.material.dispose();
+}
+
+// Moto e piloti: riflettono il cielo piu' forte del resto del mondo (scena.environmentIntensity e' basso per non lavare
+// asfalto e prati). Ogni materiale riceve il cielo come envMap proprio, con la sua intensita'.
+function riflessiMoto() {
+  const env = scena.environment;
+  const k = Math.max(0.5, scena.environmentIntensity * 4.2);
+  for (const m of materialiMoto) {
+    if (m.envMap !== env) { const nuovo = !m.envMap; m.envMap = env; if (nuovo) m.needsUpdate = true; }
+    m.envMapIntensity = (m.userData.riflesso || 1) * k * 0.55;
+  }
 }
 
 window.addEventListener("resize", function () {
@@ -340,7 +359,7 @@ async function avvia() {
     preparaTerrenoVicino(terrenoMesh, moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni };
+    const mondo = { disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
     applicaQualita(qualitaSalvata(), mondo);
     const test = creaTest();
     const bench = creaBenchmark({
@@ -401,7 +420,8 @@ async function avvia() {
       precipitazioni.neve.visible = true;
       precipitazioni.uniformi.uInt.value = 1;
       disegnatore.compile(scena, telecamera);
-      disegnatore.render(scena, telecamera);   // un fotogramma vero: compila anche i programmi delle ombre
+      riflessiMoto();
+      post.disegna(scena, telecamera, 0, 0);   // un fotogramma vero: compila anche i programmi delle ombre
       precipitazioni.pioggia.visible = pv;
       precipitazioni.neve.visible = nv;
     }
@@ -442,6 +462,7 @@ async function avvia() {
       precipitazioni.aggiorna(telecamera, window.innerHeight * disegnatore.getPixelRatio());
       posizionaLuce(ambiente, moto.x, moto.y, moto.z);
       aggiornaRiflessi(false);
+      riflessiMoto();
       aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);
       aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;
@@ -455,6 +476,7 @@ async function avvia() {
       const passoMezzo = moto.modello.userData.passo / 2;
       const sgomma = moto.suStrada && !moto.inAria && moto.caduta <= 0 && Math.abs(moto.velocita) > 3 &&
         (Math.abs(moto.derapata) > 0.1 || moto.sgommata === true);
+      aggiornaParticelle(particelle, moto, dt, ambiente, telecamera, window.innerHeight * disegnatore.getPixelRatio(), sgomma);
       // moto: una ruota dietro; macchina: due ruote dietro (a destra e a sinistra)
       const carreggiata = moto.modello.userData.carreggiata || 0;
       const latiRuote = carreggiata > 0 ? [-carreggiata / 2, carreggiata / 2] : [0];
@@ -479,7 +501,7 @@ async function avvia() {
       const localita = localitaVicina(dettagli, moto.x, moto.z);
       aggiornaInterfaccia(moto, terreno, zona && zona.nome !== localita ? (localita ? localita + " · " + zona.nome : zona.nome) : localita, mappa, ambiente);
       const prima = performance.now();
-      disegnatore.render(scena, telecamera);
+      post.disegna(scena, telecamera, ambiente.uniformi.notte.value, tempoGioco);
       // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)
       const tm = window.__mrw && window.__mrw.tempi;
       if (tm && tm.js.length < 3000) { tm.js.push(prima - inizioFotogramma); tm.render.push(performance.now() - prima); }
