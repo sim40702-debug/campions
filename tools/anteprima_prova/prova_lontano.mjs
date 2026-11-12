@@ -21,7 +21,7 @@ const server = http.createServer((q, s) => {
 }).listen(0);
 const risultati = [];
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info"] });
-for (const profilo of ["bassa", "media", "alta", "ultra"]) {
+for (const profilo of (process.env.PROFILI || "bassa,media,alta,ultra").split(",")) {
   const p = await browser.newPage({ viewport: { width: 800, height: 450 } });
   p.setDefaultTimeout(600000);
   const errori = [];
@@ -32,7 +32,7 @@ for (const profilo of ["bassa", "media", "alta", "ultra"]) {
   await p.waitForFunction(() => window.__mrw && window.__mrw.fotogrammi > 3);
   await p.evaluate(([x, z]) => { window.__mrw.vaiA(x, z); window.__mrw.moto.velocita = 0; }, [px, pz]);
   const f0 = await p.evaluate(() => window.__mrw.fotogrammi);
-  await p.waitForFunction((f) => window.__mrw.fotogrammi > f + 14, f0);
+  await p.waitForFunction((f) => window.__mrw.fotogrammi > f + 40, f0, { timeout: 900000 });   // il terreno si costruisce a poco a poco: si aspetta che sia pronto, cosi' spento e acceso sono confrontabili
   const misura = async (acceso) => p.evaluate(async (acceso) => {
     const THREE = await import("three");
     const m = window.__mrw;
@@ -56,8 +56,26 @@ for (const profilo of ["bassa", "media", "alta", "ultra"]) {
       memoriaJS: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null,
       geometrie: m.disegnatore.info.memory.geometries, texture: m.disegnatore.info.memory.textures };
   }, acceso);
+  await misura(false);                 // riscaldamento (il terreno lontano si completa)
   const spento = await misura(false);
   const acceso = await misura(true);
+  // vista dall'alto (solo diagnostica): dove stanno le sagome rispetto agli edifici veri e al terreno
+  const alto = await p.evaluate(async () => {
+    const THREE = await import("three");
+    const m = window.__mrw;
+    const cam = new THREE.PerspectiveCamera(50, 800 / 450, 10, 40000);
+    cam.position.set(m.moto.x, m.moto.y + 9000, m.moto.z + 4000);
+    cam.lookAt(m.moto.x, m.moto.y, m.moto.z - 1000);
+    const nebbiaFar = m.scena.fog.far;
+    m.scena.fog.far = 60000; m.scena.fog.near = 50000;
+    m.moto.modello.visible = false;
+    m.disegnatore.render(m.scena, cam);
+    const url = m.disegnatore.domElement.toDataURL("image/png");
+    m.scena.fog.far = nebbiaFar; m.scena.fog.near = nebbiaFar * 0.18;
+    m.moto.modello.visible = true;
+    return url;
+  });
+  fs.writeFileSync(path.join(uscita, "lontano_" + profilo + "_dall_alto.png"), Buffer.from(alto.split(",")[1], "base64"));
   fs.writeFileSync(path.join(uscita, "lontano_" + profilo + "_spento.png"), Buffer.from(spento.url.split(",")[1], "base64"));
   fs.writeFileSync(path.join(uscita, "lontano_" + profilo + "_acceso.png"), Buffer.from(acceso.url.split(",")[1], "base64"));
   const r = {
