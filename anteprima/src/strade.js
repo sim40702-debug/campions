@@ -2,6 +2,7 @@
 // le disegna come nastri di asfalto e permette di sapere "su che strada sono".
 
 import { aggiungiDettaglio } from "./superfici.js";
+import { calcolaIncroci, costruisciIncroci } from "./incroci.js";
 import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
@@ -1509,20 +1510,38 @@ const TIPI_CON_MARCIAPIEDE = ["primary", "secondary", "tertiary", "unclassified"
 function aggiungiMarciapiedi(indice, strada, ctx, g, quotaTerreno) {
   const p = strada.p;
   const punti = p.length / 3;
-  // ricampiono la strada ogni 3 m
-  const campioni = [];
-  for (let i = 0; i < punti - 1; i++) {
-    const ax = p[i * 3], ay = p[i * 3 + 1], az = p[i * 3 + 2];
-    const bx = p[i * 3 + 3], by = p[i * 3 + 4], bz = p[i * 3 + 5];
-    const lung = Math.hypot(bx - ax, bz - az);
-    const n = Math.max(1, Math.round(lung / 3));
-    const w0 = larghezzaIn(strada, i), w1 = larghezzaIn(strada, i + 1);
-    for (let k = 0; k < n; k++) {
-      const t = k / n;
-      campioni.push([ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t, w0 + (w1 - w0) * t, i]);
+  // ricampiono la strada ogni ~3 m, piu' i punti esatti dove finisce il tratto occupato dal raccordo di un incrocio
+  // (cosi' il marciapiede comincia esattamente dove finisce la curva del cordolo: vedi incroci.js)
+  const tagli = (ctx.stradeDati && ctx.stradeDati.tagli && ctx.stradeDati.tagli.get(indice)) || [];
+  const cum = new Float32Array(punti);
+  for (let i = 1; i < punti; i++) cum[i] = cum[i - 1] + Math.hypot(p[i * 3] - p[(i - 1) * 3], p[i * 3 + 2] - p[(i - 1) * 3 + 2]);
+  const lungTot = cum[punti - 1];
+  if (lungTot < 0.5) return;
+  const ss = [];
+  const passoS = lungTot / Math.max(1, Math.round(lungTot / 3));
+  for (let s = 0; s < lungTot - 1e-6; s += passoS) ss.push(s);
+  ss.push(lungTot);
+  for (const rec of tagli) {
+    for (const taglio of [rec.L, rec.R]) {
+      if (taglio <= 0) continue;
+      const s = cum[rec.k] + (rec.avanti ? taglio : -taglio);
+      if (s > 0.1 && s < lungTot - 0.1) ss.push(s);
     }
   }
-  campioni.push([p[(punti - 1) * 3], p[(punti - 1) * 3 + 1], p[(punti - 1) * 3 + 2], larghezzaIn(strada, punti - 1), punti - 2]);
+  ss.sort(function (x, y) { return x - y; });
+  const campioni = [];
+  let segmento = 0;
+  for (const s of ss) {
+    if (campioni.length > 0 && s - campioni[campioni.length - 1][5] < 0.15) continue;
+    while (segmento < punti - 2 && cum[segmento + 1] < s) segmento++;
+    const l = cum[segmento + 1] - cum[segmento];
+    const t = l > 0 ? Math.min(1, Math.max(0, (s - cum[segmento]) / l)) : 0;
+    const i = segmento;
+    campioni.push([
+      p[i * 3] + (p[i * 3 + 3] - p[i * 3]) * t, p[i * 3 + 1] + (p[i * 3 + 4] - p[i * 3 + 1]) * t, p[i * 3 + 2] + (p[i * 3 + 5] - p[i * 3 + 2]) * t,
+      larghezzaIn(strada, i) + (larghezzaIn(strada, i + 1) - larghezzaIn(strada, i)) * t, i, s
+    ]);
+  }
   if (campioni.length < 2) return;
   const colTop = new THREE.Color(0xffffff);
   const colCordolo = new THREE.Color(0xd8d5cd);
@@ -1535,6 +1554,12 @@ function aggiungiMarciapiedi(indice, strada, ctx, g, quotaTerreno) {
       const l = Math.hypot(dx, dz) || 1;
       dx /= l; dz /= l;
       const nx = -dz * lato, nz = dx * lato;
+      // dentro il raccordo di un incrocio: il cordolo e il marciapiede girano l'angolo (incroci.js)
+      for (const rec of tagli) {
+        const fuori = rec.avanti ? c[5] - cum[rec.k] : cum[rec.k] - c[5];
+        const taglio = rec.avanti ? (lato === 1 ? rec.L : rec.R) : (lato === 1 ? rec.R : rec.L);
+        if (taglio > 0 && fuori > -0.01 && fuori < taglio - 0.03) return 0;
+      }
       const urb = zonaQuiLocale(ctx.edifici, c[0], c[2]);
       if (urb < 0.07) return 0;
       const centro = c[3] / 2 + 0.9;
@@ -1671,6 +1696,7 @@ function aggiungiIncroci(strade, materiale, scena) {
   let quanti = 0;
   for (const e of nodi.values()) {
     if (!(e.n >= 3 || (e.n === 2 && e.meta && e.fine))) continue;
+    if (strade.conRaccordi && strade.conRaccordi.has(Math.round(e.x * 2) + "," + Math.round(e.z * 2))) continue;   // ha gia' i suoi raccordi (incroci.js)
     // raggio = meta' della SECONDA larghezza piu' grande: il disco riempie l'incrocio ma non sporge mai dalla
     // strada (prima usava la piu' larga, e dove una strada larga diventava stretta restava un "cerchio" in mezzo)
     e.bracci.sort(function (a, b) { return b - a; });
@@ -1721,8 +1747,10 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0, bagnato: 0.2 });   // le righe restano sempre bianche e visibili
   }
 
+  // righe bianche consumate (si intravede l'asfalto)
+  aggiungiDettaglio(righeMateriale, { macchie: 0.08, grana: 0.12, rugosita: 0.1, rilievo: 0, usura: 0.1, nome: "righe" });
   // Dettaglio fisico delle superfici: asfalto con macchie di usura, grana e rilievo; cemento dei marciapiedi
-  aggiungiDettaglio(asfaltoMateriale, { macchie: 0.5, grana: 0.3, rugosita: 0.32, rilievo: 0.02, scalaRilievo: 16, nome: "asfalto" });
+  aggiungiDettaglio(asfaltoMateriale, { macchie: 0.26, grana: 0.26, rugosita: 0.3, rilievo: 0.02, scalaRilievo: 16, nome: "asfalto" });
   aggiungiDettaglio(galleriaMateriale, { macchie: 0.4, grana: 0.25, rugosita: 0.25, rilievo: 0.015, scalaRilievo: 16, nome: "galleria" });
   aggiungiDettaglio(marciapiedeMateriale, { macchie: 0.22, grana: 0.16, rugosita: 0.2, rilievo: 0.012, scalaRilievo: 12, nome: "marciapiede" });
 
@@ -1742,9 +1770,11 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   const guardrail = { posizioni: [], indici: [] };
   const muri = { posizioni: [], indici: [] };
   const paletti = [];
+  const tombini = [];
+  const caditoie = [];
   const gruppi = new Map();   // 1 km: asfalto, gallerie, righe, marciapiedi
-  const pezzo = function (strada) {
-    const k = Math.floor(strada.p[0] / 1000) + "," + Math.floor(strada.p[2] / 1000);
+  const gruppoIn = function (x, z) {
+    const k = Math.floor(x / 1000) + "," + Math.floor(z / 1000);
     let v = gruppi.get(k);
     if (!v) {
       v = { asfalto: nuovoNastro(), gallerie: nuovoNastro(), righe: { posizioni: [], indici: [] }, marciapiedi: nuovoNastro() };
@@ -1752,7 +1782,15 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     }
     return v;
   };
+  const pezzo = function (strada) { return gruppoIn(strada.p[0], strada.p[2]); };
   const bianco = new THREE.Color(1, 1, 1);
+
+  // Forma vera degli incroci (raccordi, cordoli, isole delle rotonde): vedi incroci.js. Va calcolata PRIMA dei marciapiedi,
+  // che si interrompono dove comincia il raccordo.
+  const incrociDati = calcolaIncroci(strade, chiaveNodo, larghezzaIn);
+  strade.tagli = incrociDati.tagli;
+  strade.conRaccordi = new Set();
+  for (const nodo of incrociDati.incroci) if (nodo.raccordi.length > 0) strade.conRaccordi.add(chiaveNodo(nodo.x, nodo.z));
 
   for (let indice = 0; indice < strade.lista.length; indice++) {
     const strada = strade.lista[indice];
@@ -1779,6 +1817,9 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       // righe tra le corsie (tratteggiate) + linee di bordo continue (interrotte dove passa un'altra strada)
       aggiungiLinee(indice, strada, strade, gruppo.righe);
     }
+    if (!strada.g && !strada.b && !strada.riemp) {
+      aggiungiUsuraAsfalto(indice, strada, strade, gruppo.asfalto, tombini, caditoie, marciapiedi && TIPI_CON_MARCIAPIEDE.includes(strada.t));
+    }
     if (strada.b) {
       aggiungiParapetti(strada, parapetti.posizioni, parapetti.indici);
     } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
@@ -1788,6 +1829,18 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     if (marciapiedi && !strada.g && !strada.b && strada.w >= 4 && TIPI_CON_MARCIAPIEDE.includes(strada.t)) {
       aggiungiMarciapiedi(indice, strada, ctx, gruppo.marciapiedi, terreno);
     }
+  }
+  if (marciapiedi || true) {
+    strade.incroci2 = costruisciIncroci(incrociDati, {
+      gruppo: gruppoIn,
+      tipiMarciapiede: TIPI_CON_MARCIAPIEDE,
+      marciapiede: function (x, z, y) {
+        if (!marciapiedi) return 0;
+        if (zonaQuiLocale(ctx.edifici, x, z) < 0.07) return 0;
+        if (ctx.dentro(x, z, y + 1)) return 0;
+        return ctx.dentro(x, z, y + 1.4) ? 0.9 : 1.9;
+      }
+    });
   }
   scena.add(creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0));
   scena.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
@@ -1808,6 +1861,30 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
       istanze.setMatrixAt(i / 3, matrice);
     }
     scena.add(istanze);
+  }
+
+  // Tombini di ghisa e caditoie: tutti insieme in due InstancedMesh
+  if (tombini.length > 0) {
+    const forma = new THREE.CylinderGeometry(0.33, 0.33, 0.02, 10);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x4a4d52, roughness: 0.42, metalness: 0.6, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+    const ist = new THREE.InstancedMesh(forma, mat, tombini.length / 3);
+    const m = new THREE.Matrix4();
+    for (let i = 0; i < tombini.length; i += 3) { m.makeTranslation(tombini[i], tombini[i + 1], tombini[i + 2]); ist.setMatrixAt(i / 3, m); }
+    ist.receiveShadow = true;
+    scena.add(ist);
+  }
+  if (caditoie.length > 0) {
+    const forma = new THREE.BoxGeometry(0.34, 0.02, 0.6);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x33363a, roughness: 0.5, metalness: 0.55, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+    const ist = new THREE.InstancedMesh(forma, mat, caditoie.length / 4);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), asseY = new THREE.Vector3(0, 1, 0), pos = new THREE.Vector3(), unita = new THREE.Vector3(1, 1, 1);
+    for (let i = 0; i < caditoie.length; i += 4) {
+      q.setFromAxisAngle(asseY, caditoie[i + 3]);
+      m.compose(pos.set(caditoie[i], caditoie[i + 1], caditoie[i + 2]), q, unita);
+      ist.setMatrixAt(i / 4, m);
+    }
+    ist.receiveShadow = true;
+    scena.add(ist);
   }
 
   aggiungiIncroci(strade, asfaltoMateriale, scena);
@@ -1852,7 +1929,9 @@ function aggiungiLinee(indice, strada, strade, g) {
     dist += lung;
   }
   // strisce: [lato, frazione della larghezza]; lato 0 = riga tra due corsie
-  const corsie = strada.w >= 9 ? Math.round(strada.w / 3.3) : (strada.w >= 5.5 ? 2 : 1);
+  // corsie: il numero vero di OpenStreetMap (lanes) se c'e' e non contraddice la larghezza, altrimenti dalla larghezza
+  const corsieStima = strada.w >= 9 ? Math.round(strada.w / 3.3) : (strada.w >= 5.5 ? 2 : 1);
+  const corsie = strada.l > 0 ? Math.max(1, Math.min(strada.l, Math.round(strada.w / 2.6))) : corsieStima;
   const strisce = [];
   for (let k = 1; k < corsie; k++) strisce.push([0, k / corsie - 0.5]);
   if (!strada.g) strisce.push([1, 0], [-1, 0]);
@@ -1890,6 +1969,60 @@ function aggiungiLinee(indice, strada, strade, g) {
       }
       precedente = { x: x, y: c.y, z: z, dx: c.dx, dz: c.dz };
     }
+  }
+}
+
+// --- Usura dell'asfalto: toppe di riparazione, tombini e caditoie -----------------------------------------------------
+// Posizioni ripetibili (dipendono solo dall'indice della strada), lontane dagli incroci. Toppe: rettangoli piu' scuri lungo la
+// corsia; tombini: dischi di ghisa al centro delle corsie; caditoie: griglie accanto al cordolo dove c'e' il marciapiede.
+function casuale01(a, b) {
+  let h = Math.imul((a * 73856093) ^ (b * 19349663), 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function aggiungiUsuraAsfalto(indice, strada, strade, g, tombini, caditoie, conCordolo) {
+  if (strada.w < 4 || strada.g || strada.b || stradaVeloce(strada)) return;
+  const p = strada.p, punti = p.length / 3;
+  let percorso = 0, prossimo = 12 + casuale01(indice, 1) * 25, n = 0;
+  for (let i = 0; i < punti - 1; i++) {
+    const ax = p[i * 3], ay = p[i * 3 + 1], az = p[i * 3 + 2], bx = p[i * 3 + 3], by = p[i * 3 + 4], bz = p[i * 3 + 5];
+    const l = Math.hypot(bx - ax, bz - az);
+    if (l < 0.01) continue;
+    const dx = (bx - ax) / l, dz = (bz - az) / l, lx = -dz, lz = dx;
+    while (percorso + l >= prossimo) {
+      const t = (prossimo - percorso) / l;
+      const x = ax + (bx - ax) * t, y = ay + (by - ay) * t, z = az + (bz - az) * t;
+      const w = larghezzaIn(strada, i);
+      const r = casuale01(indice, n * 3 + 7);
+      const lato = casuale01(indice, n * 3 + 8) < 0.5 ? -1 : 1;
+      n++;
+      prossimo += 35 + casuale01(indice, n * 3 + 9) * 60;
+      // lontano dagli altri nastri (incroci): il centro della corsia deve essere sul NOSTRO asfalto e non vicino ad altre strade
+      const cx = x + lx * lato * w / 4, cz = z + lz * lato * w / 4;
+      if (copertoDaAltra(strade, cx, cz, indice, 3.5, false) || copertoDaAltra(strade, x, z, indice, 3.5, false)) continue;
+      if (r < 0.5) {
+        tombini.push(cx + lx * (casuale01(indice, n) - 0.5) * 0.6, y + 0.03, cz + lz * (casuale01(indice, n) - 0.5) * 0.6);
+      } else if (r < 0.78) {
+        // toppa: 1.5 m di traverso x 2.5-6 m lungo la strada
+        const lung = (2.5 + casuale01(indice, n + 50) * 3.5) / 2, lar = Math.min(1.6, w * 0.3) / 2;
+        const sc = 0.62 + casuale01(indice, n + 90) * 0.18;
+        const base = g.posizioni.length / 3;
+        const alza = (strada.w >= 7 ? 0.014 : (strada.w >= 5.5 ? 0.008 : 0.002)) + 0.012;
+        g.posizioni.push(
+          cx - dx * lung - lx * lar, y + alza, cz - dz * lung - lz * lar, cx - dx * lung + lx * lar, y + alza, cz - dz * lung + lz * lar,
+          cx + dx * lung + lx * lar, y + alza, cz + dz * lung + lz * lar, cx + dx * lung - lx * lar, y + alza, cz + dz * lung - lz * lar
+        );
+        g.uv.push(0.3, 0.3, 0.7, 0.3, 0.7, 0.9, 0.3, 0.9);
+        for (let q = 0; q < 4; q++) g.colori.push(sc, sc, sc);
+        g.indici.push(base, base + 2, base + 1, base, base + 3, base + 2);
+      } else if (conCordolo) {
+        // caditoia accanto al cordolo, sul lato opposto a quello scelto non serve: una per lato
+        for (const m of [-1, 1]) caditoie.push(x + lx * m * (w / 2 - 0.3), y + 0.03, z + lz * m * (w / 2 - 0.3), Math.atan2(dx, dz));
+      }
+    }
+    percorso += l;
   }
 }
 

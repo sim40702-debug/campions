@@ -492,6 +492,17 @@ def main():
         }
         if tag.get("junction") in ("roundabout", "circular"):
             voce["j"] = "roundabout"   # rotonda: nel gioco ha l'isola centrale e il cordolo
+        # numero di corsie e senso unico veri di OpenStreetMap: li usa la grafica delle righe e degli incroci (0.15.3)
+        try:
+            corsie = int(str(tag.get("lanes", "")).split(";")[0])
+            if 1 <= corsie <= 8:
+                voce["l"] = corsie
+        except ValueError:
+            pass
+        if tag.get("oneway") in ("yes", "1", "true") or tag.get("junction") in ("roundabout", "circular"):
+            voce["o"] = 1
+        elif tag.get("oneway") == "-1":
+            voce["o"] = -1
         if min(pezzo["larghezze"]) < pezzo["larghezza"] - 0.05:
             voce["ww"] = pezzo["larghezze"]
             strette = strette + 1

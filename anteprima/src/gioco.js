@@ -21,7 +21,7 @@ import { creaBenchmark, inMarkdown } from "./benchmark.js";
 import { creaPostprocesso } from "./postprocesso.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
-const VERSIONE = "0.15.0";
+const VERSIONE = "0.15.3";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";

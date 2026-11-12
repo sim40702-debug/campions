@@ -34,3 +34,13 @@ Eseguire il benchmark ripetibile (Impostazioni > Benchmark) prima e dopo per con
 
 ## Da controllare giocando
 Intensita' di AO e bagliore, fumo delle gomme, leggibilita' dell'HUD su sole forte, FPS in citta' con qualita' Alta/Ultra.
+
+## Strade e incroci (0.15.3)
+Codice: `anteprima/src/incroci.js` (nuovo), `strade.js`, `dettagli.js`, `superfici.js`; dati: `tools/geo/passo7_esporta_anteprima.py` (campi nuovi `l` corsie, `o` senso unico).
+
+- **Verificato dai dati OSM**: tracciato, curvatura, larghezza, collegamenti, rotonde, posizione di stop/precedenze/semafori/strisce.
+- **Costruito dalla geometria vera**: bracci di ogni nodo con 3+ strade -> raccordo circolare tra bracci vicini, cordolo e marciapiede che lo seguono.
+- **Stime** (non nei dati): raggio dei raccordi (3,5-9 m), isole delle rotonde (10 m, larghezza max 1,8 m), linea di precedenza alle entrate delle rotonde, tombini/toppe/caditoie (posizioni ripetibili).
+- **Non fatto**: frecce direzionali e corsie di svolta (OSM non da' quali corsie vanno dove: `turn:lanes` e' raro, non e' stato esportato; disegnarle sarebbe inventare), isole spartitraffico non rotonde (non in OSM), semafori sul braccio giusto per ogni corsia.
+- **Prova**: `node tools/anteprima_prova/dati_osm_reali.mjs` scarica da api.openstreetmap.org una zona vera (di default Locarno-Muralto, 3,2 x 2,8 km, 616 strade, 93 km, 383 incroci) e la converte nei file dell'anteprima, cosi' si prova su strade vere anche senza i dati completi di tools/geo. Le quote vengono dal terreno di prova, non da swisstopo.
+- **Non ancora provato**: il passo 7 vero (i campi nuovi) e i dati completi swisstopo + Overpass della release; l'intero Ticino/Verzasca; FPS su GPU vera.

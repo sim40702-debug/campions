@@ -6,6 +6,9 @@ import { quotaTerreno } from "./terreno.js";
 import { stradaVicina, stradaSotto, sullAsfalto, distanzaIncrocio } from "./strade.js";
 import { aggiungiArredoUrbano } from "./arredo.js";
 import { creaSegnali } from "./segnali.js";
+import { aggiungiDettaglio } from "./superfici.js";
+import { aggiungiMeteo } from "./meteo_shader.js";
+import { lineaArresto, lineaPrecedenza } from "./incroci.js";
 
 export async function caricaDettagli() {
   const risposta = await fetch("dati/dettagli.json");
@@ -201,11 +204,45 @@ function coppie(lista) {
   return risultato;
 }
 
+// Linee di arresto (STOP, semaforo) e di dare precedenza sull'asfalto, dove OpenStreetMap ha il cartello o il semaforo.
+// Il punto e' quello della strada piu' vicina, arretrato fino a stare prima dell'incrocio (aBordoStrada con "versoIncrocio").
+function disegnaLineeArresto(scena, strade, contesto, liste) {
+  const g = { posizioni: [], indici: [] };
+  let quante = 0;
+  for (const [lista, tipo] of liste) {
+    for (const o of lista) {
+      const s = o.strada;
+      if (!s || s.scarta || s.galleria) continue;
+      const via = strade.lista[s.indice];
+      const unico = via && (via.o === 1 || via.o === -1);
+      const mezza = s.larghezza / 2;
+      const da = unico ? -mezza : 0.1, a = mezza;
+      if (tipo === "precedenza") lineaPrecedenza(g, s.x, s.y, s.z, s.dirX, s.dirZ, da + 0.15, a - 0.1);
+      else lineaArresto(g, s.x, s.y, s.z, s.dirX, s.dirZ, da, a);
+      quante++;
+    }
+  }
+  if (quante === 0) return 0;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(g.posizioni, 3));
+  geo.setIndex(g.indici);
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5, side: THREE.DoubleSide });
+  aggiungiDettaglio(mat, { macchie: 0.08, grana: 0.12, rugosita: 0.1, rilievo: 0, usura: 0.12, nome: "arresto" });
+  if (contesto && contesto.ambiente) aggiungiMeteo(mat, contesto.ambiente, { neve: 0, bagnato: 0.2 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.receiveShadow = true;
+  scena.add(mesh);
+  return quante;
+}
+
 export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
   const lampioni = coppie(dettagli.lampioni).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.6));
   const semafori = coppie(dettagli.semafori).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.8, true));
   const stop = coppie(dettagli.stop).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7, true));
   const precedenze = coppie(dettagli.precedenza).map(([x, z]) => aBordoStrada(strade, terreno, x, z, 0.7, true));
+
+  const lineeArresto = disegnaLineeArresto(scena, strade, contesto, [[stop, "stop"], [semafori, "stop"], [precedenze, "precedenza"]]);
 
   // I lampioni girano il braccio verso il centro della strada
   for (const l of lampioni) l.angolo = l.angolo - Math.PI / 2;
@@ -255,7 +292,7 @@ export function aggiungiDettagli(dettagli, scena, terreno, strade, contesto) {
 
   return {
     lampioni: lampioni.length, semafori: semafori.length, stop: stop.length,
-    precedenze: precedenze.length, strisce: dettagli.strisce.length / 2
+    precedenze: precedenze.length, strisce: dettagli.strisce.length / 2, lineeArresto: lineeArresto
   };
 }
 

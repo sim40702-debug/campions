@@ -10,7 +10,7 @@ import * as THREE from "three";
 //  rugosita: variazione della lucidita' (0-1)                rilievo: altezza del bump in metri (0.005 = 5 mm)
 //  scalaRilievo: frequenza del rilievo (piu' alto = grana piu' fine)
 export function aggiungiDettaglio(materiale, opzioni) {
-  const o = Object.assign({ macchie: 0.25, grana: 0.2, rugosita: 0.2, rilievo: 0.012, scalaRilievo: 9, nome: "d" }, opzioni || {});
+  const o = Object.assign({ macchie: 0.25, grana: 0.2, rugosita: 0.2, rilievo: 0.012, scalaRilievo: 9, usura: 0, nome: "d" }, opzioni || {});
   const precedente = materiale.onBeforeCompile;
   const chiavePrec = materiale.customProgramCacheKey ? materiale.customProgramCacheKey() : "";
   materiale.onBeforeCompile = function (shader, disegnatore) {
@@ -39,7 +39,10 @@ export function aggiungiDettaglio(materiale, opzioni) {
         float vicinoD = 1.0 - smoothstep(35.0, 230.0, length(vViewPosition));
         float macroV = macroD(vDettXZ);
         diffuseColor.rgb *= 1.0 + (macroV - 0.5) * ${(o.macchie * 1.4).toFixed(3)};
-        diffuseColor.rgb *= 1.0 + (nD(vDettXZ * 3.3) * 0.5 + nD(vDettXZ * 11.0) * 0.5 - 0.5) * ${(o.grana).toFixed(3)} * vicinoD;`)
+        diffuseColor.rgb *= 1.0 + (nD(vDettXZ * 3.3) * 0.5 + nD(vDettXZ * 11.0) * 0.5 - 0.5) * ${(o.grana).toFixed(3)} * vicinoD;
+        ${o.usura > 0 ? `
+        // segni consumati: macchie dove la vernice e' saltata (si vede l'asfalto sotto)
+        if (nD(vDettXZ * 6.5) * 0.55 + nD(vDettXZ * 21.0) * 0.45 > ${(0.93 - o.usura * 1.3).toFixed(3)}) discard;` : ""}`)
       .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
         roughnessFactor = clamp(roughnessFactor + (macroV - 0.5) * ${o.rugosita.toFixed(3)} + (nD(vDettXZ * 5.7) - 0.5) * ${(o.rugosita * 0.6).toFixed(3)} * vicinoD, 0.04, 1.0);`)
       .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
@@ -56,7 +59,7 @@ export function aggiungiDettaglio(materiale, opzioni) {
         }`);
   };
   materiale.customProgramCacheKey = function () {
-    return chiavePrec + "|dett" + o.nome + o.macchie + o.grana + o.rugosita + o.rilievo + o.scalaRilievo;
+    return chiavePrec + "|dett" + o.nome + o.macchie + o.grana + o.rugosita + o.rilievo + o.scalaRilievo + o.usura;
   };
   return materiale;
 }

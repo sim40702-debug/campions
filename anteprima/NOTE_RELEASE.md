@@ -3,7 +3,24 @@
 Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.0) – Valle Verzasca
+### Novità di questa versione (0.15.3) – Incroci veri e grafica nuova
+
+**Strade e incroci (il lavoro principale)**
+- **Ogni incrocio ha la sua forma**, calcolata dalle strade vere di OpenStreetMap che ci arrivano: incroci a 3, 4, 5 e più vie ed entrate delle rotonde. Tra due strade vicine l'angolo non è più vivo ma ha un **raccordo circolare** tangente ai due bordi (raggio da 3,5 a 9 m secondo la larghezza), come nei cordoli veri. Niente più "dischi" di asfalto e buchi tra le strade.
+- **Cordoli e marciapiedi girano l'angolo**: il marciapiede si ferma esattamente dove comincia la curva e la segue, invece di finire a metà incrocio.
+- **Rotonde**: isola spartitraffico con cordolo sui rami a due sensi e **linea di dare precedenza** (denti di squalo) all'entrata. Isola, anello e rami sono quelli veri.
+- **Linee di STOP e di precedenza** dove OpenStreetMap ha il cartello o il semaforo (stop, "dare precedenza", semafori), arretrate prima dell'incrocio.
+- **Corsie vere**: il numero di corsie (`lanes`) e il senso unico (`oneway`) di OpenStreetMap vengono esportati dal passo 7 e usati per le righe. Con i dati vecchi (senza questi campi) il gioco usa la larghezza come prima.
+- **Asfalto**: macchie di usura e variazioni di colore, grana e rilievo; **toppe** di riparazione, **tombini** e **caditoie** (griglie accanto al cordolo) lungo tutte le strade; righe bianche **consumate** dove la vernice è saltata.
+- Posizioni, larghezze e collegamenti delle strade sono quelli dei dati: nulla è inventato. Sono **stime** (non dati OSM): il raggio dei raccordi, la lunghezza delle isole delle rotonde, tombini/toppe/caditoie e la linea di precedenza alle rotonde.
+- La fisica della moto non cambia: cordoli, isole e raccordi sono solo grafica (come i marciapiedi di prima).
+
+**Grafica generale**
+- Immagine in HDR con anti-aliasing 4x, bagliore sulle luci forti, occlusione ambientale (AO), correzione colore e vignettatura (non in qualità Bassa).
+- Luce più contrastata, riflessi del cielo più forti su moto e piloti, fumo delle gomme, polvere fuori strada e spruzzi sul bagnato.
+- HUD, minimappa, menu, garage e schermata di caricamento ridisegnati; tasti da tastiera con anello visibile, schermi piccoli e riduzione del movimento.
+
+### Novità della 0.15.0 – Valle Verzasca
 
 - **Tutta la Valle Verzasca si può esplorare**, in moto e in macchina: la mappa va da Ascona fino alle creste sopra Sonogno (16 × 32 km invece di 16 × 12).
 - **Strada della valle completa**, collegata al resto della rete: da Gordola e Tenero alla **diga della Verzasca** e al **Lago di Vogorno**, poi **Vogorno, Corippo, Lavertezzo**, **Brione, Gerra, Frasco e Sonogno**, con la strada per **Mergoscia**, la Val d'Osura e le strade laterali.
