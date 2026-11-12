@@ -125,7 +125,7 @@ TIPI_SENZA_MURI = {"roof", "carport", "construction"}
 # Con la regola generale (2 piani sopra il punto PIU' ALTO del terreno, tetto piatto) un rustico di 40 m2 su un
 # pendio diventava una torre di 15 m. Nelle valli (zona "Valle Verzasca") e in quota (monti e alpi) un edificio
 # piccolo e senza altre indicazioni e' un rustico: muri bassi di sasso (o intonacati), tetto a due falde in piode.
-ZONE_RUSTICHE = {"Valle Verzasca"}
+ZONE_RUSTICHE = {"Valle Verzasca", "Vallemaggia", "Valle di Blenio", "Leventina"}   # valli con i rustici in sasso
 QUOTA_RUSTICI_M = 650        # sopra questa quota i nuclei sono rustici anche fuori dalle valli
 AREA_MASSIMA_RUSTICO_M2 = 700     # sopra: capannoni, scuole, alberghi grandi (regola generale)
 TIPI_RUSTICO = {"yes", "house", "detached", "residential", "hut", "cabin", "barn", "stable", "cowshed",
@@ -404,9 +404,31 @@ def esporta_acqua(percorso, suolo, zona, centro_est, centro_nord, dighe=()):
         poligono = poligono_osm(elemento)
         if poligono is None or poligono.is_empty:
             continue
-        if poligono.area > 5_000_000 or tag.get("water") == "lake" and poligono.area > 1_000_000:
-            continue   # Lago Maggiore
+        grande = poligono.area > 5_000_000 or tag.get("water") == "lake" and poligono.area > 1_000_000
         poligono = poligono.intersection(zona)
+        if grande:
+            # Lago grande. Il Lago Maggiore (193 m) e' gia' nel gioco come superficie piatta: lo salto.
+            # Gli altri (Lago di Lugano 271 m, laghi alpini e bacini: Ritom, Luzzone, Sambuco, Naret...) diventano
+            # una superficie piatta alla quota della loro riva (la mediana, cosi' un punto sbagliato non conta).
+            if poligono.is_empty:
+                continue
+            parti_lago = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
+            for parte in parti_lago:
+                if parte.geom_type != "Polygon" or parte.area < 2000:
+                    continue
+                riva = sorted(suolo.quota(e, n) for e, n in parte.exterior.coords)
+                livello = riva[len(riva) // 2]
+                if livello < 196.5:
+                    continue   # Lago Maggiore
+                parte = parte.simplify(3)
+                if parte.is_empty or parte.geom_type != "Polygon":
+                    continue
+                poligoni.append({
+                    "o": locali(list(parte.exterior.coords)[:-1]),
+                    "f": [locali(list(buco.coords)[:-1]) for buco in parte.interiors if buco.length > 60],
+                    "piatto": round(livello + 0.2, 2),
+                })
+            continue
         parti = list(poligono.geoms) if poligono.geom_type == "MultiPolygon" else [poligono]
         for parte in parti:
             if parte.geom_type != "Polygon" or parte.area < 20:

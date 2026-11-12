@@ -99,7 +99,8 @@ def main():
     nuovi = utilita.scarica_tanti([(t["url"], cartella / t["nome"]) for t in tasselli])
     print("   Nuovi file scaricati: " + str(nuovi))
 
-    if not argomenti.pilota:
+    # Con il Ticino completo (MRW_AREA) le regioni di confine arrivano in Italia: serve anche li'
+    if not argomenti.pilota or config.AREA_DA_FUORI:
         print("3) Scarico Copernicus DEM 30 m per il bordo fuori dalla Svizzera...")
         scarica_copernicus()
 

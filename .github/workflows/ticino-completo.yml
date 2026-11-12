@@ -1,0 +1,347 @@
+# TICINO COMPLETO (branch feature/ticino-completo): tutto il cantone a regioni.
+#
+# Non tocca le release normali dell'anteprima (quelle partono solo da "main").
+#
+# 1) "osm":      scarica da OpenStreetMap i dati di TUTTO il cantone (a blocchi), decide le regioni,
+#                crea la mappa del cantone e controlla che le strade siano collegate
+# 2) "regione":  per ogni regione (24 x 24 km) esegue i passi 1, 3, 6, 7, 8 e crea il pacchetto regione_R_....tar.gz
+# 3) "pubblica": unisce i controlli e mette i pacchetti nella pre-release "ticino-completo-dati"
+#                (il gioco li scarica da li' quando si entra in una regione nuova)
+# 4) "app":      costruisce l'app per Mac e Windows (dentro c'e' gia' la regione di Locarno)
+# 5) "release":  pubblica l'app come PRE-release "ticino-completo-vX" (non e' "l'ultima versione": chi usa
+#                l'anteprima normale non la riceve come aggiornamento)
+#
+# I dati (lavori 1-3) si rifanno solo se il messaggio del commit contiene "[dati]" oppure avviando il workflow
+# a mano con "dati" attivo. Altrimenti si rifa' solo l'app, con i dati gia' pubblicati.
+
+name: Ticino completo
+
+on:
+  push:
+    branches: [feature/ticino-completo]
+    paths:
+      - "anteprima/**"
+      - "tools/geo/**"
+      - ".github/workflows/ticino-completo.yml"
+  workflow_dispatch:
+    inputs:
+      dati:
+        description: "Rifare anche i dati di tutte le regioni"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  TAG_DATI: ticino-completo-dati
+
+jobs:
+  decidi:
+    runs-on: ubuntu-latest
+    outputs:
+      dati: ${{ steps.d.outputs.dati }}
+      numero: ${{ steps.d.outputs.numero }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        shell: bash
+        env:
+          MESSAGGIO: ${{ github.event.head_commit.message }}
+        run: |
+          echo "numero=$(node -p "require('./anteprima/package.json').version")" >> $GITHUB_OUTPUT
+          dati=false
+          if [ "${{ inputs.dati }}" = "true" ]; then dati=true; fi
+          case "$MESSAGGIO" in *"[dati]"*) dati=true;; esac
+          echo "dati=$dati" >> $GITHUB_OUTPUT
+          echo "Rifare i dati: $dati"
+
+  osm:
+    needs: decidi
+    if: needs.decidi.outputs.dati == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    outputs:
+      matrice: ${{ steps.regioni.outputs.matrice }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # I blocchi gia' scaricati si salvano sempre (anche se il lavoro fallisce): la volta dopo si riparte da li'
+      - name: Riusa i dati OpenStreetMap gia' scaricati
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/geo/dati/download/osm
+          key: osm-cantone-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            osm-cantone-
+
+      - name: Installa le librerie Python
+        run: pip install -r tools/geo/requirements.txt
+
+      - name: Scarica OpenStreetMap per tutto il cantone
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          python -u cantone.py scarica 2>&1 | tee -a registro_cantone.txt
+
+      - name: Salva i dati scaricati (anche se il passo e' fallito)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: tools/geo/dati/download/osm
+          key: osm-cantone-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Regioni, mappa del cantone e controllo delle strade
+        id: regioni
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          python -u cantone.py regioni 2>&1 | tee -a registro_cantone.txt
+          echo "matrice=$(grep '^MATRICE=' registro_cantone.txt | tail -1 | cut -d= -f2-)" >> $GITHUB_OUTPUT
+          python -u cantone.py panoramica 2>&1 | tee -a registro_cantone.txt
+          cp registro_cantone.txt dati/cantone/registro_cantone.txt
+
+      - name: Riassunto
+        if: always()
+        shell: bash
+        run: |
+          echo '## Tutto il cantone' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -v "elementi$" tools/geo/registro_cantone.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Salva OpenStreetMap del cantone per le regioni
+        uses: actions/upload-artifact@v4
+        with:
+          name: osm-cantone
+          path: tools/geo/dati/download/osm
+          retention-days: 3
+          compression-level: 6
+
+      - name: Salva la mappa del cantone
+        uses: actions/upload-artifact@v4
+        with:
+          name: cantone-base
+          path: tools/geo/dati/cantone
+          retention-days: 7
+
+  regione:
+    needs: osm
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        id: ${{ fromJson(needs.osm.outputs.matrice) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installa le librerie Python
+        run: pip install -r tools/geo/requirements.txt
+
+      - name: Prendi OpenStreetMap del cantone
+        uses: actions/download-artifact@v4
+        with:
+          name: osm-cantone
+          path: tools/geo/dati/download/osm
+
+      - name: Passi 1, 3, 6, 7, 8 sulla regione ${{ matrix.id }}
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          export MRW_AREA=$(python cantone.py area ${{ matrix.id }})
+          echo "Regione ${{ matrix.id }}: MRW_AREA=$MRW_AREA" | tee -a registro.txt
+          python -u cantone.py prepara 2>&1 | tee -a registro.txt
+          for passo in passo1_scarica_altimetria passo3_crea_terreno passo6_verifica_terreno passo7_esporta_anteprima passo8_foto_aeree; do
+            echo "===== $passo =====" | tee -a registro.txt
+            python -u $passo.py --anteprima 2>&1 | grep -v "Catalogo swisstopo, pagina" | tee -a registro.txt
+          done
+          echo "===== controllo e pacchetto =====" | tee -a registro.txt
+          python -u cantone.py chiudi ${{ matrix.id }} 2>&1 | tee -a registro.txt
+          cp registro.txt dati/cantone/regioni_fatte/registro_${{ matrix.id }}.txt
+          df -h . | tail -1
+
+      - name: Se un passo fallisce, scrivi l'errore
+        if: failure()
+        shell: bash
+        run: |
+          echo "::error::${{ matrix.id }}: $(tail -c 1200 tools/geo/registro.txt | tr '\n' ' ')"
+
+      - name: Riassunto
+        if: always()
+        shell: bash
+        run: |
+          echo '## Regione ${{ matrix.id }}' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 60 tools/geo/registro.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Salva il pacchetto della regione
+        uses: actions/upload-artifact@v4
+        with:
+          name: regione-${{ matrix.id }}
+          path: tools/geo/dati/cantone/regioni_fatte
+          retention-days: 3
+          compression-level: 0
+
+  pubblica:
+    needs: [osm, regione]
+    # anche se una regione fallisce si pubblicano le altre (lo stato dice quali mancano)
+    if: always() && needs.osm.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installa le librerie Python
+        run: pip install -r tools/geo/requirements.txt
+
+      - name: Prendi la mappa del cantone
+        uses: actions/download-artifact@v4
+        with:
+          name: cantone-base
+          path: tools/geo/dati/cantone
+
+      - name: Prendi OpenStreetMap (servono i confini)
+        uses: actions/download-artifact@v4
+        with:
+          name: osm-cantone
+          path: tools/geo/dati/download/osm
+
+      - name: Prendi i pacchetti delle regioni
+        uses: actions/download-artifact@v4
+        with:
+          pattern: regione-*
+          path: fatte
+          merge-multiple: true
+
+      - name: Unisci rilievi e controlli
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          python -u cantone.py unisci ../../fatte 2>&1 | tee stato.txt
+          echo '## Stato del Ticino completo' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat stato.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          mkdir -p ../../uscita
+          cp ../../fatte/registro_*.txt dati/cantone/ 2>/dev/null || true
+          tar -czf ../../uscita/cantone.tar.gz -C dati/cantone cantone.json regioni.json rilievo.bin stato.json verifica_strade.json
+          cp dati/cantone/stato.json ../../uscita/stato.json
+          cat dati/cantone/registro_*.txt > ../../uscita/registro-regioni.txt 2>/dev/null || true
+          cp ../../fatte/regione_*.tar.gz ../../uscita/
+          ls -la ../../uscita
+
+      - name: Pubblica i dati nella pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$TAG_DATI" > /dev/null 2>&1; then
+            gh release create "$TAG_DATI" --prerelease --target "${{ github.sha }}" \
+              --title "Ticino completo - dati delle regioni" \
+              --notes "Pacchetti dei dati delle regioni del Canton Ticino per il branch feature/ticino-completo. Il gioco li scarica da qui. Dati: (c) OpenStreetMap contributors (ODbL), Ufficio federale di topografia swisstopo."
+          fi
+          gh release upload "$TAG_DATI" uscita/* --clobber
+
+  app:
+    needs: [decidi, pubblica]
+    if: always() && (needs.pubblica.result == 'success' || needs.pubblica.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            comando: build:mac
+            nome: mac
+          - os: windows-latest
+            comando: build:win
+            nome: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prendi la mappa del cantone e la regione di partenza (Locarno)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p scarico anteprima/cantone anteprima/dati
+          gh release download "$TAG_DATI" -D scarico -p cantone.tar.gz -p regione_R_2696_1106.tar.gz
+          tar -xzf scarico/cantone.tar.gz -C anteprima/cantone
+          tar -xzf scarico/regione_R_2696_1106.tar.gz -C anteprima/dati
+          ls anteprima/cantone anteprima/dati | head -40
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installa le dipendenze
+        working-directory: anteprima
+        run: npm ci
+
+      - name: Costruisci l'app
+        working-directory: anteprima
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run ${{ matrix.comando }}
+
+      - name: Controlla che nell'app ci sia tutto
+        shell: bash
+        run: |
+          cd anteprima/dist
+          ls -la
+          trovati=$(find . -path "*app/cantone/cantone.json" | wc -l)
+          terzi=$(find . -path "*app/terzi/three/GLTFLoader.js" | wc -l)
+          terreno=$(find . -path "*app/dati/terreno.json" | wc -l)
+          echo "cantone: $trovati, terzi: $terzi, terreno: $terreno"
+          if [ "$trovati" = "0" ] || [ "$terzi" = "0" ] || [ "$terreno" = "0" ]; then
+            echo "::error::Nell'app mancano dei file (cantone, terzi o terreno)"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.nome }}
+          path: |
+            anteprima/dist/*.dmg
+            anteprima/dist/*.exe
+          compression-level: 0
+          retention-days: 7
+
+  release:
+    needs: [decidi, app]
+    if: always() && needs.app.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: app-*
+          path: uscita
+          merge-multiple: true
+      - name: Pubblica la pre-release dell'app
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="ticino-completo-v${{ needs.decidi.outputs.numero }}"
+          ls -la uscita
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" uscita/* --clobber
+          else
+            gh release create "$tag" uscita/* --prerelease --target "${{ github.sha }}" \
+              --title "Ticino completo ${{ needs.decidi.outputs.numero }} (prova, branch feature/ticino-completo)" \
+              --notes-file anteprima/NOTE_TICINO_COMPLETO.md
+          fi
