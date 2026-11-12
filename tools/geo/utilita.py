@@ -165,6 +165,20 @@ def scarica_file(url, percorso, tentativi=3):
     raise RuntimeError("Download non riuscito: " + url)
 
 
+def scarica_tanti(elenco, quanti_insieme=12):
+    # Scarica molti file insieme (elenco di coppie (url, percorso)): uno alla volta, con 1'400 tasselli
+    # (Locarnese + Valle Verzasca), ci voleva piu' di un'ora. Ritorna quanti file sono nuovi.
+    from concurrent.futures import ThreadPoolExecutor
+    nuovi = 0
+    with ThreadPoolExecutor(quanti_insieme) as lavoratori:
+        for numero, nuovo in enumerate(lavoratori.map(lambda coppia: scarica_file(*coppia), elenco), start=1):
+            if nuovo:
+                nuovi = nuovi + 1
+            if numero % 100 == 0:
+                print("   " + str(numero) + " / " + str(len(elenco)), flush=True)
+    return nuovi
+
+
 def chiedi_overpass(query, percorso):
     # Manda una richiesta a Overpass (OpenStreetMap) e salva la risposta in JSON.
     # Se un server non risponde (errore 429, 502, 504...) prova il prossimo.

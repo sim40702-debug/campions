@@ -70,8 +70,8 @@ def main():
     cartella = config.CARTELLA_DOWNLOAD / "swissimage"
     anni = {}
     for tassello in tasselli:
-        utilita.scarica_file(tassello["url"], cartella / tassello["nome"])
         anni[tassello["anno"]] = anni.get(tassello["anno"], 0) + 1
+    print("   File nuovi: " + str(utilita.scarica_tanti([(t["url"], cartella / t["nome"]) for t in tasselli])))
     print("   Anni delle foto: " + ", ".join(str(a) + " (" + str(n) + ")" for a, n in sorted(anni.items())))
 
     print("2) Creo una foto per ogni pezzo da 2 x 2 km...")

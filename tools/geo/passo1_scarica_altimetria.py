@@ -96,12 +96,7 @@ def main():
 
     print("2) Scarico i tasselli (quelli gia' scaricati vengono saltati)...")
     cartella = config.CARTELLA_DOWNLOAD / "swissalti3d"
-    nuovi = 0
-    for numero, tassello in enumerate(tasselli, start=1):
-        if utilita.scarica_file(tassello["url"], cartella / tassello["nome"]):
-            nuovi = nuovi + 1
-        if numero % 50 == 0:
-            print("   " + str(numero) + " / " + str(len(tasselli)))
+    nuovi = utilita.scarica_tanti([(t["url"], cartella / t["nome"]) for t in tasselli])
     print("   Nuovi file scaricati: " + str(nuovi))
 
     if not argomenti.pilota:
