@@ -1,0 +1,518 @@
+{
+ "strade": 860,
+ "perTipo": {
+  "trunk": 6,
+  "primary_link": 7,
+  "secondary": 90,
+  "primary": 66,
+  "residential": 554,
+  "tertiary": 43,
+  "trunk_link": 6,
+  "living_street": 44,
+  "unclassified": 40,
+  "secondary_link": 2
+ },
+ "km": 124.5,
+ "capi": {
+  "totale": 1716,
+  "collegati": 1579,
+  "senzaCollegamento": 137,
+  "senzaCollegamentoPerTipo": {
+   "trunk": 1,
+   "secondary": 1,
+   "primary": 2,
+   "residential": 108,
+   "tertiary": 6,
+   "living_street": 13,
+   "unclassified": 6
+  },
+  "esempi": [
+   {
+    "n": "Galleria Mappo Morettina",
+    "t": "trunk",
+    "x": 2000,
+    "z": -1814,
+    "w": 6.6
+   },
+   {
+    "n": "Via Vallemaggia",
+    "t": "secondary",
+    "x": -2000,
+    "z": -1138,
+    "w": 6.6
+   },
+   {
+    "n": "Via San Gottardo",
+    "t": "primary",
+    "x": 2000,
+    "z": -727,
+    "w": 6.6
+   },
+   {
+    "n": "Via Brione",
+    "t": "tertiary",
+    "x": 2000,
+    "z": -782,
+    "w": 6.6
+   },
+   {
+    "n": "Via Moscia",
+    "t": "primary",
+    "x": -2000,
+    "z": 1771,
+    "w": 6.6
+   },
+   {
+    "n": "Via Mezzana",
+    "t": "tertiary",
+    "x": -2000,
+    "z": -10,
+    "w": 6.6
+   },
+   {
+    "n": "Via Municipio",
+    "t": "tertiary",
+    "x": -2000,
+    "z": 451,
+    "w": 6.5
+   },
+   {
+    "n": "Via Brione",
+    "t": "tertiary",
+    "x": 2000,
+    "z": -1173,
+    "w": 6.6
+   },
+   {
+    "n": "Via ai Molini",
+    "t": "tertiary",
+    "x": -2000,
+    "z": 584,
+    "w": 6.5
+   },
+   {
+    "n": "Via Orselina",
+    "t": "tertiary",
+    "x": 2000,
+    "z": -1476,
+    "w": 6.6
+   }
+  ]
+ },
+ "doppie": [
+  {
+   "a": "Galleria Mappo Morettina",
+   "b": "Via Rovedo",
+   "metri": 16,
+   "x": 2000,
+   "z": -1814
+  },
+  {
+   "a": "A13",
+   "b": "Via Rovedo",
+   "metri": 18,
+   "x": 168,
+   "z": 411
+  },
+  {
+   "a": "primary_link",
+   "b": "13",
+   "metri": 8,
+   "x": -1000,
+   "z": 811
+  },
+  {
+   "a": "13",
+   "b": "primary_link",
+   "metri": 8,
+   "x": -1000,
+   "z": 811
+  }
+ ],
+ "quote": {
+  "nodiCondivisi": 833,
+  "nodiConScalino": 0,
+  "scalinoMax": 0,
+  "esempi": []
+ },
+ "pendenze": {
+  "tratti_oltre_25": 0,
+  "massima_pct": 23,
+  "esempi": []
+ },
+ "terreno": {
+  "punti": 17102,
+  "stradaSopraTerreno_oltre1m": 136,
+  "stradaSottoTerreno_oltre50cm": 0,
+  "maxSopra": 10.13,
+  "maxSotto": 0,
+  "esempiSopra": [
+   {
+    "n": "13",
+    "t": "primary",
+    "x": -18,
+    "z": 684,
+    "d": 1.2
+   },
+   {
+    "n": "13",
+    "t": "primary",
+    "x": -11,
+    "z": 680,
+    "d": 8.1
+   },
+   {
+    "n": "13",
+    "t": "primary",
+    "x": -5,
+    "z": 676,
+    "d": 7.7
+   },
+   {
+    "n": "13",
+    "t": "primary",
+    "x": 2,
+    "z": 672,
+    "d": 2.5
+   },
+   {
+    "n": "Via Locarno",
+    "t": "secondary",
+    "x": -768,
+    "z": 899,
+    "d": 4
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 691,
+    "z": -325,
+    "d": 1.2
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 694,
+    "z": -331,
+    "d": 2
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 699,
+    "z": -336,
+    "d": 2
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 705,
+    "z": -339,
+    "d": 3
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 711,
+    "z": -342,
+    "d": 1.1
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 718,
+    "z": -344,
+    "d": 2.8
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 724,
+    "z": -344,
+    "d": 2.4
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 731,
+    "z": -343,
+    "d": 3.5
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 738,
+    "z": -342,
+    "d": 3.2
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 744,
+    "z": -342,
+    "d": 4
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 747,
+    "z": -343,
+    "d": 3.5
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 749,
+    "z": -346,
+    "d": 1.4
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 749,
+    "z": -350,
+    "d": 1
+   },
+   {
+    "n": "Via ai Monti",
+    "t": "secondary",
+    "x": 494,
+    "z": -356,
+    "d": 1.2
+   },
+   {
+    "n": "Via Orselina",
+    "t": "secondary",
+    "x": 1680,
+    "z": -824,
+    "d": 1.4
+   },
+   {
+    "n": "Via Orselina",
+    "t": "secondary",
+    "x": 1686,
+    "z": -826,
+    "d": 1.5
+   },
+   {
+    "n": "Via Orselina",
+    "t": "secondary",
+    "x": 1690,
+    "z": -828,
+    "d": 3.1
+   },
+   {
+    "n": "Via del Sole",
+    "t": "secondary",
+    "x": 1507,
+    "z": -738,
+    "d": 2.3
+   },
+   {
+    "n": "Via del Tiglio",
+    "t": "residential",
+    "x": 296,
+    "z": -465,
+    "d": 2.7
+   },
+   {
+    "n": "Via del Tiglio",
+    "t": "residential",
+    "x": 289,
+    "z": -461,
+    "d": 2.9
+   },
+   {
+    "n": "Via del Tiglio",
+    "t": "residential",
+    "x": 282,
+    "z": -458,
+    "d": 1.5
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -15,
+    "z": 678,
+    "d": 8.2
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -9,
+    "z": 674,
+    "d": 7.9
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -3,
+    "z": 670,
+    "d": 1.8
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -22,
+    "z": 641,
+    "d": 5.1
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -28,
+    "z": 646,
+    "d": 8.1
+   },
+   {
+    "n": "A13",
+    "t": "trunk",
+    "x": -34,
+    "z": 651,
+    "d": 6.4
+   },
+   {
+    "n": "",
+    "t": "primary_link",
+    "x": -833,
+    "z": 879,
+    "d": 1.1
+   },
+   {
+    "n": "",
+    "t": "primary_link",
+    "x": -818,
+    "z": 884,
+    "d": 2.4
+   },
+   {
+    "n": "",
+    "t": "primary_link",
+    "x": -803,
+    "z": 888,
+    "d": 2.4
+   },
+   {
+    "n": "",
+    "t": "primary_link",
+    "x": -797,
+    "z": 890,
+    "d": 2.5
+   },
+   {
+    "n": "",
+    "t": "primary_link",
+    "x": -792,
+    "z": 893,
+    "d": 1.3
+   },
+   {
+    "n": "Via Pescatori",
+    "t": "residential",
+    "x": 1486,
+    "z": -303,
+    "d": 2.5
+   },
+   {
+    "n": "Via al Sasso",
+    "t": "residential",
+    "x": 812,
+    "z": -441,
+    "d": 3.6
+   },
+   {
+    "n": "Via al Sasso",
+    "t": "residential",
+    "x": 818,
+    "z": -436,
+    "d": 2.6
+   }
+  ]
+ },
+ "incroci": {
+  "motivi": {
+   "angolo": 430,
+   "corto": 183,
+   "dietro": 19,
+   "fatti": 959
+  },
+  "nodi": 502,
+  "perNumeroBracci": {
+   "3": 420,
+   "4": 79,
+   "5": 3
+  },
+  "raccordiCostruiti": 959,
+  "nodiConRaccordo": 424,
+  "nodiSenzaRaccordo": 78,
+  "angoliSenzaRaccordoMaPossibili": 202,
+  "angoliTroppoStretti": 24,
+  "coppieTotali": 1591,
+  "esempiSenza": [
+   {
+    "x": -484,
+    "z": 920,
+    "bracci": "-178/-11/170"
+   },
+   {
+    "x": -917,
+    "z": 442,
+    "bracci": "-49/89/151"
+   },
+   {
+    "x": -911,
+    "z": 424,
+    "bracci": "-118/-54/82"
+   },
+   {
+    "x": -940,
+    "z": 421,
+    "bracci": "-111/-49/110"
+   },
+   {
+    "x": 459,
+    "z": 284,
+    "bracci": "-179/-13/8"
+   },
+   {
+    "x": 293,
+    "z": 494,
+    "bracci": "-32/130/160"
+   },
+   {
+    "x": 1254,
+    "z": 91,
+    "bracci": "-81/34/124"
+   },
+   {
+    "x": 1221,
+    "z": 20,
+    "bracci": "-109/64/102"
+   }
+  ],
+  "extra": {
+   "raccordi": 959,
+   "marciapiedi": 747,
+   "isole": 6,
+   "precedenze": 24
+  }
+ },
+ "rotonde": {
+  "pezzi": 22,
+  "isole": 6,
+  "precedenze": 24
+ },
+ "dettagli": {
+  "semafori": 24,
+  "stop": 69,
+  "precedenza": 90,
+  "strisce": 285,
+  "lampioni": 147
+ },
+ "render": {
+  "chiamate": 230,
+  "triangoli": 1483040,
+  "geometrie": 381,
+  "texture": 56
+ }
+}
