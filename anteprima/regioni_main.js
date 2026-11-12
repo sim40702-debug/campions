@@ -8,7 +8,12 @@
 // Lo scaricamento e' sicuro come l'aggiornamento: il pacchetto si apre in una cartella ".parziale" e solo
 // quando e' completo e controllato prende il nome vero. Una regione scaricata a meta' non viene mai usata.
 
-const { app, net } = require("electron");
+let app = null, net = null;
+try {
+  ({ app, net } = require("electron"));
+} catch (errore) {
+  // fuori da Electron (prove automatiche delle funzioni di scaricamento): niente app ne' rete di Electron
+}
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
@@ -191,51 +196,105 @@ function cancella(cartella) {
   }
 }
 
-// Scarica un pacchetto .tar.gz e lo apre in "cartella" (gia' creata). Dice l'avanzamento con { id, tipo, percento, ... }.
-// Se qualcosa non va lancia un errore: chi chiama toglie la cartella parziale.
-async function scaricaPacchetto(nomeFile, cartella, id, tipo, avanzamento) {
-  const risposta = await net.fetch(URL_PACCHETTI + nomeFile);
+// Scarica un file con RIPRESA: se la connessione cade il file parziale resta e la volta dopo si riparte da dove era
+// arrivato (richiesta HTTP "Range", che GitHub supporta: risponde 206). Se il server non supporta la ripresa si riparte da zero.
+// Alla fine controlla che la grandezza sia quella annunciata dal server: un file incompleto non viene mai aperto.
+// Ritorna { byte, totale }. "scarica" e' la funzione di rete (net.fetch in Electron, fetch nelle prove).
+async function scaricaFile(url, destinazione, avanzamento, scarica) {
+  let gia = 0;
+  try {
+    gia = fs.statSync(destinazione).size;
+  } catch (errore) {
+    gia = 0;
+  }
+  const richiesta = gia > 0 ? { headers: { Range: "bytes=" + gia + "-" } } : {};
+  const risposta = await scarica(url, richiesta);
+  if (risposta.status === 416) {
+    // il file parziale e' piu' grande di quello vero (pacchetto cambiato sul server): si butta e si riparte
+    fs.rmSync(destinazione, { force: true });
+    throw new Error("il pacchetto sul server e' cambiato: riprova");
+  }
   if (!risposta.ok) {
     throw new Error(risposta.status === 404 ? "questo pacchetto non e' ancora stato preparato" : "GitHub risponde " + risposta.status);
   }
-  const totale = parseInt(risposta.headers.get("content-length") || "0", 10);
-  const apritore = creaApritore(cartella);
-  const gunzip = zlib.createGunzip();
-  let errore = null;
-  gunzip.on("data", function (pezzo) {
-    try {
-      apritore.aggiungi(pezzo);
-    } catch (e) {
-      errore = e;
-    }
-  });
-  const finito = new Promise(function (fatto, fallito) {
-    gunzip.on("end", fatto);
-    gunzip.on("error", fallito);
-  });
-
-  const lettore = risposta.body.getReader();
-  let ricevuti = 0;
-  let ultimo = -1;
-  while (true) {
-    const { done, value } = await lettore.read();
-    if (done) break;
-    if (errore) throw errore;
-    // se gunzip e' pieno si aspetta che si svuoti (cosi' non si riempie la memoria)
-    if (!gunzip.write(Buffer.from(value))) {
-      await new Promise(function (fatto) { gunzip.once("drain", fatto); });
-    }
-    ricevuti += value.length;
-    const percento = totale > 0 ? Math.floor((ricevuti / totale) * 100) : 0;
-    if (percento !== ultimo) {
-      ultimo = percento;
-      avanzamento({ id: id, tipo: tipo, percento: percento, megabyte: Math.round(ricevuti / 1e6), totale: Math.round(totale / 1e6) });
-    }
+  let totale;
+  let riprende = false;
+  if (risposta.status === 206) {
+    const m = /\/(\d+)$/.exec(risposta.headers.get("content-range") || "");
+    totale = m ? parseInt(m[1], 10) : 0;
+    riprende = true;
+  } else {
+    totale = parseInt(risposta.headers.get("content-length") || "0", 10);
+    gia = 0;       // il server ha mandato tutto da capo
   }
-  gunzip.end();
-  await finito;
-  if (errore) throw errore;
-  return apritore.chiudi();
+  fs.mkdirSync(path.dirname(destinazione), { recursive: true });
+  const fd = fs.openSync(destinazione, riprende ? "a" : "w");
+  let ricevuti = gia;
+  let ultimo = -1;
+  try {
+    const lettore = risposta.body.getReader();
+    while (true) {
+      const { done, value } = await lettore.read();
+      if (done) break;
+      fs.writeSync(fd, value);
+      ricevuti += value.length;
+      const percento = totale > 0 ? Math.floor((ricevuti / totale) * 100) : 0;
+      if (percento !== ultimo) {
+        ultimo = percento;
+        avanzamento({ percento: percento, megabyte: Math.round(ricevuti / 1e6), totale: Math.round(totale / 1e6) });
+      }
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+  const finale = fs.statSync(destinazione).size;
+  if (totale > 0 && finale !== totale) throw new Error("scaricamento interrotto (" + finale + " di " + totale + " byte): riprendera' da dove e' arrivato");
+  return { byte: finale, totale: totale };
+}
+
+// Apre un .tar.gz gia' scaricato in "cartella" (senza caricarlo tutto in memoria)
+function apriPacchetto(file, cartella) {
+  return new Promise(function (fatto, fallito) {
+    const apritore = creaApritore(cartella);
+    let errore = null;
+    const gunzip = zlib.createGunzip();
+    gunzip.on("data", function (pezzo) {
+      try {
+        apritore.aggiungi(pezzo);
+      } catch (e) {
+        errore = e;
+        gunzip.destroy(e);
+      }
+    });
+    gunzip.on("error", fallito);
+    gunzip.on("end", function () {
+      try {
+        if (errore) throw errore;
+        fatto(apritore.chiudi());
+      } catch (e) {
+        fallito(e);
+      }
+    });
+    fs.createReadStream(file).on("error", fallito).pipe(gunzip);
+  });
+}
+
+// Scarica un pacchetto .tar.gz (con ripresa) e lo apre in "cartella" (gia' creata). Dice l'avanzamento con { id, tipo, percento, ... }.
+// Il file scaricato a meta' resta in userData/regioni/_scarico per la volta dopo; quello completo e aperto viene tolto.
+async function scaricaPacchetto(nomeFile, cartella, id, tipo, avanzamento) {
+  const parte = path.join(cartellaRegioni(), "_scarico", nomeFile + ".part");
+  await scaricaFile(URL_PACCHETTI + nomeFile, parte, function (a) {
+    avanzamento({ id: id, tipo: tipo, percento: a.percento, megabyte: a.megabyte, totale: a.totale });
+  }, function (url, opzioni) { return net.fetch(url, opzioni); });
+  try {
+    const aperti = await apriPacchetto(parte, cartella);
+    fs.rmSync(parte, { force: true });
+    return aperti;
+  } catch (errore) {
+    // il file e' completo ma non si apre (rovinato): inutile riprendere, si riparte da capo la volta dopo
+    fs.rmSync(parte, { force: true });
+    throw errore;
+  }
 }
 
 async function scaricaDavvero(id, avanzamento) {
@@ -330,6 +389,16 @@ function scarica(id, avanzamento) {
 
 // Toglie le regioni scaricate a meta' rimaste da una chiusura improvvisa
 function pulisci() {
+  // i file scaricati a meta' (per la ripresa) si tengono 14 giorni, poi si tolgono
+  try {
+    const cartellaScarico = path.join(cartellaRegioni(), "_scarico");
+    for (const nome of fs.readdirSync(cartellaScarico)) {
+      const percorso = path.join(cartellaScarico, nome);
+      if (Date.now() - fs.statSync(percorso).mtimeMs > 14 * 24 * 3600 * 1000) cancella(percorso);
+    }
+  } catch (errore) {
+    // niente da pulire
+  }
   try {
     for (const nome of fs.readdirSync(cartellaRegioni())) {
       if (nome.endsWith(".parziale")) cancella(path.join(cartellaRegioni(), nome));   // anche ".hd.parziale"
@@ -363,4 +432,4 @@ function megabyteUsati() {
   return Math.round(totale / 1e6);
 }
 
-module.exports = { stato, imposta, scarica, scaricaHD, haFotoHD, elimina, pulisci, cartellaDatiAttuale, megabyteUsati, creaApritore };
+module.exports = { stato, imposta, scarica, scaricaHD, haFotoHD, scaricaFile, apriPacchetto, elimina, pulisci, cartellaDatiAttuale, megabyteUsati, creaApritore };

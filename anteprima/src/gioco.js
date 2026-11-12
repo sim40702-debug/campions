@@ -13,6 +13,7 @@ import { partenzaSalvata, preparaPartenza } from "./partenza.js";
 import { aggiornaSuono, scoppioInCorso } from "./audio.js";
 import { creaDanni, aggiornaDanni } from "./danni.js";
 import { creaSegni, lasciaSegno, staccaSegno } from "./segni.js";
+import { aggiungiLontano, aggiornaLontano } from "./lontano.js";
 import { caricaEdifici, pulisciEdifici, aggiungiEdifici, aggiornaEdifici, preparaEdificiVicini, dentroEdificio } from "./edifici.js";
 import { creaLuoghi } from "./luoghi.js";
 import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
@@ -340,6 +341,7 @@ async function avvia() {
     await mostraStato("Costruzione delle citta': facciate, tetti, quartieri...");
     aggiungiEdifici(edifici, scena, { ambiente: ambiente, luoghi: luoghi, strade: strade, terreno: terreno, notte: ambiente.uniformi.notte, anisotropia: disegnatore.capabilities.getMaxAnisotropy() });
     aggiungiStrade(strade, scena, terreno, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
+    const lontano = aggiungiLontano(scena, edifici, strade);   // sagome delle citta' e strade principali oltre i dettagli (lontano.js)
     aggiungiOpere(strade, scena, terreno);
     // Terreno, strade ed edifici si costruiscono a pezzi vicino alla moto: dopo uno spostamento improvviso
     // (partenza, tasto R, scelta sulla mappa) si prepara subito quello che sta attorno al punto di arrivo
@@ -404,7 +406,7 @@ async function avvia() {
     preparaVicinanze(moto.x, moto.z);
 
     // Impostazioni e test delle prestazioni
-    const mondo = { erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, strade: strade, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
+    const mondo = { lontano: lontano, erba: erba, disegnatore: disegnatore, telecamera: telecamera, scena: scena, alberi: alberi, terrenoMesh: terrenoMesh, sole: sole, ambiente: ambiente, edifici: edifici, strade: strade, riflessi: aggiornaRiflessi, precipitazioni: precipitazioni, post: post };
     // foto di dettaglio facoltative (pacchetto a parte): si scaricano in secondo piano solo con i profili che le usano
     mondo.richiediFotoHD = function () {
       richiediFotoHD(regioni, async function () {
@@ -448,6 +450,7 @@ async function avvia() {
     window.__mrw.moto = moto;
     window.__mrw.dettagli = dettagli;
     window.__mrw.erba = erba;
+    window.__mrw.lontano = lontano;
     window.__mrw.fotoHD = uniformiHD;
     window.__mrw.eventiStreaming = eventiStreaming;
     window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
@@ -547,6 +550,7 @@ async function avvia() {
       aggiornaRiflessi(false);
       riflessiMoto();
       aggiornaEdifici(edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero, ambiente);
+      aggiornaLontano(lontano, edifici, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero);
       aggiornaStrade(strade, bench.attivo ? bench.x : telecamera.position.x, bench.attivo ? bench.z : telecamera.position.z, vero);
       aggiornaFaro(moto);
       tempoGioco = tempoGioco + vero;

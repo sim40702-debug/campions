@@ -382,7 +382,7 @@ def da_pacchetti(cartella_pacchetti, cartella_cantone, uscita_json=None):
             nuovo = origine.with_suffix(".nuovo")
             with tarfile.open(origine, "r:gz") as vecchio, tarfile.open(nuovo, "w:gz", compresslevel=6) as dopo:
                 for membro in vecchio:
-                    if membro.name == "strade.json":
+                    if membro.name in ("strade.json", "./strade.json"):
                         dopo.add(base / ident / "strade.json", arcname="strade.json")
                     elif membro.isfile():
                         dopo.addfile(membro, vecchio.extractfile(membro))

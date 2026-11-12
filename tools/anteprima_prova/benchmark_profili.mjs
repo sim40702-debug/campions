@@ -33,7 +33,7 @@ const secondi = +opz("secondi", 40);
 const [larghezza, altezza] = String(opz("risoluzione", "1920x1080")).split("x").map(Number);
 const conGpu = opz("gpu", false) === true;
 const canale = opz("canale", null);
-const radice = path.resolve(import.meta.dirname, "../../anteprima");
+const radice = process.env.RADICE_APP ? path.resolve(process.env.RADICE_APP) : path.resolve(import.meta.dirname, "../../anteprima");   // RADICE_APP: misura un'altra copia del gioco (per esempio la 0.15.5)
 const uscita = path.resolve(String(opz("uscita", path.join(import.meta.dirname, "../../docs/anteprima/fase4/misure"))));
 fs.mkdirSync(uscita, { recursive: true });
 
