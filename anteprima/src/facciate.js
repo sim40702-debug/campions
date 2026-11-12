@@ -612,7 +612,11 @@ function modificaFacciata(materiale, atlante, notte, probabilitaLuce) {
         uvBay = vec2((variante + 0.03 + fp.x * 0.94) * 0.25, 0.03 + fp.y * 0.94);
         gradX = dFdx(vBay) * vec2(0.235, 0.94);
         gradY = dFdy(vBay) * vec2(0.235, 0.94);
-        diffuseColor *= textureGrad(map, uvBay, gradX, gradY);`)
+        diffuseColor *= textureGrad(map, uvBay, gradX, gradY);
+        // zoccolo: il piano terra e' piu' scuro in basso (polvere e schizzi di pioggia), e ogni campata ha una patina diversa
+        float pianoTerra = 1.0 - step(0.5, bayId.y);
+        diffuseColor.rgb *= 1.0 - pianoTerra * (1.0 - smoothstep(0.0, 0.34, fp.y)) * 0.3;
+        diffuseColor.rgb *= 0.93 + 0.14 * h21(bayId * 2.3 + vec2(sInt * 0.11, 3.1));`)
       .replace("#include <roughnessmap_fragment>", `
         float roughnessFactor = roughness * textureGrad(tRuvido, uvBay, gradX, gradY).g * (255.0 / 235.0);`)
       .replace("#include <emissivemap_fragment>", `
@@ -624,7 +628,7 @@ function modificaFacciata(materiale, atlante, notte, probabilitaLuce) {
           totalEmissiveRadiance += luminosa * acceso * uNotte * 2.2;
         }`);
   };
-  materiale.customProgramCacheKey = function () { return "facciata-v2"; };
+  materiale.customProgramCacheKey = function () { return "facciata-v3"; };
 }
 
 function creaAtlante(disegna, anisotropia) {

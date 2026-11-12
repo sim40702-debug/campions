@@ -35,11 +35,13 @@ function braccio(strada, s, i, verso, larghezzaIn) {
     const l = Math.hypot(P[j].x - P[0].x, P[j].z - P[0].z) || 1;
     ux = (P[j].x - P[0].x) / l; uz = (P[j].z - P[0].z) / l;
   }
-  // tratto dritto: finche' i pezzi non girano di oltre 5 gradi
+  // tratto dritto: finche' la strada resta entro 35 cm dalla retta di riferimento (una curva dolce, con punti ogni 4.5 m,
+  // si considera dritta per qualche metro: il raccordo ci sta lo stesso)
   let retto = P.length > 1 ? P[P.length - 1].d : 0;
   for (let k = 1; k < P.length; k++) {
-    const l = P[k].d - P[k - 1].d;
-    if ((((P[k].x - P[k - 1].x) * ux + (P[k].z - P[k - 1].z) * uz) / l) < 0.9962) { retto = P[k - 1].d; break; }
+    const lat = Math.abs((P[k].x - P[0].x) * -uz + (P[k].z - P[0].z) * ux);
+    const lungo = (P[k].x - P[0].x) * ux + (P[k].z - P[0].z) * uz;
+    if (lat > 0.35 || lungo < P[k - 1].d * 0.8 - 0.5) { retto = k > 1 ? P[k - 1].d : 0; break; }
   }
   return {
     s: s, i: i, avanti: verso > 0, strada: strada,
@@ -71,6 +73,7 @@ export function calcolaIncroci(strade, chiaveNodo, larghezzaIn) {
   });
   const incroci = [];
   const tagli = new Map();
+  const motivi = { angolo: 0, corto: 0, dietro: 0, fatti: 0 };
   for (const nodo of nodi.values()) {
     const b = nodo.bracci;
     if (b.length < 3) continue;
@@ -81,7 +84,7 @@ export function calcolaIncroci(strade, chiaveNodo, larghezzaIn) {
       const a = b[idx], c = b[(idx + 1) % b.length];
       let alfa = c.ang - a.ang;
       if (alfa <= 0) alfa += Math.PI * 2;
-      if (alfa < 0.44 || alfa > 2.75) continue;       // quasi paralleli o quasi allineati: niente raccordo
+      if (alfa < 0.44 || alfa > 2.75) { motivi.angolo++; continue; }       // quasi paralleli o quasi allineati: niente raccordo
       const ha = a.w / 2, hc = c.w / 2;
       // angolo vivo C tra il bordo sinistro di "a" e il bordo destro di "c"
       const nax = -Math.sin(a.ang), naz = Math.cos(a.ang), ncx = -Math.sin(c.ang), ncz = Math.cos(c.ang);
@@ -94,7 +97,9 @@ export function calcolaIncroci(strade, chiaveNodo, larghezzaIn) {
       let T = R / tg;
       const limite = Math.min(a.retto - t, c.retto - u, 14);
       if (T > limite) { T = limite; R = T * tg; }
-      if (R < 1.4 || t + T < 0.5 || u + T < 0.5) continue;
+      if (R < 0.8) { motivi.corto++; continue; }
+      if (t + T < 0.5 || u + T < 0.5) { motivi.dietro++; continue; }
+      motivi.fatti++;
       const Cx = nodo.x + nax * ha + t * a.dx, Cz = nodo.z + naz * ha + t * a.dz;
       const T1x = Cx + a.dx * T, T1z = Cz + a.dz * T;
       const T2x = Cx + c.dx * T, T2z = Cz + c.dz * T;
@@ -119,7 +124,7 @@ export function calcolaIncroci(strade, chiaveNodo, larghezzaIn) {
     }
     incroci.push(nodo);
   }
-  return { incroci: incroci, tagli: tagli };
+  return { incroci: incroci, tagli: tagli, motivi: motivi };
 }
 
 // --- Geometria -------------------------------------------------------------------------------------------------

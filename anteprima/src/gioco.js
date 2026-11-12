@@ -384,6 +384,8 @@ async function avvia() {
       telecamera.position.set(moto.x, moto.y + 30, moto.z + 40);
     };
     window.__mrw.moto = moto;
+    window.__mrw.dettagli = dettagli;
+    window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
     window.__mrw.terreno = terreno;
     window.__mrw.strade = strade;
     window.__mrw.alberi = alberi;

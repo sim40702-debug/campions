@@ -1789,6 +1789,7 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   // che si interrompono dove comincia il raccordo.
   const incrociDati = calcolaIncroci(strade, chiaveNodo, larghezzaIn);
   strade.tagli = incrociDati.tagli;
+  strade.datiIncroci = incrociDati;
   strade.conRaccordi = new Set();
   for (const nodo of incrociDati.incroci) if (nodo.raccordi.length > 0) strade.conRaccordi.add(chiaveNodo(nodo.x, nodo.z));
 

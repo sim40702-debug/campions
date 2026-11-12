@@ -47,6 +47,8 @@ for (const voce of process.argv.slice(3)) {
   if (azione) { for (const a of azione.split("+")) { if (a.startsWith("scrivi:")) await pagina.keyboard.type(a.slice(7)); else if (a.startsWith("clic:")) await pagina.click(a.slice(5), { timeout: 120000 }); else await pagina.keyboard.press(a); await pagina.waitForTimeout(500); } }
   // aspetto che la telecamera arrivi dietro la moto (alcuni fotogrammi: con la grafica software sono lenti)
   try { await pagina.waitForFunction(() => window.__mrw.fotogrammi > 14, null, { timeout: 200000 }); } catch (e) { errori.push('pochi fotogrammi'); }
+  // aspetto le foto aeree vicine (se ci sono): senza, il terreno e' ancora fatto di soli colori calcolati
+  try { await pagina.waitForFunction(() => { const t = window.__mrw.terrenoMesh; return !t || t.fotoCaricate >= 1; }, null, { timeout: 90000 }); const f = await pagina.evaluate(() => window.__mrw.fotogrammi); await pagina.waitForFunction((n) => window.__mrw.fotogrammi > n + 5, f, { timeout: 120000 }); } catch (e) { /* senza foto: si va avanti */ }
   const file = path.join(uscita, (nome || "shot") + ".png");
   await pagina.screenshot({ path: file, timeout: 240000 });
   const fps = await pagina.evaluate(() => { const i = window.__mrw.disegnatore.info; return JSON.stringify({ chiamate: i.render.calls, triangoli: i.render.triangles, geometrie: i.memory.geometries, texture: i.memory.textures, programmi: i.programs.length }); });

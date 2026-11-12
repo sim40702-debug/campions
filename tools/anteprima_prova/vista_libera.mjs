@@ -19,6 +19,9 @@ for (const voce of process.argv.slice(3)) {
   await p.evaluate(([x, z]) => { window.__mrw.vaiA(+x, +z); window.__mrw.moto.velocita = 0; }, [x, z]);
   const f0 = await p.evaluate(() => window.__mrw.fotogrammi);
   await p.waitForFunction((f) => window.__mrw.fotogrammi > f + 12, f0);
+  // aspetto le foto aeree vicine (si caricano a poco a poco): senza, il terreno e' ancora fatto di soli colori calcolati
+  try { await p.waitForFunction(() => { const t = window.__mrw.terrenoMesh; return !t || t.pezzi === undefined || t.fotoCaricate >= 1; }, null, { timeout: 120000 }); } catch (e) { console.log('foto non caricate'); }
+  { const f1 = await p.evaluate(() => window.__mrw.fotogrammi); await p.waitForFunction((f) => window.__mrw.fotogrammi > f + 6, f1); }
   const dati = await p.evaluate(async ([x, z, alt, dist, ang]) => {
     const THREE = await import("three");
     const m = window.__mrw;
