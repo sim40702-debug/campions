@@ -1,8 +1,8 @@
 {
   "name": "moto-racing-world-anteprima-ticino",
-  "productName": "MOTO RACING WORLD - Ticino completo",
-  "version": "0.16.0-ticino.2",
-  "description": "Tutto il Canton Ticino a regioni (branch feature/ticino-completo) con dati swisstopo e OpenStreetMap",
+  "productName": "MOTO RACING WORLD - Anteprima Ticino",
+  "version": "0.15.3",
+  "description": "Tutto il Canton Ticino a regioni, con dati swisstopo e OpenStreetMap",
   "main": "main.js",
   "author": "Simone",
   "license": "UNLICENSED",
@@ -20,8 +20,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "ch.droneticino.motoracingworld.ticinocompleto",
-    "productName": "MRW Ticino Completo",
+    "appId": "ch.droneticino.motoracingworld.anteprima",
+    "productName": "MRW Anteprima Ticino",
     "asar": false,
     "files": [
       "main.js",
@@ -50,7 +50,7 @@
           ]
         }
       ],
-      "artifactName": "MRW-Ticino-Completo-${version}-Mac-${arch}.${ext}"
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Mac-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -71,10 +71,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "MRW-Ticino-Completo-${version}-Windows-Installazione.${ext}"
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Installazione.${ext}"
     },
     "portable": {
-      "artifactName": "MRW-Ticino-Completo-${version}-Windows-Portatile.${ext}"
+      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Portatile.${ext}"
     }
   }
 }

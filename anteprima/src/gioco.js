@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.16.0-ticino.2";
+const VERSIONE = "0.15.3";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";

@@ -1,9 +1,18 @@
 ## MOTO RACING WORLD – Anteprima Ticino
 
-Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
+Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.2) – Valle Verzasca: case, diga e strade rifatte
+### Novità di questa versione (0.15.3) – TUTTO IL CANTON TICINO
+
+- **Tutto il cantone**: da Chiasso ad Airolo, da Bosco Gurin a Olivone. 19 regioni da 24 × 24 km, 3 692 km di strade, 262 549 edifici, 1 007 località, 78 laghi.
+- **Pulsante "Ticino" (tasto K)**: mappa di tutto il cantone con rilievo, confine, distretti e strade principali; si cerca qualsiasi località e si sceglie la partenza dove si vuole.
+- **Le regioni si scaricano da sole** (68–118 MB l'una) quando ci si entra o si sceglie una partenza: serve internet. Dentro l'app c'è già la regione di Locarno. Dal pannello si vede lo spazio usato e si possono eliminare.
+- **Guidando si passa da una regione all'altra**: vicino al bordo il gioco prepara la regione vicina e riparte nello stesso punto, con la stessa direzione e velocità (c'è un breve caricamento).
+- **Molta meno memoria**: edifici e strade si costruiscono solo vicino alla moto e si tolgono quando sono lontani (a Chiasso da 2,5 GB a circa 570 MB).
+- **Da sapere**: provata in tutte le 19 regioni con i dati veri, ma **non ancora su un Mac o un PC veri**. Se qualcosa non va, la 0.15.2 resta scaricabile dalla pagina Releases. Dettagli e limiti: `docs/sprint-T1/SPRINT_REPORT.md`.
+
+### Novità della 0.15.2 – Valle Verzasca: case, diga e strade rifatte
 
 - **Rustici al posto dei palazzi**: nella valle (e nei monti sopra i 650 m) le case erano palazzi di 5–6 piani con il tetto piatto. Ora sono case basse di **sasso a vista** (alcune intonacate), con poche finestre piccole, **tetto a due falde in piode** su qualsiasi pianta e comignolo di sasso. I muri partono dal terreno vero sotto ogni lato: a monte si vede un piano, a valle due.
 - **Ruderi**: i ruderi di OpenStreetMap (prima non c'erano) sono muri bassi di sasso senza tetto.

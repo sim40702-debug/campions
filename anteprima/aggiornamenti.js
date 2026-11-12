@@ -13,11 +13,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-// Ticino completo (branch feature/ticino-completo): le versioni di prova sono PRE-release con il tag
-// "ticino-completo-vX". Si guarda l'elenco delle release e si prende la piu' recente con quel tag:
-// cosi' questa app non viene mai sostituita dall'anteprima normale (e viceversa).
-const URL_RELEASE = "https://api.github.com/repos/sim40702-debug/swissgass/releases?per_page=40";
-const PREFISSO_TAG = "ticino-completo-v";
+const URL_ULTIMA_RELEASE = "https://api.github.com/repos/sim40702-debug/swissgass/releases/latest";
+const PREFISSO_TAG = "anteprima-v";
 
 // "0.2.10" -> [0, 2, 10]  (per confrontare le versioni numero per numero)
 function numeriVersione(testo) {
@@ -29,7 +26,7 @@ function numeriVersione(testo) {
 function versionePiuNuova(nuova, attuale) {
   const a = numeriVersione(nuova);
   const b = numeriVersione(attuale);
-  for (let i = 0; i < 4; i++) {   // il quarto numero e' quello della prova: 0.16.0-ticino.2
+  for (let i = 0; i < 3; i++) {
     if ((a[i] || 0) > (b[i] || 0)) return true;
     if ((a[i] || 0) < (b[i] || 0)) return false;
   }
@@ -52,21 +49,13 @@ function fileGiusto(release) {
 }
 
 async function controlla() {
-  const risposta = await net.fetch(URL_RELEASE, {
+  const risposta = await net.fetch(URL_ULTIMA_RELEASE, {
     headers: { "User-Agent": "MRW-Anteprima", "Accept": "application/vnd.github+json" }
   });
   if (!risposta.ok) {
     throw new Error("GitHub non risponde (" + risposta.status + ")");
   }
-  const tutte = await risposta.json();
-  let release = null;
-  for (const una of tutte) {
-    if (una.draft || !una.tag_name.startsWith(PREFISSO_TAG)) continue;
-    if (release === null || versionePiuNuova(una.tag_name.replace(PREFISSO_TAG, ""), release.tag_name.replace(PREFISSO_TAG, ""))) release = una;
-  }
-  if (release === null) {
-    return { attuale: app.getVersion(), nuova: app.getVersion(), disponibile: false, url: null, nome: null, note: "" };
-  }
+  const release = await risposta.json();
   const nuova = release.tag_name.replace(PREFISSO_TAG, "");
   const attuale = app.getVersion();
   const file = fileGiusto(release);
