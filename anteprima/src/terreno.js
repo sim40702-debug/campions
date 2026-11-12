@@ -5,6 +5,8 @@
 // - una versione "lontana" leggera (un punto ogni 16 m), sempre presente;
 // - una versione "vicina" dettagliata (un punto ogni 4 m), creata solo vicino alla moto.
 // Se c'e' la foto aerea SWISSIMAGE del pezzo (passo 8), il terreno la usa come colore.
+// Le foto si caricano solo per i pezzi entro la distanza di visibilita' (e si tolgono quando ci si allontana):
+// con la Valle Verzasca i pezzi sono 128 e tutte le foto insieme occuperebbero circa 700 MB della scheda video.
 
 import * as THREE from "three";
 import { creaMaterialeAcqua } from "./onde.js";
@@ -284,8 +286,6 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
   const colonnePezzi = Math.floor((terreno.colonne - 1) / QUAD_PEZZO);
   const righePezzi = Math.floor((terreno.righe - 1) / QUAD_PEZZO);
   const latoPezzo = QUAD_PEZZO * terreno.passo;
-  const caricatore = new THREE.TextureLoader();
-  const anisotropia = disegnatore ? disegnatore.capabilities.getMaxAnisotropy() : 1;
   const pezzi = [];
 
   for (let py = 0; py < righePezzi; py++) {
@@ -298,20 +298,8 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
         creaGeometriaPezzo(terreno, px * QUAD_PEZZO, py * QUAD_PEZZO, 4, centroX, centroZ), materiale);
       lontano.position.set(centroX, 0, centroZ);
       scena.add(lontano);
-      const pezzo = { px: px, py: py, centroX: centroX, centroZ: centroZ, materiale: materiale, lontano: lontano, vicino: null };
+      const pezzo = { px: px, py: py, centroX: centroX, centroZ: centroZ, materiale: materiale, lontano: lontano, vicino: null, foto: null, statoFoto: "no" };
       pezzi.push(pezzo);
-
-      // Foto aerea SWISSIMAGE (se c'e')
-      caricatore.load("dati/foto/foto_x" + px + "_y" + py + ".jpg", function (foto) {
-        foto.flipY = false;
-        foto.colorSpace = THREE.SRGBColorSpace;
-        foto.anisotropy = anisotropia;
-        materiale.map = foto;
-        materiale.vertexColors = false;
-        materiale.needsUpdate = true;
-      }, undefined, function () {
-        // nessuna foto: restano i colori calcolati
-      });
     }
   }
 
@@ -326,7 +314,49 @@ export function aggiungiTerreno(terreno, scena, disegnatore, ambiente) {
   lago.receiveShadow = false;
   scena.add(lago);
 
-  return { terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0, pieno: 1000, lavoro: null };
+  return {
+    terreno: terreno, scena: scena, pezzi: pezzi, latoPezzo: latoPezzo, fattore: 1.2, attesa: 0, pieno: 1000, lavoro: null,
+    caricatore: new THREE.TextureLoader(), anisotropia: disegnatore ? disegnatore.capabilities.getMaxAnisotropy() : 1,
+    raggioFoto: 8500, fotoCaricate: 0
+  };
+}
+
+// Foto aeree SWISSIMAGE: si caricano per i pezzi entro "raggioFoto" e si tolgono oltre raggioFoto + 3 km
+// (la differenza evita di caricare e togliere di continuo la stessa foto). Senza foto restano i colori calcolati.
+function gestisciFoto(terrenoMesh, x, z) {
+  for (const p of terrenoMesh.pezzi) {
+    const distanza = Math.hypot(p.centroX - x, p.centroZ - z);
+    if (distanza < terrenoMesh.raggioFoto && p.statoFoto === "no") {
+      p.statoFoto = "carico";
+      terrenoMesh.caricatore.load("dati/foto/foto_x" + p.px + "_y" + p.py + ".jpg", function (foto) {
+        if (p.statoFoto !== "carico") {
+          foto.dispose();   // nel frattempo ci si e' allontanati
+          return;
+        }
+        foto.flipY = false;
+        foto.colorSpace = THREE.SRGBColorSpace;
+        foto.anisotropy = terrenoMesh.anisotropia;
+        p.foto = foto;
+        p.statoFoto = "si";
+        p.materiale.map = foto;
+        p.materiale.vertexColors = false;
+        p.materiale.needsUpdate = true;
+        terrenoMesh.fotoCaricate++;
+      }, undefined, function () {
+        p.statoFoto = "manca";   // nessuna foto per questo pezzo: restano i colori calcolati
+      });
+    } else if (distanza > terrenoMesh.raggioFoto + 3000 && (p.statoFoto === "si" || p.statoFoto === "carico")) {
+      if (p.foto) {
+        p.materiale.map = null;
+        p.materiale.vertexColors = true;
+        p.materiale.needsUpdate = true;
+        p.foto.dispose();
+        p.foto = null;
+        terrenoMesh.fotoCaricate--;
+      }
+      p.statoFoto = "no";
+    }
+  }
 }
 
 // Crea i pezzi dettagliati vicino a (x, z) e toglie quelli lontani.
@@ -352,6 +382,7 @@ export function aggiornaTerreno(terrenoMesh, x, z, dt, sincrono) {
   terrenoMesh.attesa -= dt;
   if (terrenoMesh.attesa > 0) return;
   terrenoMesh.attesa = 0.25;
+  gestisciFoto(terrenoMesh, x, z);
   const raggio = terrenoMesh.latoPezzo * terrenoMesh.fattore;
   let daCreare = null;
   let distanzaMinima = Infinity;
@@ -392,9 +423,11 @@ export function preparaTerrenoVicino(terrenoMesh, x, z) {
   }
 }
 
-// Fino a che distanza il terreno usa il dettaglio pieno (menu Impostazioni)
-export function impostaDettaglioTerreno(terrenoMesh, fattore, pieno) {
+// Fino a che distanza il terreno usa il dettaglio pieno (menu Impostazioni) e fino a dove servono le foto aeree
+export function impostaDettaglioTerreno(terrenoMesh, fattore, pieno, visibilita) {
   terrenoMesh.fattore = fattore;
   terrenoMesh.pieno = pieno || 1000;   // entro questa distanza (m) il terreno ha un punto ogni 4 m, oltre ogni 8 m
+  // il centro di un pezzo puo' stare 1.4 km piu' in la' del suo bordo: le foto arrivano un po' oltre la visibilita'
+  if (visibilita) terrenoMesh.raggioFoto = visibilita + 1500;
   terrenoMesh.attesa = 0;
 }

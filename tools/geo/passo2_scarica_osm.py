@@ -8,7 +8,7 @@
 #
 # Uso:
 #   python passo2_scarica_osm.py --pilota   (strade solo nel settore pilota)
-#   python passo2_scarica_osm.py --anteprima (area dell'anteprima, Locarnese 16 x 12 km)
+#   python passo2_scarica_osm.py --anteprima (area dell'anteprima, Locarnese e Valle Verzasca 16 x 32 km)
 #   python passo2_scarica_osm.py            (strade di tutto il Ticino)
 #
 # Dati: (c) OpenStreetMap contributors, licenza ODbL
@@ -115,33 +115,32 @@ def main():
         print("   - " + nome + " (admin_level " + livello + ")")
 
     print("2) Strade (" + utilita.nome_area(argomenti.pilota) + ")... puo' durare qualche minuto")
-    nome_file = "strade_" + utilita.nome_area(argomenti.pilota) + ".json"
-    strade = utilita.chiedi_overpass(query_strade(argomenti.pilota), cartella / nome_file)
+    strade = utilita.chiedi_overpass(query_strade(argomenti.pilota), utilita.file_osm("strade", argomenti.pilota))
     print("   Tratti di strada scaricati: " + str(len(strade.get("elements", []))))
 
     if argomenti.pilota:
         print("3) Edifici del pilota...")
-        edifici = utilita.chiedi_overpass(query_edifici(), cartella / ("edifici_" + utilita.nome_area(True) + ".json"))
+        edifici = utilita.chiedi_overpass(query_edifici(), utilita.file_osm("edifici", True))
         print("   Edifici scaricati: " + str(len(edifici.get("elements", []))))
 
         print("4) Boschi e alberi del pilota...")
-        verde = utilita.chiedi_overpass(query_verde(), cartella / ("verde_" + utilita.nome_area(True) + ".json"))
+        verde = utilita.chiedi_overpass(query_verde(), utilita.file_osm("verde", True))
         print("   Elementi scaricati: " + str(len(verde.get("elements", []))))
 
         print("5) Segnaletica, lampioni e localita' del pilota...")
-        dettagli = utilita.chiedi_overpass(query_dettagli(), cartella / ("dettagli_" + utilita.nome_area(True) + ".json"))
+        dettagli = utilita.chiedi_overpass(query_dettagli(), utilita.file_osm("dettagli", True))
         print("   Elementi scaricati: " + str(len(dettagli.get("elements", []))))
 
         print("6) Laghi, fiumi e torrenti del pilota...")
-        acqua = utilita.chiedi_overpass(query_acqua(), cartella / ("acqua_" + utilita.nome_area(True) + ".json"))
+        acqua = utilita.chiedi_overpass(query_acqua(), utilita.file_osm("acqua", True))
         print("   Elementi scaricati: " + str(len(acqua.get("elements", []))))
 
         print("7) Teleferiche, funicolari e ferrovie del pilota...")
-        trasporti = utilita.chiedi_overpass(query_trasporti(), cartella / ("trasporti_" + utilita.nome_area(True) + ".json"))
+        trasporti = utilita.chiedi_overpass(query_trasporti(), utilita.file_osm("trasporti", True))
         print("   Elementi scaricati: " + str(len(trasporti.get("elements", []))))
 
         print("8) Parchi, giardini, prati e zone d'uso del suolo del pilota (per la mappa)...")
-        uso = utilita.chiedi_overpass(query_uso_suolo(), cartella / ("uso_suolo_" + utilita.nome_area(True) + ".json"))
+        uso = utilita.chiedi_overpass(query_uso_suolo(), utilita.file_osm("uso_suolo", True))
         print("   Elementi scaricati: " + str(len(uso.get("elements", []))))
 
     print("Fatto. I file sono in: " + str(cartella))

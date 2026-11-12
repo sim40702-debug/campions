@@ -1,9 +1,20 @@
 ## MOTO RACING WORLD – Anteprima Ticino
 
-Versione giocabile **leggera** del **Locarnese** (16 × 12 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
+Versione giocabile **leggera** del **Locarnese** e di tutta la **Valle Verzasca** (16 × 32 km), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.14.9) – sottopasso di Gordola
+### Novità di questa versione (0.15.0) – Valle Verzasca
+
+- **Tutta la Valle Verzasca si può esplorare**, in moto e in macchina: la mappa va da Ascona fino alle creste sopra Sonogno (16 × 32 km invece di 16 × 12).
+- **Strada della valle completa**, collegata al resto della rete: da Gordola e Tenero alla **diga della Verzasca** e al **Lago di Vogorno**, poi **Vogorno, Corippo, Lavertezzo**, **Brione, Gerra, Frasco e Sonogno**, con la strada per **Mergoscia**, la Val d'Osura e le strade laterali.
+- **Nuove località** con i loro cartelli e la loro identità: nuclei di case in sasso (Corippo, Sonogno, Frasco, Gerra...). Entra anche la **bassa Valle Maggia** (Avegno, Gordevio, Aurigeno, Maggia, Moghegno).
+- **Zone sulla mappa**: Locarnese, Valle Verzasca e Valle Maggia hanno un contorno tratteggiato che segue gli spartiacque veri e il nome scritto in grande sulla minimappa (zoom lontano) e sulla mappa grande (P). Si possono cercare ("Verzasca") e c'è un filtro per nasconderle.
+- **Quando si entra in una zona compare il suo nome** in alto ("VALLE VERZASCA") e sotto la velocità si legge paese e zona ("LAVERTEZZO · VALLE VERZASCA").
+- L'angolo di Leventina (Giornico) che entra nel rettangolo è solo paesaggio, senza strade.
+- **Foto aeree caricate solo vicino**: con la mappa più grande le foto si caricano entro la distanza di visibilità e si tolgono lontano, così la memoria della scheda video resta come prima.
+- La partenza scelta sulla mappa resta nello stesso posto anche con la mappa più grande (ora si ricordano le coordinate svizzere).
+
+### Novità della 0.14.9 – sottopasso di Gordola
 
 - **Sottopasso di Via Brere sotto l'A13 (Gordola) sistemato**: prima stava solo 2,7 m sotto l'autostrada, quindi la sua volta spuntava dall'asfalto dell'A13 e toglieva la vista; ora passa circa 5 m più in basso, in trincea, con una volta più bassa (4,2 m).
 - **Da dentro si vede l'uscita**: il terreno e il muro di sostegno dell'autostrada non chiudono più i due imbocchi. Vale per tutti i sottopassi corti (meno di 80 m).

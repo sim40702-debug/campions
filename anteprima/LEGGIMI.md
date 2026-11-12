@@ -1,6 +1,6 @@
 # Anteprima Ticino (Three.js + Electron)
 
-Versione giocabile leggera del settore pilota di Locarno. Progetto: `docs/anteprima/PROGETTO_ANTEPRIMA.pdf`.
+Versione giocabile leggera del Locarnese e della Valle Verzasca (16 × 32 km). Progetto: `docs/anteprima/PROGETTO_ANTEPRIMA.pdf`.
 
 ## Per giocare
 
@@ -46,6 +46,7 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/interfaccia.js` | Velocità, quota, coordinate, ora |
 | `src/mappa.js` | Motore di disegno di minimappa e mappa grande (rilievo, acque, boschi, edifici, strade, nomi, POI) |
 | `src/partenza.js` | Mappa grande (P / N): ricerca, filtri, zoom, partenza |
+| `src/zone.js` | Zone (Locarnese, Valle Verzasca, Valle Maggia): nome quando si entra, contorni per le mappe |
 | `src/ambiente.js` | Ora del giorno, sole e luna, cielo, stelle, nuvole, meteo |
 | `src/luoghi.js` | Identità di ogni città/paese (colori, facciate, palme, alberi) |
 | `src/facciate.js` | Facciate e tetti disegnati dal codice, finestre che si accendono di notte |

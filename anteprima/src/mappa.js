@@ -10,6 +10,7 @@
 //  - edifici (solo a ingrandimenti alti), strade con bordo e gerarchia (autostrada ... vicolo),
 //    ponti, gallerie, ferrovie, teleferiche;
 //  - nomi di citta' e paesi, nomi delle strade, punti di interesse (chiese, stazioni, gallerie, ponti);
+//  - zone del mondo (Locarnese, Valle Verzasca...): contorno tratteggiato e nome grande (vedi zone.js);
 //  - di notte la mappa passa ai colori scuri.
 
 const CHIAVE_FILTRI = "mrw-filtri-mappa";
@@ -55,6 +56,7 @@ export const FILTRI_MAPPA = [
   { chiave: "nomiStrade", nome: "Nomi delle strade" },
   { chiave: "ferrovie", nome: "Ferrovie e teleferiche" },
   { chiave: "luoghi", nome: "Citta' e paesi" },
+  { chiave: "zone", nome: "Zone (Locarnese, Valle Verzasca...)" },
   { chiave: "poi", nome: "Punti di interesse" }
 ];
 
@@ -233,14 +235,15 @@ function creaRilievo(terreno) {
 }
 
 export function preparaMinimappa(o) {
+  const zone = o.zone ? o.zone.lista : [];
   const strade = o.strade, terreno = o.terreno, edifici = o.edifici, luoghi = o.luoghi, acqua = o.acqua, trasporti = o.trasporti;
   const metaX = terreno.metaX, metaZ = terreno.metaZ;
 
   const mappa = {
-    metaX: metaX, metaZ: metaZ, terreno: terreno, ambiente: o.ambiente, luoghi: luoghi,
+    metaX: metaX, metaZ: metaZ, terreno: terreno, ambiente: o.ambiente, luoghi: luoghi, zone: o.zone || null,
     filtri: Object.assign({
       rilievo: true, quartieri: true, edifici: true, boschi: true, acque: true, strade: true, nomiStrade: true,
-      ferrovie: true, luoghi: true, poi: true
+      ferrovie: true, luoghi: true, poi: true, zone: true
     }, leggi(CHIAVE_FILTRI) || {}),
     mini: Object.assign({ zoom: 2, ruota: true }, leggi(CHIAVE_MINI) || {}),
     palette: "giorno",
@@ -374,6 +377,7 @@ export function preparaMinimappa(o) {
   // Indice per la ricerca: luoghi, strade con nome, punti di interesse con nome
   const ricerca = [];
   for (const l of o.localita || []) ricerca.push({ nome: l.n, tipo: l.t, x: l.x, z: l.z, genere: "luogo" });
+  for (const zona of zone) ricerca.push({ nome: zona.nome, tipo: "zona", x: zona.x, z: zona.z, genere: "luogo" });
   for (const [nome, e] of nomiVie) {
     const p = e.strada.p;
     const m = Math.floor(p.length / 6) * 3;
@@ -638,6 +642,48 @@ export function preparaMinimappa(o) {
       }
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    // zone (Locarnese, Valle Verzasca...): contorno tratteggiato e nome grande, solo da lontano
+    if (F.zone && zone.length > 0 && scala < 0.4) {
+      ctx.save();
+      const notte = mappa.palette === "notte";
+      ctx.strokeStyle = notte ? "rgba(255,215,90,0.45)" : "rgba(150,90,30,0.5)";
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([7, 5]);
+      for (const zona of zone) {
+        if (zona.x1 < x0 || zona.x0 > x1 || zona.z1 < z0 || zona.z0 > z1) continue;
+        const c = zona.contorno;
+        ctx.beginPath();
+        for (let i = 0; i < c.length; i += 2) {
+          if (i === 0) ctx.moveTo(sx(c[i]), sz(c[i + 1])); else ctx.lineTo(sx(c[i]), sz(c[i + 1]));
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      // nome: lettere spaziate, sotto i nomi dei paesi (non occupa spazio)
+      const dim = scala < 0.15 ? 15 : 19;
+      ctx.font = "italic 600 " + dim + "px 'Segoe UI', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      for (const zona of zone) {
+        const X = sx(zona.x), Y = sz(zona.z);
+        if (X < -200 || X > w + 200 || Y < -40 || Y > h + 40) continue;
+        const testo = zona.nome.toUpperCase().split("").join("\u200a");
+        ctx.save();
+        ctx.translate(X, Y);
+        if (zona.verticale) ctx.rotate(-Math.PI / 2);
+        ctx.strokeStyle = tav.alone;
+        ctx.globalAlpha = 0.85;
+        ctx.strokeText(testo, 0, 0);
+        ctx.fillStyle = notte ? "#ffd75a" : "#8a5a24";
+        ctx.fillText(testo, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
     }
 
     // etichette: sempre dopo tutto il resto, senza sovrapporsi

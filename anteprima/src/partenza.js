@@ -8,23 +8,35 @@
 
 import { FILTRI_MAPPA } from "./mappa.js";
 import { quotaTerreno } from "./terreno.js";
+import { zonaQui } from "./zone.js";
 
 const CHIAVE = "mrw-partenza";
 
-// Partenza salvata (coordinate del gioco x, z) oppure null
-export function partenzaSalvata() {
+// Centro del mondo fino alla 0.14.9 (Locarnese 16 x 12 km): le partenze salvate allora avevano solo x e z
+const CENTRO_VECCHIO = [2704000, 1116000];
+
+// Partenza salvata (coordinate del gioco x, z) oppure null.
+// Si salvano anche le coordinate svizzere (LV95): se il mondo diventa piu' grande (0.15: Valle Verzasca)
+// il centro del gioco si sposta, ma la partenza resta nello stesso posto vero.
+export function partenzaSalvata(terreno) {
   try {
     const testo = localStorage.getItem(CHIAVE);
-    if (testo) return JSON.parse(testo);
+    if (testo) {
+      const s = JSON.parse(testo);
+      const centro = terreno.info.centro_lv95;
+      const est = typeof s.est === "number" ? s.est : CENTRO_VECCHIO[0] + s.x;
+      const nord = typeof s.nord === "number" ? s.nord : CENTRO_VECCHIO[1] - s.z;
+      return { x: est - centro[0], z: -(nord - centro[1]), nome: s.nome };
+    }
   } catch (errore) {
     // memoria non disponibile
   }
   return null;
 }
 
-function salva(x, z, nome) {
+function salva(x, z, nome, centro) {
   try {
-    localStorage.setItem(CHIAVE, JSON.stringify({ x: x, z: z, nome: nome }));
+    localStorage.setItem(CHIAVE, JSON.stringify({ x: x, z: z, nome: nome, est: Math.round(centro[0] + x), nord: Math.round(centro[1] - z) }));
   } catch (errore) {
     // non importa
   }
@@ -182,13 +194,15 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
     const est = Math.round(terreno.info.centro_lv95[0] + x);
     const nord = Math.round(terreno.info.centro_lv95[1] - z);
     const luogo = nomeLuogo(x, z);
+    const zona = mappa.zone ? zonaQui(mappa.zone, x, z) : null;
     info.innerHTML = "";
     const titolo = document.createElement("strong");
     titolo.textContent = nome || (strada && strada.n) || luogo || "Punto sulla mappa";
     info.appendChild(titolo);
     const righe = [
       strada ? "Strada: " + (strada.n || "senza nome") : "Fuori strada: si parte dalla strada piu' vicina",
-      luogo ? "Zona: " + luogo : "",
+      luogo ? "Vicino a: " + luogo : "",
+      zona ? "Zona: " + zona.nome : "",
       "Quota: " + Math.round(q) + " m",
       "LV95: " + est + " / " + nord
     ];
@@ -204,7 +218,7 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
   function parti() {
     if (!selezione) return;
     mettiSullaStrada(moto, selezione.x, selezione.z);
-    salva(selezione.x, selezione.z, selezione.nome || "punto sulla mappa");
+    salva(selezione.x, selezione.z, selezione.nome || "punto sulla mappa", terreno.info.centro_lv95);
     chiudi();
   }
 
@@ -212,15 +226,15 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
   const normalizza = function (t) {
     return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   };
-  const ETICHETTE = { city: "Citta'", town: "Paese", village: "Paese", suburb: "Quartiere", hamlet: "Frazione", neighbourhood: "Quartiere", quarter: "Quartiere", strada: "Strada", stazione: "Stazione", parco: "Parco" };
+  const ETICHETTE = { city: "Citta'", town: "Paese", village: "Paese", suburb: "Quartiere", hamlet: "Frazione", neighbourhood: "Quartiere", quarter: "Quartiere", strada: "Strada", stazione: "Stazione", parco: "Parco", zona: "Zona" };
   function cerca() {
     const q = normalizza(campoRicerca.value.trim());
     elencoRisultati.innerHTML = "";
     let trovati;
     if (q.length === 0) {
-      // senza testo: i paesi principali
-      trovati = mappa.ricerca.filter(function (r) { return r.tipo === "city" || r.tipo === "town" || r.tipo === "village"; })
-        .sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+      // senza testo: prima le zone (Locarnese, Valle Verzasca...), poi i paesi principali
+      trovati = mappa.ricerca.filter(function (r) { return r.tipo === "zona" || r.tipo === "city" || r.tipo === "town" || r.tipo === "village"; })
+        .sort(function (a, b) { return ((b.tipo === "zona") - (a.tipo === "zona")) || a.nome.localeCompare(b.nome); });
     } else {
       trovati = mappa.ricerca.filter(function (r) { return normalizza(r.nome).includes(q); }).sort(function (a, b) {
         const pa = normalizza(a.nome).startsWith(q) ? 0 : 1, pb = normalizza(b.nome).startsWith(q) ? 0 : 1;
@@ -240,7 +254,7 @@ export function preparaPartenza(moto, mappa, mettiSullaStrada) {
         evento.currentTarget.blur();
         vista.cx = r.x;
         vista.cz = r.z;
-        vista.scala = r.genere === "luogo" && (r.tipo === "city" || r.tipo === "town") ? 0.35 : 0.6;
+        vista.scala = r.tipo === "zona" ? 0.09 : (r.genere === "luogo" && (r.tipo === "city" || r.tipo === "town") ? 0.35 : 0.6);
         limita();
         seleziona(r.x, r.z, r.nome);
       });

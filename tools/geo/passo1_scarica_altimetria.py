@@ -5,7 +5,7 @@
 #
 # Uso:
 #   python passo1_scarica_altimetria.py --pilota   (solo Locarno 8 x 8 km)
-#   python passo1_scarica_altimetria.py --anteprima (Locarnese 16 x 12 km)
+#   python passo1_scarica_altimetria.py --anteprima (Locarnese e Valle Verzasca 16 x 32 km)
 #   python passo1_scarica_altimetria.py            (tutto il mondo 68 x 96 km)
 #
 # Fonte: Ufficio federale di topografia swisstopo (Open Government Data)

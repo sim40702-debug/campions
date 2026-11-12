@@ -19,20 +19,20 @@ def crea_cartelle():
     config.CARTELLA_UNREAL.mkdir(parents=True, exist_ok=True)
 
 
-# "pilota" (8 x 8 km, per Unreal) oppure "anteprima" (16 x 12 km, per il gioco Three.js)
+# "pilota" (8 x 8 km, per Unreal) oppure "anteprima" (16 x 32 km, Locarnese e Valle Verzasca, per il gioco Three.js)
 MODO_PICCOLO = "pilota"
 
 
 def leggi_argomenti(descrizione):
     # Ogni script accetta:
     #   --pilota     solo il settore pilota 8 x 8 km
-    #   --anteprima  l'area dell'anteprima giocabile 16 x 12 km (Locarnese)
+    #   --anteprima  l'area dell'anteprima giocabile 16 x 32 km (Locarnese e Valle Verzasca)
     global MODO_PICCOLO
     parser = argparse.ArgumentParser(description=descrizione)
     parser.add_argument("--pilota", action="store_true",
                         help="lavora solo sul settore pilota (Locarno 8 x 8 km)")
     parser.add_argument("--anteprima", action="store_true",
-                        help="lavora sull'area dell'anteprima (Locarnese 16 x 12 km)")
+                        help="lavora sull'area dell'anteprima (Locarnese e Valle Verzasca, 16 x 32 km)")
     argomenti = parser.parse_args()
     if argomenti.anteprima:
         MODO_PICCOLO = "anteprima"
@@ -56,6 +56,17 @@ def nome_area(pilota):
     if pilota:
         return MODO_PICCOLO
     return "ticino"
+
+
+def file_osm(tipo, pilota):
+    # File scaricato da OpenStreetMap, per esempio dati/download/osm/strade_anteprima_2696_1110_2712_1142.json.
+    # Per l'anteprima il nome contiene il rettangolo: se l'area cambia (per esempio quando si e' aggiunta
+    # la Valle Verzasca) i file vecchi, piu' piccoli, non vengono riusati per sbaglio (anche dalla cache di GitHub).
+    nome = tipo + "_" + nome_area(pilota)
+    if pilota and MODO_PICCOLO == "anteprima":
+        est_min, est_max, nord_min, nord_max = area_di_lavoro(True)
+        nome = nome + "_" + "_".join(str(v // 1000) for v in (est_min, nord_min, est_max, nord_max))
+    return config.CARTELLA_DOWNLOAD / "osm" / (nome + ".json")
 
 
 # --- Settori -------------------------------------------------------------------

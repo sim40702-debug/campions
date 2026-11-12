@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 
-const VERSIONE = "0.14.9";
+const VERSIONE = "0.15.0";
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -30,6 +30,7 @@ import { applicaQualita, preparaMenu, qualitaSalvata } from "./impostazioni.js";
 import { aggiornaFps, creaTest, avviaTest, aggiornaTest, preparaRisultato } from "./prestazioni.js";
 import { aggiornaInterfaccia, mostraStato, nascondiCaricamento } from "./interfaccia.js";
 import { preparaMinimappa } from "./mappa.js";
+import { creaZone, aggiornaZona } from "./zone.js";
 
 // Punto di partenza: Piazza Grande, Locarno (coordinate LV95)
 const PARTENZA_EST = 2704700;
@@ -287,6 +288,7 @@ async function avvia() {
   try {
     await mostraStato("Caricamento del terreno (swisstopo)...");
     const terreno = await caricaTerreno();
+    const zone = creaZone(terreno);   // Locarnese, Valle Verzasca, ... (nomi delle grandi aree)
     // uso del suolo (parchi, prati, sport, cimiteri): serve prima del terreno, che li colora
     const usoSuolo = await caricaUsoSuolo();
     terreno.uso = creaMascheraUso(usoSuolo, terreno);
@@ -316,7 +318,7 @@ async function avvia() {
 
     await mostraStato("Segnaletica, lampioni e arredo urbano...");
     aggiungiDettagli(dettagli, scena, terreno, strade, { edifici: edifici, luoghi: luoghi, ambiente: ambiente });
-    const mappa = preparaMinimappa({ usoSuolo: usoSuolo, strade: strade, terreno: terreno, localita: dettagli.localita, trasporti: trasporti, edifici: edifici, luoghi: luoghi, acqua: acquaDati, ambiente: ambiente });
+    const mappa = preparaMinimappa({ usoSuolo: usoSuolo, strade: strade, terreno: terreno, localita: dettagli.localita, trasporti: trasporti, edifici: edifici, luoghi: luoghi, acqua: acquaDati, ambiente: ambiente, zone: zone });
 
     await mostraStato("Preparazione dei boschi e del verde urbano...");
     const alberi = creaAlberi(scena, terreno, strade, edifici, await caricaAlberiSingoli(), { luoghi: luoghi, ambiente: ambiente });
@@ -328,7 +330,7 @@ async function avvia() {
     // Partenza: quella scelta l'ultima volta (tasto P), altrimenti Piazza Grande
     let partenzaX = PARTENZA_EST - terreno.info.centro_lv95[0];
     let partenzaZ = -(PARTENZA_NORD - terreno.info.centro_lv95[1]);
-    const scelta = partenzaSalvata();
+    const scelta = partenzaSalvata(terreno);
     if (scelta && Math.abs(scelta.x) < terreno.metaX && Math.abs(scelta.z) < terreno.metaZ) {
       partenzaX = scelta.x;
       partenzaZ = scelta.z;
@@ -354,6 +356,7 @@ async function avvia() {
     window.__mrw.eseguiBenchmark = function (opzioni) { return bench.esegui(opzioni); };
     window.__mrw.benchmarkMarkdown = inMarkdown;
     window.__mrw.mappa = mappa;
+    window.__mrw.zone = zone;
     window.__mrw.luoghi = luoghi;
     window.__mrw.edifici = edifici;
     window.__mrw.vaiA = function (x, z) {
@@ -471,7 +474,10 @@ async function avvia() {
       window.__mrw.fotogrammi = (window.__mrw.fotogrammi || 0) + 1;
       risoluzioneAdattiva(vero, mondo);
       aggiornaFps(vero, disegnatore);
-      aggiornaInterfaccia(moto, terreno, localitaVicina(dettagli, moto.x, moto.z), mappa, ambiente);
+      // localita' e zona: "Lavertezzo · Valle Verzasca"
+      const zona = aggiornaZona(zone, test.attivo ? telecamera.position.x : moto.x, test.attivo ? telecamera.position.z : moto.z, vero);
+      const localita = localitaVicina(dettagli, moto.x, moto.z);
+      aggiornaInterfaccia(moto, terreno, zona && zona.nome !== localita ? (localita ? localita + " · " + zona.nome : zona.nome) : localita, mappa, ambiente);
       const prima = performance.now();
       disegnatore.render(scena, telecamera);
       // tempi CPU (JavaScript) del fotogramma: aggiornamenti, e invio dei disegni alla scheda video (per le prove automatiche)

@@ -1,8 +1,8 @@
 # PASSO 7 - Prepara i dati del settore pilota per l'anteprima Three.js
 #
 # Legge:
-#   dati/per_unreal/pilota/terreno_pilota.png   (passo 3)
-#   dati/download/osm/strade_pilota.json         (passo 2)
+#   dati/per_unreal/<area>/terreno_<area>.png    (passo 3)
+#   dati/download/osm/strade_<area>....json      (passo 2, vedi utilita.file_osm)
 # Scrive in anteprima/dati/:
 #   terreno.bin   quote ogni 3.94 m (circa 4 m), numeri a 16 bit
 #   terreno.json  informazioni per leggere terreno.bin
@@ -21,7 +21,7 @@
 # Coordinate dell'anteprima (metri), centro = centro del settore pilota:
 #   x verso EST, y verso l'ALTO (quota reale), z verso SUD
 #
-# Uso:  python passo7_esporta_anteprima.py --anteprima   (Locarnese 16 x 12 km)
+# Uso:  python passo7_esporta_anteprima.py --anteprima   (Locarnese e Valle Verzasca 16 x 32 km)
 #       python passo7_esporta_anteprima.py --pilota      (solo il pilota 8 x 8 km)
 
 import json
@@ -353,6 +353,32 @@ def esporta_funivie(percorso, zona, suolo, centro_est, centro_nord):
     return funivie
 
 
+def esporta_zone(giocabile, centro_est, centro_nord):
+    # Zone con un nome (Locarnese, Valle Verzasca...): contorno in coordinate del gioco, tagliato sull'area giocabile.
+    # Nel gioco: scritta quando si entra, nome sulla minimappa e sulla mappa grande, ricerca (vedi src/zone.js).
+    zone = []
+    for voce in getattr(config, "ZONE_ANTEPRIMA", []):
+        forma = Polygon(voce["contorno"]).buffer(0).intersection(giocabile)
+        if forma.is_empty:
+            continue
+        if forma.geom_type != "Polygon":
+            forma = max(forma.geoms, key=lambda g: g.area)
+        forma = forma.simplify(20)
+        piatta = []
+        for e, n in list(forma.exterior.coords)[:-1]:
+            piatta.append(round(e - centro_est))
+            piatta.append(round(-(n - centro_nord)))
+        etichetta = voce.get("etichetta") or (forma.representative_point().x, forma.representative_point().y)
+        zone.append({
+            "nome": voce["nome"],
+            "contorno": piatta,
+            "etichetta": [round(etichetta[0] - centro_est), round(-(etichetta[1] - centro_nord))],
+            "verticale": bool(voce.get("verticale", False)),
+        })
+        print("   zona " + voce["nome"] + ": " + str(round(forma.area / 1_000_000, 1)) + " km2")
+    return zone
+
+
 def larghezza_strada(tag):
     # 1) larghezza scritta in OSM  2) corsie x 3.3 m  3) valore di base
     try:
@@ -402,10 +428,17 @@ def main():
     centro_est = (est_min + est_max) / 2
     centro_nord = (nord_min + nord_max) / 2
     zona = box(est_min, nord_min, est_max, nord_max)
-    osm = config.CARTELLA_DOWNLOAD / "osm"
+    # Parte giocabile: il rettangolo senza gli angoli di altre valli (Leventina) che non fanno parte del gioco.
+    # Li' resta solo il paesaggio (terreno, foto aeree, boschi, fiumi): niente strade, case, binari, cartelli.
+    giocabile = zona
+    for contorno in getattr(config, "ESCLUSI_ANTEPRIMA", []):
+        giocabile = giocabile.difference(Polygon(contorno).buffer(0))
+    if giocabile.geom_type != "Polygon":
+        giocabile = max(giocabile.geoms, key=lambda g: g.area)
+    print("Area giocabile: " + str(round(giocabile.area / 1_000_000, 1)) + " km2 su " + str(round(zona.area / 1_000_000, 1)))
 
     percorso_png = config.CARTELLA_UNREAL / nome / ("terreno_" + nome + ".png")
-    percorso_strade = osm / ("strade_" + nome + ".json")
+    percorso_strade = utilita.file_osm("strade", True)
     if not percorso_png.exists() or not percorso_strade.exists():
         print("Mancano i dati: esegui prima i passi 1, 2 e 3 con --" + nome + ".")
         raise SystemExit(1)
@@ -417,27 +450,27 @@ def main():
     ridotte = quote[::2, ::2].copy()                                       # circa 4 m
 
     print("2) Edifici (servono per la larghezza delle strade)...")
-    percorso_edifici = osm / ("edifici_" + nome + ".json")
+    percorso_edifici = utilita.file_osm("edifici", True)
     lista_edifici = []
     vie_edifici = []
     if percorso_edifici.exists():
-        lista_edifici = poligoni_edifici(percorso_edifici, zona)
+        lista_edifici = poligoni_edifici(percorso_edifici, giocabile)
         vie_edifici = [poligono for poligono, tag, ident in lista_edifici]
     print("   " + str(len(lista_edifici)) + " edifici")
 
     print("3) Strade: profilo liscio, larghezza, terreno spianato...")
     trasforma = utilita.DA_WGS84_A_LV95.transform
-    pezzi = vie.raccogli_pezzi(utilita.leggi_json(percorso_strade).get("elements", []), zona, trasforma,
+    pezzi = vie.raccogli_pezzi(utilita.leggi_json(percorso_strade).get("elements", []), giocabile, trasforma,
                                lambda tag: "highway" in tag)
-    vie.calcola_profili(pezzi, vero, zona)
+    vie.calcola_profili(pezzi, vero, giocabile)
     vie.limita_larghezze(pezzi, vie_edifici, larghezza_strada)
 
     pezzi_ferrovia = []
-    percorso_trasporti = osm / ("trasporti_" + nome + ".json")
+    percorso_trasporti = utilita.file_osm("trasporti", True)
     if percorso_trasporti.exists():
         elementi = utilita.leggi_json(percorso_trasporti).get("elements", [])
-        pezzi_ferrovia = vie.raccogli_pezzi(elementi, zona, trasforma, lambda tag: "railway" in tag)
-        vie.calcola_profili(pezzi_ferrovia, vero, zona)
+        pezzi_ferrovia = vie.raccogli_pezzi(elementi, giocabile, trasforma, lambda tag: "railway" in tag)
+        vie.calcola_profili(pezzi_ferrovia, vero, giocabile)
         for pezzo in pezzi_ferrovia:
             pezzo["larghezze"] = [3.4] * len(pezzo["coordinate"])
 
@@ -493,6 +526,7 @@ def main():
         "scala_quota": SCALA_QUOTA,
         "centro_lv95": [centro_est, centro_nord],
         "livello_lago": 193.3,
+        "zone": esporta_zone(giocabile, centro_est, centro_nord),
         "fonte": "Fonte: Ufficio federale di topografia swisstopo",
     }
     utilita.scrivi_json(info, CARTELLA_ANTEPRIMA / "terreno.json")
@@ -510,7 +544,7 @@ def main():
     print("   " + str(len(edifici)) + " edifici, chiese: " + str(chiese) + ", campanili: " + str(campanili))
 
     print("6) Boschi e alberi...")
-    percorso_verde = osm / ("verde_" + nome + ".json")
+    percorso_verde = utilita.file_osm("verde", True)
     if percorso_verde.exists():
         maschera, alberi = esporta_verde(percorso_verde, area, zona, ridotte.shape,
                                          config.PASSO_M * 2, centro_est, centro_nord)
@@ -520,16 +554,16 @@ def main():
         print("   Bosco: " + str(round(superficie, 1)) + " km2, alberi singoli: " + str(len(alberi) // 2))
 
     print("7) Segnaletica, lampioni e localita'...")
-    percorso_dettagli = osm / ("dettagli_" + nome + ".json")
+    percorso_dettagli = utilita.file_osm("dettagli", True)
     if percorso_dettagli.exists():
-        dettagli = esporta_dettagli(percorso_dettagli, zona, centro_est, centro_nord)
+        dettagli = esporta_dettagli(percorso_dettagli, giocabile, centro_est, centro_nord)
         scrivi("dettagli.json", dettagli)
         for chiave in ["semafori", "stop", "precedenza", "lampioni", "strisce"]:
             print("   " + chiave + ": " + str(len(dettagli[chiave]) // 2))
         print("   localita': " + str(len(dettagli["localita"])))
 
     print("8) Fiumi, torrenti e stagni...")
-    percorso_acqua = osm / ("acqua_" + nome + ".json")
+    percorso_acqua = utilita.file_osm("acqua", True)
     if percorso_acqua.exists():
         acqua = esporta_acqua(percorso_acqua, suolo, zona, centro_est, centro_nord)
         scrivi("acqua.json", acqua)
@@ -537,15 +571,15 @@ def main():
 
     print("9) Teleferiche e seggiovie...")
     if percorso_trasporti.exists():
-        funivie = esporta_funivie(percorso_trasporti, zona, suolo, centro_est, centro_nord)
+        funivie = esporta_funivie(percorso_trasporti, giocabile, suolo, centro_est, centro_nord)
         scrivi("funivie.json", {"funivie": funivie})
         for funivia in funivie:
             print("   " + funivia["t"] + ": " + (funivia["n"] or "senza nome") + " (" + str(len(funivia["p"]) // 4) + " punti)")
 
     print("10) Parchi, giardini e zone d'uso del suolo...")
-    percorso_uso = osm / ("uso_suolo_" + nome + ".json")
+    percorso_uso = utilita.file_osm("uso_suolo", True)
     if percorso_uso.exists():
-        uso = esporta_uso_suolo(percorso_uso, zona, centro_est, centro_nord)
+        uso = esporta_uso_suolo(percorso_uso, giocabile, centro_est, centro_nord)
         scrivi("uso_suolo.json", uso)
         print("   aree: " + str(len(uso["aree"])))
     else:

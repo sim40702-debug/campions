@@ -40,7 +40,7 @@ def trova_gruppo(genitori, nodo):
 def main():
     argomenti = utilita.leggi_argomenti("Misura la rete stradale")
     nome = utilita.nome_area(argomenti.pilota)
-    percorso = config.CARTELLA_DOWNLOAD / "osm" / ("strade_" + nome + ".json")
+    percorso = utilita.file_osm("strade", argomenti.pilota)
     if not percorso.exists():
         print("Manca " + percorso.name + ": prima esegui il passo 2.")
         return

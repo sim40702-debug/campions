@@ -18,6 +18,8 @@ const server = http.createServer((q, s) => {
   });
 }).listen(0);
 const porta = server.address().port;
+// La partenza si salva anche in coordinate svizzere (dalla 0.15): x, z del gioco -> LV95 con il centro dei dati
+const centro = JSON.parse(fs.readFileSync(path.join(radice, "dati/terreno.json"), "utf8")).centro_lv95;
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 for (const voce of process.argv.slice(3)) {
@@ -29,12 +31,12 @@ for (const voce of process.argv.slice(3)) {
   pagina.on("console", (m) => { if (/Edifici tolti/.test(m.text())) console.log(m.text()); });
   await pagina.addInitScript((d) => { window.__dbg = d; }, process.env.DBG || "");
   await pagina.addInitScript((m) => { if (m) { localStorage.setItem("mrw-meteo", m.split(":")[0]); if (m.split(":")[1] === "0") localStorage.setItem("mrw-meteo-realistico", "0"); } }, process.env.METEO || "");
-  await pagina.addInitScript(([x, z, q, o]) => {
-    localStorage.setItem("mrw-partenza", JSON.stringify({ x: +x, z: +z, nome: "prova" }));
+  await pagina.addInitScript(([x, z, q, o, c]) => {
+    localStorage.setItem("mrw-partenza", JSON.stringify({ x: +x, z: +z, nome: "prova", est: c[0] + +x, nord: c[1] - +z }));
     localStorage.setItem("mrw-qualita", q || "media");
     if (o) localStorage.setItem("mrw-ora", o);
     if (window.__dbg) localStorage.setItem("mrw-debug", window.__dbg);
-  }, [x, z, qualita, ora]);
+  }, [x, z, qualita, ora, centro]);
   const t0 = Date.now();
   await pagina.goto("http://localhost:" + porta + "/index.html");
   try {

@@ -95,7 +95,7 @@ export function applicaQualita(chiave, mondo) {
   if (mondo.precipitazioni) mondo.precipitazioni.imposta(q.gocce);
   impostaEdifici(mondo.edifici, q.vistaCitta, q.dettagli, q.ombreCitta && preferenze.ombreCitta, q.areaOmbre);
   impostaAlberi(mondo.alberi, q.raggioAlberi, q.densitaAlberi);
-  impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno);
+  impostaDettaglioTerreno(mondo.terrenoMesh, q.terreno, q.terrenoPieno, q.visibilita);
   salvaQualita(chiave);
 }
 

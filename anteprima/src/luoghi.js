@@ -50,6 +50,23 @@ const NOTI = {
   "cavigliano": { famiglia: "pietra", pesi: [0.14, 0.1, 0.02, 0.06, 0.68], balconi: 0.2, palme: 0, alberi: 0.4 },
   "verscio": { famiglia: "pietra", pesi: [0.2, 0.14, 0.04, 0.06, 0.56], balconi: 0.3, palme: 0.05, alberi: 0.5 },
   "gambarogno": { famiglia: "pastello", pesi: [0.3, 0.2, 0.1, 0.1, 0.3], balconi: 0.4, palme: 0.3, alberi: 0.6 },
+  // Valle Verzasca (0.15): nuclei di case in sasso (gneiss) con i tetti in piode, poche facciate intonacate
+  "vogorno": { famiglia: "pietra", pesi: [0.12, 0.08, 0.02, 0.08, 0.7], balconi: 0.15, palme: 0, alberi: 0.35 },
+  "corippo": { famiglia: "pietra", pesi: [0.02, 0.02, 0, 0.06, 0.9], balconi: 0.05, palme: 0, alberi: 0.25 },
+  "mergoscia": { famiglia: "pietra", pesi: [0.1, 0.06, 0.02, 0.08, 0.74], balconi: 0.15, palme: 0, alberi: 0.35 },
+  "lavertezzo": { famiglia: "pietra", pesi: [0.1, 0.08, 0.02, 0.06, 0.74], balconi: 0.15, palme: 0, alberi: 0.3 },
+  "brione (verzasca)": { famiglia: "pietra", pesi: [0.1, 0.06, 0.02, 0.08, 0.74], balconi: 0.1, palme: 0, alberi: 0.3 },
+  "brione verzasca": { famiglia: "pietra", pesi: [0.1, 0.06, 0.02, 0.08, 0.74], balconi: 0.1, palme: 0, alberi: 0.3 },
+  "gerra (verzasca)": { famiglia: "pietra", pesi: [0.06, 0.04, 0, 0.06, 0.84], balconi: 0.08, palme: 0, alberi: 0.25 },
+  "gerra verzasca": { famiglia: "pietra", pesi: [0.06, 0.04, 0, 0.06, 0.84], balconi: 0.08, palme: 0, alberi: 0.25 },
+  "frasco": { famiglia: "pietra", pesi: [0.06, 0.04, 0, 0.06, 0.84], balconi: 0.08, palme: 0, alberi: 0.25 },
+  "sonogno": { famiglia: "pietra", pesi: [0.04, 0.02, 0, 0.06, 0.88], balconi: 0.06, palme: 0, alberi: 0.25 },
+  // bassa Valle Maggia (entra nel rettangolo con la Verzasca)
+  "avegno": { famiglia: "pietra", pesi: [0.2, 0.16, 0.06, 0.06, 0.52], balconi: 0.25, palme: 0, alberi: 0.4 },
+  "gordevio": { famiglia: "pietra", pesi: [0.2, 0.16, 0.06, 0.06, 0.52], balconi: 0.25, palme: 0, alberi: 0.4 },
+  "aurigeno": { famiglia: "pietra", pesi: [0.12, 0.08, 0.02, 0.08, 0.7], balconi: 0.15, palme: 0, alberi: 0.4 },
+  "maggia": { famiglia: "pietra", pesi: [0.22, 0.18, 0.08, 0.08, 0.44], balconi: 0.25, palme: 0, alberi: 0.45 },
+  "moghegno": { famiglia: "pietra", pesi: [0.12, 0.08, 0.02, 0.08, 0.7], balconi: 0.15, palme: 0, alberi: 0.4 },
   "bellinzona": { famiglia: "pietra", pesi: [0.2, 0.2, 0.2, 0.3, 0.1], balconi: 0.5, palme: 0.1, alberi: 0.5 },
   "lugano": { famiglia: "mediterraneo", pesi: [0.2, 0.18, 0.3, 0.28, 0.04], balconi: 0.7, palme: 0.5, alberi: 0.6, portici: true }
 };

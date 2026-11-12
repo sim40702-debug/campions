@@ -31,12 +31,32 @@ PILOTA_EST_MAX = 2_708_000
 PILOTA_NORD_MIN = 1_110_000
 PILOTA_NORD_MAX = 1_118_000
 
-# --- Area dell'anteprima giocabile (Three.js): Locarnese 16 x 12 km ---------
-# Da Ponte Brolla/Tegna a Tenero/Gordola, da Ascona alla Cimetta.
+# --- Area dell'anteprima giocabile (Three.js): Locarnese + Valle Verzasca 16 x 32 km
+# Da Ponte Brolla/Tegna a Tenero/Gordola, da Ascona alla Cimetta (Locarnese, fino a 1'122'000),
+# poi verso nord tutta la Valle Verzasca: Vogorno, Corippo, Lavertezzo, Brione, Gerra, Frasco,
+# Sonogno e le valli sopra Sonogno fino alle creste (1'142'000).
+# L'altezza deve restare un multiplo di 4 km (settori del passo 3).
 ANTEPRIMA_EST_MIN = 2_696_000
 ANTEPRIMA_EST_MAX = 2_712_000
 ANTEPRIMA_NORD_MIN = 1_110_000
-ANTEPRIMA_NORD_MAX = 1_122_000
+ANTEPRIMA_NORD_MAX = 1_142_000
+
+# Zone dell'anteprima (nomi mostrati nel gioco: minimappa, mappa grande, scritta quando si entra) e parti
+# del rettangolo che sono solo paesaggio (Leventina: niente strade, case, binari). I contorni seguono gli
+# spartiacque veri e si trovano in zone_anteprima.json, creato da crea_zone_anteprima.py.
+def _leggi_zone():
+    import json
+    percorso = CARTELLA_SCRIPT / "zone_anteprima.json"
+    if not percorso.exists():
+        return [], []
+    dati = json.loads(percorso.read_text(encoding="utf-8"))
+    if dati.get("area") != [ANTEPRIMA_EST_MIN, ANTEPRIMA_EST_MAX, ANTEPRIMA_NORD_MIN, ANTEPRIMA_NORD_MAX]:
+        print("ATTENZIONE: zone_anteprima.json e' per un'altra area: rilancia crea_zone_anteprima.py")
+        return [], []
+    return dati["zone"], [voce["contorno"] for voce in dati.get("esclusi", [])]
+
+
+ZONE_ANTEPRIMA, ESCLUSI_ANTEPRIMA = _leggi_zone()
 
 # --- Settori e terreno (decisione D2: circa 2 m) ---------------------------
 LATO_SETTORE_M = 4000          # ogni settore e' 4 x 4 km
@@ -75,6 +95,7 @@ OVERPASS_RISERVA = [
     "https://overpass.private.coffee/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
 ]
 COPERNICUS_URL = "https://copernicus-dem-30m.s3.amazonaws.com"
 

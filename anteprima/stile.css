@@ -122,6 +122,31 @@ canvas {
   margin-bottom: 4px;
 }
 
+/* Nome della zona (Valle Verzasca...) in alto al centro, compare e sparisce piano */
+#avvisoZona {
+  position: fixed;
+  top: 14%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#avvisoZona.visibile {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 #quota,
 #coordinate {
   font-size: 14px;
