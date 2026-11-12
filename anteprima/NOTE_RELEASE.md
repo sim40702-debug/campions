@@ -17,6 +17,11 @@ La versione principale del gioco resta quella in Unreal Engine 5.
 - **Paravalanghe di Aquino** (sotto Brione): strada coperta con soletta, muro a monte e pilastri verso valle, non più una galleria.
 - Non ancora sistemato: i fiumi larghi nei tratti ripidi (per esempio a Gerra e sotto Corippo) sono ancora disegnati a grandi lastre azzurre.
 
+### Novità della 0.15.1 – aggiornamento sicuro su Mac
+
+- **Su Mac l'aggiornamento non può più rovinare l'app**: prima la versione vecchia veniva cancellata subito; se il Mac bloccava la copia della nuova a metà, restava un'app senza i dati ("Mancano i dati del terreno"). Ora la nuova viene copiata accanto, controllata (dati del terreno compresi) e solo dopo prende il posto della vecchia. Se qualcosa non va, la vecchia resta intatta e si apre il .dmg da trascinare in Applicazioni.
+- Se mancano i dati del terreno, il messaggio dice cosa fare (riscaricare l'ultima versione da GitHub).
+
 ### Novità della 0.15.0 – Valle Verzasca
 
 - **Tutta la Valle Verzasca si può esplorare**, in moto e in macchina: la mappa va da Ascona fino alle creste sopra Sonogno (16 × 32 km invece di 16 × 12).
