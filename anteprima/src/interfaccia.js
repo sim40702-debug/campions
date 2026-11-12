@@ -29,7 +29,9 @@ export function aggiornaInterfaccia(moto, terreno, localita, mappa, ambiente) {
   const quota = (moto.giri - s.minimo) / (s.limitatore - s.minimo);
   elGiri.style.width = Math.round(Math.min(1, Math.max(0, quota)) * 100) + "%";
   elGiri.style.background = quota > 0.85 ? "#ff4650" : "#5ee08a";
-  elNomeMoto.textContent = s.nome + " · " + Math.round(moto.giri / 100) * 100 + " giri/min";
+  let scrittaMoto = s.nome + " · " + Math.round(moto.giri / 100) * 100 + " giri/min";
+  if (moto.mappaImpennate && s.forma === "supermotard") scrittaMoto += " · MAPPA IMPENNATE";
+  elNomeMoto.textContent = scrittaMoto;
   if (moto.suStrada) {
     elStrada.textContent = moto.nomeStrada || "Strada senza nome";
   } else {

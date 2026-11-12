@@ -13,6 +13,7 @@ Gravità: **Alta** (blocca il gioco) / **Media** (si gioca ma è sbagliato) / **
 | BUG-006 | Case sopra le strade | Media | R3 pilota (città vecchia) | 0.5.0, vie strette di Locarno | F1 | 0.6.0 strade ristrette; 0.9.0 contorni delle case ritagliati (957 → 1 casa che tocca l'asfalto): da confermare |
 | BUG-007 | Piante sulle strade | Bassa | R3 pilota | 0.5.0, strade nel bosco | F1 | Corretto in 0.6.0 (alberi a 3,5 m dall'asfalto): da confermare |
 | BUG-008 | L'app installata si ferma su "Caricamento del territorio..." | Alta | 0.10.0–0.12.0, Mac e Windows | electron-builder non mette nel pacchetto `node_modules/three/examples`: mancavano GLTFLoader, Sky e RoomEnvironment | H4 | Corretto in 0.12.2: file copiati in `anteprima/terzi/three`; la CI controlla che ci siano nell'app; provato con l'app impacchettata |
+| BUG-009 | Nelle regioni fitte (Mendrisiotto, Luganese) il gioco usa 2,5 GB e puo' chiudersi durante il caricamento | Alta | Ticino completo 0.16.0-ticino.1 | Partire da Chiasso: tutti gli edifici e le strade della regione costruiti all'avvio | T1 | Corretto in 0.16.0-ticino.2 (edifici e strade costruiti a pezzi vicino alla moto: 2 547 → 572 MB): da confermare su Mac/PC |
 
 
 ## Bug chiusi

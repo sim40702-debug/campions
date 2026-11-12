@@ -11,7 +11,7 @@ import { impostaMeteoSenzaSalvare } from "./ambiente.js";
 
 // Scenari: nome, zona/luogo cercato, ora, meteo, distanza e altezza della telecamera
 export const SCENARI = [
-  { id: "centro_storico", nome: "Centro storico di Locarno", cerca: "storico", ora: 14, meteo: "sereno", dist: 14, alto: 5 },
+  { id: "centro_storico", nome: "Centro storico", cerca: "storico", ora: 14, meteo: "sereno", dist: 14, alto: 5 },
   { id: "lungolago", nome: "Lungolago", cerca: "lungolago", ora: 17.5, meteo: "variabile", dist: 16, alto: 5 },
   { id: "residenziale", nome: "Area residenziale", cerca: "residenziale", ora: 11, meteo: "sereno", dist: 14, alto: 4.5 },
   { id: "industriale", nome: "Zona industriale", cerca: "industriale", ora: 10, meteo: "variabile", dist: 18, alto: 6 },

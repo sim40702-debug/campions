@@ -118,16 +118,62 @@ function installaMac(dmg) {
     // non era montato: va bene
   }
   execFileSync("hdiutil", ["attach", dmg, "-nobrowse", "-noautoopen", "-mountpoint", montaggio]);
+  let nomeApp = "";
   try {
-    const nomeApp = fs.readdirSync(montaggio).find(function (nome) {
+    nomeApp = fs.readdirSync(montaggio).find(function (nome) {
       return nome.endsWith(".app");
     });
     if (inApplicazioni) destinazione = path.join("/Applications", nomeApp);
-    // 1) tolgo la versione vecchia   2) copio la nuova
-    execFileSync("rm", ["-rf", destinazione]);
-    execFileSync("ditto", [path.join(montaggio, nomeApp), destinazione]);
+    // 1) copio la nuova ACCANTO alla vecchia (prima si cancellava subito la vecchia: se il Mac
+    //    bloccava la copia a meta', restava un'app senza i dati del terreno)
+    execFileSync("rm", ["-rf", destinazione + ".nuova"]);
+    execFileSync("ditto", [path.join(montaggio, nomeApp), destinazione + ".nuova"]);
+  } catch (errore) {
+    console.log("Aggiornamento non riuscito: " + errore.message);
+    try {
+      execFileSync("rm", ["-rf", destinazione + ".nuova"]);
+    } catch (altroErrore) {
+      // pazienza
+    }
+    nomeApp = "";
   } finally {
     execFileSync("hdiutil", ["detach", montaggio, "-force"]);
+  }
+
+  // 2) controllo che la copia nuova sia completa (dati del terreno compresi)
+  const datiNuovi = path.join(destinazione + ".nuova", "Contents", "Resources", "app", "dati", "terreno.json");
+  if (nomeApp === "" || !fs.existsSync(datiNuovi)) {
+    // la vecchia e' ancora intatta: tolgo la copia incompleta, apro il .dmg
+    // e l'utente trascina l'app in Applicazioni
+    try {
+      execFileSync("rm", ["-rf", destinazione + ".nuova"]);
+    } catch (errore) {
+      // pazienza
+    }
+    shell.openPath(dmg);
+    return "aperto";
+  }
+
+  // 3) scambio: la vecchia diventa ".vecchia", la nuova prende il suo posto, poi tolgo la vecchia
+  try {
+    if (fs.existsSync(destinazione)) {
+      execFileSync("rm", ["-rf", destinazione + ".vecchia"]);
+      fs.renameSync(destinazione, destinazione + ".vecchia");
+    }
+    fs.renameSync(destinazione + ".nuova", destinazione);
+  } catch (errore) {
+    console.log("Scambio non riuscito: " + errore.message);
+    // rimetto a posto la vecchia se serve
+    if (!fs.existsSync(destinazione) && fs.existsSync(destinazione + ".vecchia")) {
+      fs.renameSync(destinazione + ".vecchia", destinazione);
+    }
+    shell.openPath(dmg);
+    return "aperto";
+  }
+  try {
+    execFileSync("rm", ["-rf", destinazione + ".vecchia"]);
+  } catch (errore) {
+    // se non riesce a toglierla non e' grave
   }
   try {
     execFileSync("xattr", ["-cr", destinazione]);

@@ -52,10 +52,14 @@ function materialeTerreno(ambiente) {
   return aggiungiMeteo(m, ambiente, { neve: 1, bagnato: 0.8 });
 }
 
+// Se manca un file dei dati l'app e' installata male (es. aggiornamento interrotto): dico cosa fare
+const COME_RIMEDIARE = " — L'installazione e' incompleta: scarica di nuovo l'ultima versione da GitHub" +
+  " (pagina Releases di sim40702-debug/swissgass) e installala sopra a questa.";
+
 export async function caricaTerreno() {
   const rispostaInfo = await fetch("dati/terreno.json");
   if (!rispostaInfo.ok) {
-    throw new Error("Mancano i dati del terreno: " + (await rispostaInfo.text()));
+    throw new Error("Mancano i dati del terreno: " + (await rispostaInfo.text()) + COME_RIMEDIARE);
   }
   const info = await rispostaInfo.json();
   // I dati vecchi (fino alla 0.7) erano quadrati: "punti" e "lato_m"
@@ -66,7 +70,7 @@ export async function caricaTerreno() {
 
   const rispostaBin = await fetch("dati/terreno.bin");
   if (!rispostaBin.ok) {
-    throw new Error("Mancano i dati del terreno: " + (await rispostaBin.text()));
+    throw new Error("Mancano i dati del terreno: " + (await rispostaBin.text()) + COME_RIMEDIARE);
   }
   const valori = new Uint16Array(await rispostaBin.arrayBuffer());
 

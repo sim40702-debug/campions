@@ -51,6 +51,10 @@ Su Windows scrivi `python` al posto di `python3`.
 | 7 | `python3 passo7_esporta_anteprima.py --anteprima` | Prepara i dati del gioco (anteprima) | 1-3 minuti |
 | 8 | `python3 passo8_foto_aeree.py --anteprima` | Foto aeree SWISSIMAGE sul terreno | qualche minuto |
 
+Il passo 2 scarica anche le dighe (`opere_...json`); il passo 7 ne ricava `opere.json` (diga di Contra) e il livello del Lago di Vogorno.
+Nella zona "Valle Verzasca" e sopra i 650 m il passo 7 riconosce i rustici (campo `s` di `edifici.json`) e scrive per le strade
+righe, marciapiedi, fondo e paravalanghe presi da OpenStreetMap (campi `m`, `mp`, `sf`, `pv`, `vl`).
+
 Con `--anteprima` invece di `--pilota` i passi lavorano sull'area del gioco (Locarnese e Valle Verzasca, 16 × 32 km).
 L'area e le zone con un nome (Locarnese, Valle Verzasca, Valle Maggia) sono in `config.py` (`ANTEPRIMA_*`, `ZONE_ANTEPRIMA`,
 `ESCLUSI_ANTEPRIMA`). I file OpenStreetMap dell'anteprima hanno il rettangolo nel nome (per esempio

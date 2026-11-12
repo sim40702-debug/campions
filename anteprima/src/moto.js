@@ -42,7 +42,9 @@ export function creaMoto(scena, idMoto) {
     derapata: 0,        // di quanto il dietro della moto e' "girato" fuori (radianti): derapata in entrata di curva
     affondamento: 0,    // sospensioni: forcella che affonda in frenata (-), dietro schiacciato in accelerazione (+)
     impennata: 0,       // angolo della ruota davanti in alto (+) o della ruota dietro in alto (-), radianti
-    velImpennata: 0
+    velImpennata: 0,
+    mappaImpennate: false,   // tasto I: impennata tenuta da sola (solo motard)
+    fiammata: 0              // secondi di fiamma allo scarico ancora da mostrare (scoppiettio del 450)
   };
   cambiaMoto(moto, idMoto);
   return moto;
@@ -120,6 +122,15 @@ const ADERENZA_ASFALTO = 1.05;  // gomme stradali su asfalto asciutto
 const ADERENZA_PRATO = 0.75;    // erba e terra
 const BARICENTRO_ALTO = 0.68;   // altezza del baricentro moto + pilota (m)
 const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m)
+const ANGOLO_MAPPA = 0.72;      // angolo tenuto dalla "mappa impennate" (radianti, circa 41 gradi)
+
+// La mappa impennate c'e' solo sui supermotard e si accende con il tasto I
+export function haMappaImpennate(moto) {
+  return moto.scheda.forma === "supermotard";
+}
+function mappaAttiva(moto) {
+  return moto.mappaImpennate === true && haMappaImpennate(moto);
+}
 
 // La moto cade: da aggiornaMoto (scivolata, urto, atterraggio). Il resto lo decide danni.js
 // Contro un muro di roccia o una montagna ripida non si "sale": ci si schianta (e si muore se si va forte).
@@ -264,7 +275,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
       accMotore = Math.min(accelerazioneMax(s), aderenza * G) * quanto;
       // Senza Shift la moto non impenna da sola (e se e' gia' su, torna giu' piano):
       // si toglie la potenza che alzerebbe il davanti
-      if (!tasti.pesoDietro) {
+      if (!tasti.pesoDietro && !mappaAttiva(moto)) {
         accMotore = Math.min(accMotore, G * BARICENTRO_DIETRO / BARICENTRO_ALTO - 0.3);
       }
       moto.velocita += accMotore * dt;
@@ -305,8 +316,30 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     const sn = Math.sin(angolo);
     const alfaSu = ((accMotore - (tasti.frenoDietro ? accFreni : 0)) * h * c - G * (b * c - h * sn)) / (b * b + h * h);
     const alfaGiu = (accFreni * h * c - G * (d * c - h * sn)) / (d * d + h * h);
-    if (moto.impennata > 0 || (alfaSu > 0 && v > 1)) {
+    if (mappaAttiva(moto) && !tasti.frenoDietro && (moto.impennata > 0 || (avanti && v > 2))) {
+      // MAPPA IMPENNATE (tasto I, solo sui motard): col gas la moto si alza e resta da sola a un angolo
+      // sicuro (non si ribalta); mollando il gas torna giu' piano. Lo fa una "molla" verso l'angolo voluto.
+      const voluto = avanti && v > 2 ? ANGOLO_MAPPA : 0;
+      const forza = avanti ? 16 : 5;        // col gas sale decisa, senza gas scende dolce
+      moto.velImpennata += ((voluto - moto.impennata) * forza - moto.velImpennata * (avanti ? 7 : 4)) * dt;
+      moto.impennata += moto.velImpennata * dt;
+      if (moto.impennata > ANGOLO_MAPPA + 0.1) moto.impennata = ANGOLO_MAPPA + 0.1;
+      if (moto.impennata <= 0.005 && !avanti) {
+        moto.impennata = 0;
+        moto.velImpennata = 0;
+      }
+    } else if (moto.impennata > 0 || (alfaSu > 0 && v > 1)) {
       moto.velImpennata += alfaSu * dt;
+      if (tasti.frenoDietro && moto.impennata > 0) {
+        // FRENO DIETRO in impennata: tira giu' il davanti. Un colpetto ferma la salita e abbassa un po'
+        // (cosi' si tiene l'impennata senza ribaltarsi), tenuto premuto riporta la ruota a terra.
+        if (moto.velImpennata > 0) moto.velImpennata *= Math.max(0, 1 - dt * 40);
+        moto.velImpennata -= 11 * dt;
+        if (moto.velImpennata < -1.5) moto.velImpennata = -1.5;   // scende decisa ma non sbatte
+      } else if (moto.impennata > 0) {
+        // il pilota accompagna la moto: l'impennata non parte a razzo (cosi' c'e' il tempo di dosare il freno)
+        moto.velImpennata *= Math.max(0, 1 - dt * 2.2);
+      }
       moto.impennata += moto.velImpennata * dt;
       if (moto.impennata <= 0) {
         moto.impennata = 0;

@@ -58,7 +58,7 @@ Su Windows scrivi `python` al posto di `python3`.
 | `src/aggiorna.js` | Pulsante e pannello "Aggiorna" |
 | `src/dettagli.js` | Semafori, cartelli, lampioni, strisce, località |
 | `src/acqua.js` | Fiumi, torrenti, stagni |
-| `src/opere.js` | Gallerie (tubo, luci, portali) e piloni dei ponti |
+| `src/opere.js` | Gallerie (tubo, luci, portali), piloni dei ponti, paravalanghe e dighe |
 | `src/impostazioni.js` | Menu qualità grafica |
 | `src/prestazioni.js` | Contatore FPS e test prestazioni |
 | `src/moto_modelli.js` | Le 5 moto: prestazioni e modelli 3D |

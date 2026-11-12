@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { quotaTerreno } from "./terreno.js";
 import { aggiungiMeteo } from "./meteo_shader.js";
 import { liberaDopoCaricamento } from "./memoria.js";
+import { texturaSasso } from "./facciate.js";
 
 export const CELLA = 40;   // griglia di ricerca: celle da 40 x 40 m
 
@@ -139,16 +140,48 @@ function sistemaQuote(lista) {
     }
   }
   const veloci = variabili.filter(function (c) { return c.veloce; });
+  // I conti si fanno su tabelle di numeri (non sugli oggetti uno per uno): stessi calcoli nello stesso ordine,
+  // quindi stesse quote di prima, ma molto piu' in fretta (era il passo piu' lento del caricamento: 13 secondi
+  // sui 16 delle strade).
+  for (let i = 0; i < variabili.length; i++) variabili[i].numero = i;
   const giri = function (quanti, elenco, omega) {
-    for (let giro = 0; giro < quanti; giro++) {
-      for (const c of elenco) {
-        const v = c.vicini;
-        if (v.length === 0) continue;
-        let somma = c.peso * c.y0, peso = c.peso;
-        for (let k = 0; k < v.length; k++) { somma += c.forze[k] * v[k].y; peso += c.forze[k]; }
-        c.y += (somma / peso - c.y) * omega;   // sovra-rilassamento: converge prima
+    // quote di TUTTI i punti (i vicini possono essere fuori dall'elenco)
+    const y = new Float64Array(variabili.length);
+    for (let i = 0; i < variabili.length; i++) y[i] = variabili[i].y;
+    // per ogni punto dell'elenco: dove cominciano i suoi vicini nella tabella
+    let totale = 0;
+    for (const c of elenco) totale += c.vicini.length;
+    const chi = new Int32Array(elenco.length);
+    const inizio = new Int32Array(elenco.length + 1);
+    const vicino = new Int32Array(totale);
+    const forza = new Float64Array(totale);
+    const peso0 = new Float64Array(elenco.length);
+    const base = new Float64Array(elenco.length);   // peso * quota dei dati
+    let posto = 0;
+    for (let e = 0; e < elenco.length; e++) {
+      const c = elenco[e];
+      chi[e] = c.numero;
+      inizio[e] = posto;
+      peso0[e] = c.peso;
+      base[e] = c.peso * c.y0;
+      for (let k = 0; k < c.vicini.length; k++) {
+        vicino[posto] = c.vicini[k].numero;
+        forza[posto] = c.forze[k];
+        posto++;
       }
     }
+    inizio[elenco.length] = posto;
+    for (let giro = 0; giro < quanti; giro++) {
+      for (let e = 0; e < elenco.length; e++) {
+        const da = inizio[e], a = inizio[e + 1];
+        if (a === da) continue;
+        let somma = base[e], peso = peso0[e];
+        for (let k = da; k < a; k++) { somma += forza[k] * y[vicino[k]]; peso += forza[k]; }
+        const io = chi[e];
+        y[io] += (somma / peso - y[io]) * omega;   // sovra-rilassamento: converge prima
+      }
+    }
+    for (let e = 0; e < elenco.length; e++) elenco[e].y = y[chi[e]];
   };
   giri(260, variabili, 1.6);
   if (veloci.length > 0) {
@@ -1068,11 +1101,33 @@ export async function caricaStrade() {
   preparaRete(dati.strade);
   larghezzaRaccordi(dati.strade);
   // i sottopassi corti (meno di 80 m) hanno la volta piu' bassa di una galleria vera: 4.2 m invece di 5
+  // Vale solo per i sottopassi VERI, cioe' dove sopra passa un'altra strada: una galleria corta scavata nella roccia
+  // (le due da 76 e 78 m della strada della Verzasca) resta una galleria, con la montagna sopra. Prima anche per loro
+  // il terreno veniva abbassato in una trincea e il tubo restava all'aperto.
+  const grigliaPrima = costruisciGriglia(dati.strade);
   for (const strada of dati.strade) {
     if (!strada.g) continue;
     let lunga = 0;
     for (let i = 3; i < strada.p.length; i += 3) lunga += Math.hypot(strada.p[i] - strada.p[i - 3], strada.p[i + 2] - strada.p[i - 1]);
-    if (lunga < 80) strada.alta = 4.2;
+    if (lunga >= 80) continue;
+    let sopra = false;
+    const p = strada.p, n = p.length / 3;
+    for (let i = 2; i < n - 2 && !sopra; i++) {
+      const x = p[i * 3], z = p[i * 3 + 2];
+      for (const [o, j] of grigliaPrima.get(Math.floor(x / CELLA) + "," + Math.floor(z / CELLA)) || []) {
+        const altra = dati.strade[o];
+        if (altra === strada || altra.g) continue;
+        const q = altra.p;
+        const ax = q[j], az = q[j + 2], bx = q[j + 3], bz = q[j + 5];
+        const lungo = (bx - ax) * (bx - ax) + (bz - az) * (bz - az);
+        if (lungo < 0.01) continue;
+        // solo se il punto cade DENTRO il pezzo dell'altra strada: la strada che continua dopo l'imbocco non conta
+        const t = ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / lungo;
+        if (t < 0 || t > 1) continue;
+        if (Math.hypot(x - (ax + (bx - ax) * t), z - (az + (bz - az) * t)) < altra.w / 2 + 1.5) { sopra = true; break; }
+      }
+    }
+    if (sopra) strada.alta = 4.2;
   }
   const quote = sistemaQuote(dati.strade);
   const gradoStrade = stessoPiano(dati.strade, costruisciGriglia(dati.strade), quote);
@@ -1152,46 +1207,121 @@ function aggiungiNastro(p, larghezza, alzata, posizioni, indici, tratteggio) {
   }
 }
 
+const materialiNastri = new Map();
+
 function creaMesh(posizioni, indici, colore, spostamento) {
   const geometria = new THREE.BufferGeometry();
   geometria.setAttribute("position", new THREE.Float32BufferAttribute(posizioni, 3));
   geometria.setIndex(indici);
   geometria.computeVertexNormals();
-  const materiale = new THREE.MeshLambertMaterial({
-    color: colore,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: spostamento,
-    polygonOffsetUnits: spostamento
-  });
+  // un materiale solo per ogni colore (in comune a tutti i pezzi di strada)
+  const chiave = colore + "," + spostamento;
+  let materiale = materialiNastri.get(chiave);
+  if (!materiale) {
+    materiale = new THREE.MeshLambertMaterial({
+      color: colore,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: spostamento,
+      polygonOffsetUnits: spostamento
+    });
+    materialiNastri.set(chiave, materiale);
+  }
+  geometria.computeBoundingSphere();
+  liberaDopoCaricamento(geometria);
   const nastro = new THREE.Mesh(geometria, materiale);
   nastro.receiveShadow = true;   // ombra della moto sull'asfalto
   return nastro;
 }
 
-// Parapetto: due "muretti" alti 1 m ai lati di un ponte, che scendono 0.7 m sotto l'asfalto (il fianco
-// dell'impalcato: da sotto e di lato il ponte non sembra piu' un foglio di carta). Niente parapetto dal lato dove
-// c'e' un'altra corsia affiancata o lo spartitraffico asfaltato.
-function aggiungiParapetti(strada, posizioni, indici) {
-  const p = strada.p;
-  const punti = p.length / 3;
-  for (const lato of [-1, 1]) {
-    let prima = false;
-    for (let i = 0; i < punti; i++) {
-      const d = direzioneIn(p, i);
-      const meta = larghezzaIn(strada, i) / 2;
-      const x = p[i * 3] - d[1] * lato * meta;
-      const z = p[i * 3 + 2] + d[0] * lato * meta;
-      const y = p[i * 3 + 1];
-      const libero = !latoOccupato(strada, i, lato);
-      if (!libero) { prima = false; continue; }
-      const primo = posizioni.length / 3;
-      posizioni.push(x, y - 0.7, z, x, y + 1.0, z);
-      if (prima) {
-        indici.push(primo - 2, primo, primo - 1, primo - 1, primo, primo + 1);
-      }
-      prima = true;
+// Estrude un profilo lungo una fila di punti del bordo della strada.
+//   fila: [{ x, y, z, nx, nz, d }]  (nx, nz = verso l'esterno della strada; d = metri fatti lungo la strada)
+//   profilo: [[fuori, alto], ...]   (metri verso l'esterno e sopra l'asfalto), una faccia tra ogni coppia di punti
+// Se "g" ha le UV (muratura di sasso) u = metri lungo la strada / 2.4, v = sviluppo del profilo / 2.4.
+function estrudi(g, fila, profilo, colore) {
+  if (fila.length < 2) return;
+  const sviluppo = [0];
+  for (let k = 1; k < profilo.length; k++) sviluppo.push(sviluppo[k - 1] + Math.hypot(profilo[k][0] - profilo[k - 1][0], profilo[k][1] - profilo[k - 1][1]));
+  const base = g.posizioni.length / 3;
+  const n = profilo.length;
+  for (const q of fila) {
+    for (let k = 0; k < n; k++) {
+      g.posizioni.push(q.x + q.nx * profilo[k][0], q.y + profilo[k][1], q.z + q.nz * profilo[k][0]);
+      if (g.uv) g.uv.push(q.d / 2.4, sviluppo[k] / 2.4);
+      if (g.colori) g.colori.push(colore.r, colore.g, colore.b);
     }
+  }
+  for (let i = 0; i + 1 < fila.length; i++) {
+    for (let k = 0; k + 1 < n; k++) {
+      const a = base + i * n + k, b = base + (i + 1) * n + k;
+      g.indici.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+}
+
+// I tratti del bordo (lato = +1 sinistra, -1 destra) dove "serve(i, x, z, y)" e' vero: ogni tratto e' una fila per "estrudi"
+function trattiDelBordo(strada, lato, serve) {
+  const p = strada.p, punti = p.length / 3;
+  const tratti = [];
+  let fila = null, fatta = 0;
+  for (let i = 0; i < punti; i++) {
+    if (i > 0) fatta += Math.hypot(p[i * 3] - p[i * 3 - 3], p[i * 3 + 2] - p[i * 3 - 1]);
+    const d = direzioneIn(p, i);
+    const meta = larghezzaIn(strada, i) / 2;
+    const nx = -d[1] * lato, nz = d[0] * lato;
+    const x = p[i * 3] + nx * meta, z = p[i * 3 + 2] + nz * meta, y = p[i * 3 + 1];
+    if (!serve(i, x, z, y, nx, nz)) { fila = null; continue; }
+    if (!fila) { fila = []; tratti.push(fila); }
+    fila.push({ x: x, y: y, z: z, nx: nx, nz: nz, d: fatta });
+  }
+  return tratti;
+}
+
+// Ponti. Il fianco dell'impalcato (0.7 m sotto l'asfalto: da sotto e di lato il ponte non sembra un foglio) e il parapetto:
+//  - ponti stretti (stradine, ponti di sasso delle valli): muretto di sasso alto 95 cm e spesso 40;
+//  - ponti delle strade a due corsie: cordolo di cemento e ringhiera d'acciaio (montanti ogni 2 m, tre correnti),
+//    cosi' dal ponte si vede il fiume (prima c'era un muro pieno alto 1 m su tutti i ponti).
+// Niente parapetto dal lato dove c'e' un'altra corsia affiancata o lo spartitraffico asfaltato.
+const SASSO_PARAPETTO = [[0, 0], [0, 0.95], [0.4, 0.95], [0.4, -0.7]];
+const CORDOLO_PONTE = [[0, 0], [0, 0.2], [0.34, 0.2], [0.34, -0.7]];
+const MURETTO = [[0.15, -0.05], [0.15, 0.55], [0.5, 0.55], [0.5, -0.6]];
+function aggiungiParapetti(strada, opere) {
+  const diSasso = strada.sf === "c" || strada.w < 4.6;
+  for (const lato of [-1, 1]) {
+    const tratti = trattiDelBordo(strada, lato, function (i) { return !latoOccupato(strada, i, lato); });
+    for (const fila of tratti) {
+      if (diSasso) { estrudi(opere.sasso, fila, SASSO_PARAPETTO, opere.grigio); continue; }
+      estrudi(opere.cemento, fila, CORDOLO_PONTE);
+      // correnti della ringhiera (fasce sottili) e montanti
+      for (const [basso, alto] of [[0.5, 0.56], [0.76, 0.82], [1.02, 1.1]]) estrudi(opere.ringhiere, fila, [[0.17, basso], [0.17, alto]]);
+      let prossimo = 0;
+      for (let k = 0; k < fila.length; k++) {
+        const q = fila[k];
+        if (q.d < prossimo && k < fila.length - 1) continue;
+        prossimo = q.d + 2;
+        opere.montanti.push(q.x + q.nx * 0.17, q.y + 0.2, q.z + q.nz * 0.17);
+      }
+    }
+  }
+}
+
+// Di quanto scende il terreno a lato della strada: si guarda a 2.4 m e a 6 m dal bordo (vicino al bordo il terreno
+// e' la banchina spianata: guardando solo li' un burrone non si vedeva e il guardrail mancava)
+function scendeALato(terreno, x, z, nx, nz, y) {
+  const vicino = y - quotaTerreno(terreno, x + nx * 2.4, z + nz * 2.4);
+  const lontano = y - quotaTerreno(terreno, x + nx * 6, z + nz * 6);
+  return Math.max(vicino, lontano * 0.6);
+}
+
+// Muretti di sasso: sulle stradine di valle (una corsia, senza righe) al posto del guardrail d'acciaio,
+// dal lato dove il terreno scende
+function aggiungiMuretti(strada, terreno, opere) {
+  for (const lato of [-1, 1]) {
+    const tratti = trattiDelBordo(strada, lato, function (i, x, z, y, nx, nz) {
+      return scendeALato(terreno, x, z, nx, nz, y) > 1.5 && !latoOccupato(strada, i, lato) &&
+        !copertoDaAltra(opere.strade, x + nx * 0.6, z + nz * 0.6, opere.indice, 0.3);
+    });
+    for (const fila of tratti) if (fila.length >= 3) estrudi(opere.sasso, fila, MURETTO, opere.grigio);
   }
 }
 
@@ -1254,12 +1384,13 @@ function cimaSottopasso(strade, x, z, y) {
   return cima;
 }
 
-function aggiungiMuri(strada, terreno, muri, strade) {
+function aggiungiMuri(strada, terreno, muri, strade, colore) {
   const p = strada.p;
   const punti = p.length / 3;
   for (const lato of [-1, 1]) {
-    let prima = null;
+    let prima = null, fatta = 0;
     for (let i = 0; i < punti; i++) {
+      if (i > 0) fatta += Math.hypot(p[i * 3] - p[i * 3 - 3], p[i * 3 + 2] - p[i * 3 - 1]);
       const a = Math.max(i - 1, 0) * 3;
       const b = Math.min(i + 1, punti - 1) * 3;
       let dx = p[b] - p[a], dz = p[b + 2] - p[a + 2];
@@ -1270,13 +1401,18 @@ function aggiungiMuri(strada, terreno, muri, strade) {
       const y = p[i * 3 + 1];
       // il terreno al bordo e poco piu' in la': si prende il piu' basso
       const giu = Math.min(quotaTerreno(terreno, x, z), quotaTerreno(terreno, x - dz * lato * 1.2, z + dx * lato * 1.2));
-      const qui = { x: x, y: y, z: z, giu: giu - 0.4, serve: y - giu > 0.3 && !latoOccupato(strada, i, lato) };
+      const qui = { x: x, y: y, z: z, giu: giu - 0.4, d: fatta, serve: y - giu > 0.3 && !latoOccupato(strada, i, lato) };
       // sopra un sottopasso il muro si ferma alla volta: non chiude l'imbocco (prima da dentro si vedeva un muro al posto dell'uscita)
       const cima = cimaSottopasso(strade, x, z, y);
       if (cima !== null) qui.giu = Math.max(qui.giu, cima + 0.2);
       if (prima !== null && (prima.serve || qui.serve)) {
         const primo = muri.posizioni.length / 3;
         muri.posizioni.push(prima.x, prima.y, prima.z, prima.x, Math.min(prima.giu, prima.y), prima.z, x, y, z, x, Math.min(qui.giu, y), z);
+        if (muri.uv) {
+          // muratura di sasso: 2.4 m di muro per ogni ripetizione della texture
+          muri.uv.push(prima.d / 2.4, prima.y / 2.4, prima.d / 2.4, Math.min(prima.giu, prima.y) / 2.4, fatta / 2.4, y / 2.4, fatta / 2.4, Math.min(qui.giu, y) / 2.4);
+          for (let k = 0; k < 4; k++) muri.colori.push(colore.r, colore.g, colore.b);
+        }
         muri.indici.push(primo, primo + 2, primo + 1, primo + 1, primo + 2, primo + 3);
       }
       prima = qui;
@@ -1305,8 +1441,7 @@ function aggiungiGuardrail(strada, terreno, nastro, paletti) {
       const x = p[i * 3] - dz * lato * distanza;
       const z = p[i * 3 + 2] + dx * lato * distanza;
       const y = p[i * 3 + 1];
-      const fuori = quotaTerreno(terreno, p[i * 3] - dz * lato * (distanza + 2), p[i * 3 + 2] + dx * lato * (distanza + 2));
-      if (y - fuori > 1.5 && !latoOccupato(strada, i, lato)) {
+      if (scendeALato(terreno, x, z, -dz * lato, dx * lato, y) > 1.5 && !latoOccupato(strada, i, lato)) {
         if (prima !== null) {
           const primo = nastro.posizioni.length / 3;
           nastro.posizioni.push(prima.x, prima.y + 0.5, prima.z, prima.x, prima.y + 0.8, prima.z,
@@ -1406,6 +1541,83 @@ function texturaMarciapiede(anisotropia) {
     const v = 130 + Math.floor(casualeT() * 100);
     g.fillStyle = "rgba(" + v + "," + v + "," + (v - 4) + ",0.35)";
     g.fillRect(casualeT() * L, casualeT() * L, 1.5, 1.5);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = anisotropia;
+  return t;
+}
+
+// Acciottolato (selciato dei nuclei): sassi tondi di fiume in file irregolari. La texture copre tutta la
+// larghezza della strada e 8 m in lunghezza (come l'asfalto).
+function texturaSelciato(anisotropia) {
+  const LX = 256, LY = 512;
+  const c = document.createElement("canvas");
+  c.width = LX;
+  c.height = LY;
+  const g = c.getContext("2d");
+  g.fillStyle = "#6b675f";
+  g.fillRect(0, 0, LX, LY);
+  for (let y = 0; y < LY; y += 11) {
+    let x = -casualeT() * 12;
+    while (x < LX) {
+      const w = 9 + casualeT() * 9, h = 9 + casualeT() * 3;
+      const v = 128 + Math.floor(casualeT() * 62);
+      const caldo = casualeT() < 0.3 ? 10 : 0;
+      g.fillStyle = "rgb(" + (v + caldo) + "," + v + "," + (v - 6 - caldo) + ")";
+      g.beginPath();
+      g.ellipse(x + w / 2, y + h / 2, w / 2 - 0.8, h / 2 - 0.8, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "rgba(255,255,255,0.12)";
+      g.fillRect(x + w * 0.25, y + 1.5, w * 0.4, 1.5);
+      x += w;
+    }
+  }
+  // le due guide di lastre di granito dove passano le ruote dei carri
+  for (const centro of [0.3, 0.7]) {
+    for (let y = 0; y < LY; y += 64) {
+      const v = 150 + Math.floor(casualeT() * 30);
+      g.fillStyle = "rgb(" + v + "," + (v - 2) + "," + (v - 8) + ")";
+      g.fillRect(centro * LX - 14, y + 1, 28, 62);
+      g.fillStyle = "rgba(0,0,0,0.25)";
+      g.fillRect(centro * LX - 14, y + 62, 28, 2);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = anisotropia;
+  return t;
+}
+
+// Sterrato: terra battuta e ghiaia, due carreggiate piu' chiare e l'erba in mezzo
+function texturaSterrato(anisotropia) {
+  const L = 256;
+  const c = document.createElement("canvas");
+  c.width = L;
+  c.height = L;
+  const g = c.getContext("2d");
+  g.fillStyle = "#8a7d68";
+  g.fillRect(0, 0, L, L);
+  for (let i = 0; i < 9000; i++) {
+    const v = 95 + Math.floor(casualeT() * 85);
+    g.fillStyle = "rgba(" + (v + 12) + "," + (v + 2) + "," + (v - 14) + ",0.5)";
+    g.fillRect(casualeT() * L, casualeT() * L, 1 + casualeT() * 2.5, 1 + casualeT() * 2.5);
+  }
+  for (const centro of [0.28, 0.72]) {
+    const gr = g.createLinearGradient((centro - 0.13) * L, 0, (centro + 0.13) * L, 0);
+    gr.addColorStop(0, "rgba(190,178,150,0)");
+    gr.addColorStop(0.5, "rgba(190,178,150,0.45)");
+    gr.addColorStop(1, "rgba(190,178,150,0)");
+    g.fillStyle = gr;
+    g.fillRect((centro - 0.13) * L, 0, 0.26 * L, L);
+  }
+  for (let i = 0; i < 900; i++) {   // ciuffi d'erba al centro e ai bordi
+    const lato = casualeT();
+    const x = lato < 0.5 ? 0.5 + (casualeT() - 0.5) * 0.14 : (lato < 0.75 ? casualeT() * 0.07 : 1 - casualeT() * 0.07);
+    g.fillStyle = "rgba(" + (70 + Math.floor(casualeT() * 30)) + "," + (105 + Math.floor(casualeT() * 40)) + ",55,0.55)";
+    g.fillRect(x * L, casualeT() * L, 2 + casualeT() * 3, 2 + casualeT() * 4);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -1777,6 +1989,26 @@ function aggiungiIncroci(strade, materiale, scena) {
   return quanti;
 }
 
+// Coperchio di tombino: ghisa grigia (non nera: senza mappa ambiente un metallo pieno viene nero) con anello e croce
+function materialeTombino() {
+  let mappa = null;
+  if (typeof document !== "undefined") {
+    const tela = document.createElement("canvas");
+    tela.width = tela.height = 128;
+    const c = tela.getContext("2d");
+    c.fillStyle = "#8a8782"; c.fillRect(0, 0, 128, 128);
+    c.strokeStyle = "#55534f"; c.lineWidth = 6;
+    c.beginPath(); c.arc(64, 64, 50, 0, 7); c.stroke();
+    c.beginPath(); c.arc(64, 64, 30, 0, 7); c.lineWidth = 3; c.stroke();
+    c.lineWidth = 5;
+    for (let a = 0; a < 4; a++) { c.beginPath(); c.moveTo(64 + Math.cos(a * 0.785) * 34, 64 + Math.sin(a * 0.785) * 34); c.lineTo(64 - Math.cos(a * 0.785) * 34, 64 - Math.sin(a * 0.785) * 34); c.stroke(); }
+    mappa = new THREE.CanvasTexture(tela);
+    mappa.colorSpace = THREE.SRGBColorSpace;
+    mappa.anisotropy = 4;
+  }
+  return new THREE.MeshStandardMaterial({ color: 0xffffff, map: mappa, roughness: 0.6, metalness: 0.15, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+}
+
 export function aggiungiStrade(strade, scena, terreno, contesto) {
   const ctx = contesto || {};
   const anisotropia = 8;
@@ -1791,23 +2023,39 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     map: texturaMarciapiede(anisotropia), roughness: 0.9, vertexColors: true,
     polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, side: THREE.DoubleSide
   });
+  const righeMateriale = new THREE.MeshStandardMaterial({
+    color: 0xf2f2ee, roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide
+  });
+  // fondi diversi dall'asfalto (surface di OpenStreetMap): acciottolato dei nuclei e strade sterrate
+  const selciatoMateriale = new THREE.MeshStandardMaterial({
+    map: texturaSelciato(anisotropia), roughness: 0.95, metalness: 0, vertexColors: true,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide
+  });
+  const sterratoMateriale = new THREE.MeshStandardMaterial({
+    map: texturaSterrato(anisotropia), roughness: 1, metalness: 0, vertexColors: true,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide
+  });
   const banchinaMateriale = new THREE.MeshStandardMaterial({
     vertexColors: true, roughness: 0.97, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, side: THREE.DoubleSide
   });
   aggiungiDettaglio(banchinaMateriale, { macchie: 0.35, grana: 0.35, rugosita: 0.1, rilievo: 0.04, scalaRilievo: 7, nome: "banchina" });
-  const righeMateriale = new THREE.MeshStandardMaterial({
-    color: 0xf2f2ee, roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide
-  });
+  // cemento dei muri di sostegno (strade veloci) e dei cordoli/parapetti dei ponti: macchie, grana e rilievo
+  const cementoMuri = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0xb3aea3, roughness: 0.93, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), { macchie: 0.38, grana: 0.28, rugosita: 0.2, rilievo: 0.05, scalaRilievo: 4.5, nome: "muro" });
+  const cementoPonti = aggiungiDettaglio(new THREE.MeshStandardMaterial({ color: 0xaaa79e, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }), { macchie: 0.35, grana: 0.28, rugosita: 0.15, rilievo: 0.03, scalaRilievo: 6, nome: "parapetto" });
+  // muratura di sasso: muri di sostegno, muretti e parapetti dei ponti di sasso
+  const sassoMateriale = new THREE.MeshStandardMaterial({ map: texturaSasso(anisotropia), roughness: 0.96, metalness: 0, vertexColors: true, side: THREE.DoubleSide });
 
   if (ctx.ambiente) {
     aggiungiMeteo(asfaltoMateriale, ctx.ambiente, { neve: 0.5, bagnato: 1, pozzanghere: true });   // la strada resta leggibile anche con la neve
     aggiungiMeteo(marciapiedeMateriale, ctx.ambiente, { neve: 0.9, bagnato: 0.9 });
     aggiungiMeteo(righeMateriale, ctx.ambiente, { neve: 0, bagnato: 0.2 });   // le righe restano sempre bianche e visibili
+    aggiungiMeteo(selciatoMateriale, ctx.ambiente, { neve: 0.6, bagnato: 1 });
+    aggiungiMeteo(sterratoMateriale, ctx.ambiente, { neve: 0.8, bagnato: 0.8, pozzanghere: true });
+    aggiungiMeteo(sassoMateriale, ctx.ambiente, { neve: 0, bagnato: 0.7 });
   }
 
-  // righe bianche consumate (si intravede l'asfalto)
+  // righe bianche consumate (si intravede l'asfalto) e dettaglio fisico delle superfici
   aggiungiDettaglio(righeMateriale, { macchie: 0.08, grana: 0.12, rugosita: 0.1, rilievo: 0, usura: 0.1, nome: "righe" });
-  // Dettaglio fisico delle superfici: asfalto con macchie di usura, grana e rilievo; cemento dei marciapiedi
   aggiungiDettaglio(asfaltoMateriale, { macchie: 0.26, grana: 0.26, rugosita: 0.3, rilievo: 0.02, scalaRilievo: 16, nome: "asfalto" });
   aggiungiDettaglio(galleriaMateriale, { macchie: 0.4, grana: 0.25, rugosita: 0.25, rilievo: 0.015, scalaRilievo: 16, nome: "galleria" });
   aggiungiDettaglio(marciapiedeMateriale, { macchie: 0.22, grana: 0.16, rugosita: 0.2, rilievo: 0.012, scalaRilievo: 12, nome: "marciapiede" });
@@ -1824,25 +2072,21 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
     ctx.stradeDati = strade;
   }
 
-  const parapetti = { posizioni: [], indici: [] };
-  const guardrail = { posizioni: [], indici: [] };
-  const muri = { posizioni: [], indici: [] };
-  const paletti = [];
-  const tombini = [];
-  const caditoie = [];
-  const gruppi = new Map();   // 1 km: asfalto, gallerie, righe, marciapiedi
+  // TICINO COMPLETO: le strade NON si disegnano piu' tutte all'avvio (nel Luganese sono piu' di 1000 km e
+  // riempivano la memoria). Si dividono in pezzi da 1 km (dal primo punto di ogni strada) e ogni pezzo si
+  // costruisce solo quando la moto e' vicina; i pezzi lontani si tolgono. I DATI delle strade (quote, larghezze,
+  // collisioni, minimappa) restano tutti in memoria: quello che si costruisce a pezzi e' solo il disegno.
+  const pezzi = new Map();
+  // Gruppi di geometria costruiti all'avvio e legati a un chilometro (raccordi degli incroci, linee di arresto, frecce):
+  // finiscono nel pezzo di strada di quel chilometro quando questo si costruisce (stessa chiave dei pezzi).
+  const gruppiPre = new Map();
+  const nuovoGruppo = function () { return { asfalto: nuovoNastro(), selciato: nuovoNastro(), sterrato: nuovoNastro(), gallerie: nuovoNastro(), righe: { posizioni: [], indici: [] }, marciapiedi: nuovoNastro(), banchine: nuovoNastro() }; };
   const gruppoIn = function (x, z) {
     const k = Math.floor(x / 1000) + "," + Math.floor(z / 1000);
-    let v = gruppi.get(k);
-    if (!v) {
-      v = { asfalto: nuovoNastro(), gallerie: nuovoNastro(), righe: { posizioni: [], indici: [] }, marciapiedi: nuovoNastro(), banchine: nuovoNastro() };
-      gruppi.set(k, v);
-    }
+    let v = gruppiPre.get(k);
+    if (!v) { v = nuovoGruppo(); gruppiPre.set(k, v); }
     return v;
   };
-  const pezzo = function (strada) { return gruppoIn(strada.p[0], strada.p[2]); };
-  const bianco = new THREE.Color(1, 1, 1);
-
   // Forma vera degli incroci (raccordi, cordoli, isole delle rotonde): vedi incroci.js. Va calcolata PRIMA dei marciapiedi,
   // che si interrompono dove comincia il raccordo.
   const incrociDati = calcolaIncroci(strade, chiaveNodo, larghezzaIn);
@@ -1850,146 +2094,275 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   strade.datiIncroci = incrociDati;
   strade.conRaccordi = new Set();
   for (const nodo of incrociDati.incroci) if (nodo.raccordi.length > 0) strade.conRaccordi.add(chiaveNodo(nodo.x, nodo.z));
-
   for (let indice = 0; indice < strade.lista.length; indice++) {
-    const strada = strade.lista[indice];
-    const gruppo = pezzo(strada);
-    const lar = function (i) { return larghezzaIn(strada, i); };
-    if (strada.riemp) {
-      // spartitraffico e zone tra una rampa e la carreggiata: asfalto un po' piu' scuro, i bordi seguono le due strade
-      const scuro = new THREE.Color(0.84, 0.84, 0.85);
-      nastroConUV(strada.p, lar, 0.002, gruppo.asfalto, scuro, 0, function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); });
-      continue;
+    const p = strade.lista[indice].p;
+    const k = Math.floor(p[0] / 1000) + "," + Math.floor(p[2] / 1000);
+    let v = pezzi.get(k);
+    if (!v) {
+      v = { indici: [], minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, gruppo: null, lavoro: null };
+      pezzi.set(k, v);
     }
-    if (strada.g) {
-      nastroConUV(strada.p, lar, 0, gruppo.gallerie, bianco);
-    } else {
-      // leggera variazione di colore da strada a strada (asfalti piu' nuovi o piu' vecchi)
-      // (poca: dove due strade si toccano non si deve vedere lo stacco). Le strade piu' larghe stanno qualche
-      // millimetro sopra: dove due nastri si sovrappongono sullo stesso piano non "sfarfallano".
-      const v = stradaVeloce(strada) ? 1 : 0.96 + ((indice * 2654435761) % 1000) / 1000 * 0.08;   // l'autostrada ha un asfalto solo
-      const alzata = (strada.w >= 7 ? 0.014 : (strada.w >= 5.5 ? 0.008 : 0.002)) + ((indice * 7) % 5) * 0.0012;
-      const bordo = strada.b ? null : function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); };
-      nastroConUV(strada.p, lar, alzata, gruppo.asfalto, new THREE.Color(v, v, v), 0, bordo);
+    v.indici.push(indice);
+    // rettangolo che contiene tutte le strade del pezzo: una strada lunga puo' uscire di molto dal suo
+    // chilometro, e va disegnata anche quando ci si avvicina dall'altro capo
+    for (let i = 0; i < p.length; i += 3) {
+      if (p[i] < v.minX) v.minX = p[i];
+      if (p[i] > v.maxX) v.maxX = p[i];
+      if (p[i + 2] < v.minZ) v.minZ = p[i + 2];
+      if (p[i + 2] > v.maxZ) v.maxZ = p[i + 2];
     }
-    if (strada.w >= 5.5 || stradaVeloce(strada)) {
-      // righe tra le corsie (tratteggiate) + linee di bordo continue (interrotte dove passa un'altra strada)
-      aggiungiLinee(indice, strada, strade, gruppo.righe);
-    }
-    if (!strada.g && !strada.b && !strada.riemp) {
-      aggiungiUsuraAsfalto(indice, strada, strade, gruppo.asfalto, tombini, caditoie, marciapiedi && TIPI_CON_MARCIAPIEDE.includes(strada.t));
-    }
-    if (strada.b) {
-      aggiungiParapetti(strada, parapetti.posizioni, parapetti.indici);
-    } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
-      aggiungiGuardrail(strada, terreno, guardrail, paletti);
-    }
-    if (!strada.g && !strada.b && terreno) aggiungiMuri(strada, terreno, muri, strade);
-    if (marciapiedi && !strada.g && !strada.b && strada.w >= 4 && TIPI_CON_MARCIAPIEDE.includes(strada.t)) {
-      aggiungiMarciapiedi(indice, strada, ctx, gruppo.marciapiedi, terreno);
-    }
-    if (marciapiedi && !strada.g && !strada.b && !stradaVeloce(strada) && strada.w >= 3) aggiungiBanchine(indice, strada, ctx, gruppo.banchine);
   }
-  if (marciapiedi || true) {
-    strade.incroci2 = costruisciIncroci(incrociDati, {
-      gruppo: gruppoIn,
-      tipiMarciapiede: TIPI_CON_MARCIAPIEDE,
-      marciapiede: function (x, z, y) {
-        if (!marciapiedi) return 0;
-        if (zonaQuiLocale(ctx.edifici, x, z) < 0.07) return 0;
-        if (ctx.dentro(x, z, y + 1)) return 0;
-        return ctx.dentro(x, z, y + 1.4) ? 0.9 : 1.9;
-      }
-    });
-  }
+  strade.incroci2 = costruisciIncroci(incrociDati, {
+    gruppo: gruppoIn,
+    tipiMarciapiede: TIPI_CON_MARCIAPIEDE,
+    marciapiede: function (x, z, y) {
+      if (!marciapiedi) return 0;
+      if (zonaQuiLocale(ctx.edifici, x, z) < 0.07) return 0;
+      if (ctx.dentro(x, z, y + 1)) return 0;
+      return ctx.dentro(x, z, y + 1.4) ? 0.9 : 1.9;
+    }
+  });
   // frecce di corsia: solo per le strade con turn:lanes nei dati
   let frecce = 0;
   strade.lista.forEach(function (strada, indice) {
     if (strada.tf || strada.tb) frecce += frecceStrada(gruppoIn(strada.p[0], strada.p[2]).righe, strada, indice, strade.tagli.get(indice));
   });
   if (strade.incroci2) strade.incroci2.frecce = frecce;
-  {
-    // parapetti dei ponti: cemento con macchie e grana (non piu' una superficie liscia)
-    const parap = creaMesh(parapetti.posizioni, parapetti.indici, 0xb8b8b0, 0);
-    parap.material.dispose();
-    parap.material = new THREE.MeshStandardMaterial({ color: 0xaaa79e, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
-    aggiungiDettaglio(parap.material, { macchie: 0.35, grana: 0.28, rugosita: 0.15, rilievo: 0.03, scalaRilievo: 6, nome: "parapetto" });
-    scena.add(parap);
+  // ogni gruppo precostruito deve avere un pezzo (anche se nessuna strada comincia in quel chilometro) con il suo rettangolo
+  for (const [k, g] of gruppiPre) {
+    let v = pezzi.get(k);
+    if (!v) { v = { indici: [], minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, gruppo: null, lavoro: null }; pezzi.set(k, v); }
+    for (const nastro of [g.asfalto, g.righe, g.marciapiedi, g.banchine, g.gallerie]) {
+      const q = nastro.posizioni;
+      for (let i = 0; i < q.length; i += 3) {
+        if (q[i] < v.minX) v.minX = q[i];
+        if (q[i] > v.maxX) v.maxX = q[i];
+        if (q[i + 2] < v.minZ) v.minZ = q[i + 2];
+        if (q[i + 2] > v.maxZ) v.maxZ = q[i + 2];
+      }
+    }
+    v.pre = g;
   }
-  scena.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
-  if (muri.posizioni.length > 0) {
-    const muro = creaMesh(muri.posizioni, muri.indici, 0x9a968d, 0);
-    // muri di sostegno: cemento/pietra con macchie, grana e rilievo (non piu' una superficie piatta e scura)
-    muro.material.dispose();
-    muro.material = new THREE.MeshStandardMaterial({ color: 0xb3aea3, roughness: 0.93, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
-    aggiungiDettaglio(muro.material, { macchie: 0.38, grana: 0.28, rugosita: 0.2, rilievo: 0.05, scalaRilievo: 4.5, nome: "muro" });
-    muro.castShadow = true;
-    scena.add(muro);
-  }
+  const bianco = new THREE.Color(1, 1, 1);
+  const forma_tombino = new THREE.CylinderGeometry(0.33, 0.33, 0.02, 10);
+  const forma_caditoia = new THREE.BoxGeometry(0.34, 0.02, 0.6);
+  const mat_tombino = materialeTombino();
+  const mat_caditoia = new THREE.MeshStandardMaterial({ color: 0x33363a, roughness: 0.5, metalness: 0.55, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+  const materialeMontanti = new THREE.MeshStandardMaterial({ color: 0x4b5157, roughness: 0.55, metalness: 0.6 });
+  const materialePaletti = new THREE.MeshStandardMaterial({ color: 0x8d9096, roughness: 0.5, metalness: 0.6 });
+  const formaMontante = new THREE.BoxGeometry(0.07, 0.9, 0.07);
+  formaMontante.translate(0, 0.45, 0);
+  const formaPaletto = new THREE.BoxGeometry(0.12, 0.8, 0.12);
+  formaPaletto.translate(0, 0.4, 0);
 
-  // Paletti del guardrail: tutti insieme in una "InstancedMesh" (veloce)
-  if (paletti.length > 0) {
-    const forma = new THREE.BoxGeometry(0.12, 0.8, 0.12);
-    forma.translate(0, 0.4, 0);
-    const istanze = new THREE.InstancedMesh(forma, new THREE.MeshStandardMaterial({ color: 0x8d9096, roughness: 0.5, metalness: 0.6 }), paletti.length / 3);
-    const matrice = new THREE.Matrix4();
-    for (let i = 0; i < paletti.length; i += 3) {
-      matrice.makeTranslation(paletti[i], paletti[i + 1], paletti[i + 2]);
-      istanze.setMatrixAt(i / 3, matrice);
+  // Il lavoro si puo' fare a rate: ci si ferma quando l'orologio passa "scadenza" e si riprende alla chiamata
+  // dopo (guidando non c'e' mai un fotogramma lungo). Ritorna true quando il pezzo e' finito.
+  const costruisci = function (pezzo, scadenza) {
+    if (!pezzo.lavoro) {
+      pezzo.lavoro = {
+        prossimo: 0,
+        guardrail: { posizioni: [], indici: [] },
+        muri: { posizioni: [], indici: [] },       // muri di sostegno di cemento (strade veloci)
+        paletti: [],
+        // opere di sasso e dei ponti: muri di sostegno, muretti, parapetti, cordoli, ringhiere
+        opere: {
+          sasso: nuovoNastro(), cemento: { posizioni: [], indici: [] }, ringhiere: { posizioni: [], indici: [] }, montanti: [],
+          grigio: new THREE.Color(0.9, 0.89, 0.87), strade: strade, indice: -1
+        },
+        tombini: [], caditoie: [],
+        gruppo: pezzo.pre || nuovoGruppo()
+      };
     }
-    scena.add(istanze);
-  }
+    const lavoro = pezzo.lavoro;
+    const tombini = lavoro.tombini, caditoie = lavoro.caditoie, guardrail = lavoro.guardrail, muri = lavoro.muri, paletti = lavoro.paletti, opere = lavoro.opere, gruppo = lavoro.gruppo;
+    while (lavoro.prossimo < pezzo.indici.length) {
+      if (lavoro.prossimo > 0 && performance.now() > scadenza) return false;
+      const indice = pezzo.indici[lavoro.prossimo];
+      lavoro.prossimo++;
+      const strada = strade.lista[indice];
+      const lar = function (i) { return larghezzaIn(strada, i); };
+      if (strada.riemp) {
+        // spartitraffico e zone tra una rampa e la carreggiata: asfalto un po' piu' scuro, i bordi seguono le due strade
+        const scuro = new THREE.Color(0.84, 0.84, 0.85);
+        nastroConUV(strada.p, lar, 0.002, gruppo.asfalto, scuro, 0, function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); });
+        continue;
+      }
+      if (strada.g) {
+        nastroConUV(strada.p, lar, 0, gruppo.gallerie, bianco);
+      } else {
+        // leggera variazione di colore da strada a strada (asfalti piu' nuovi o piu' vecchi)
+        // (poca: dove due strade si toccano non si deve vedere lo stacco). Le strade piu' larghe stanno qualche
+        // millimetro sopra: dove due nastri si sovrappongono sullo stesso piano non "sfarfallano".
+        const v = stradaVeloce(strada) ? 1 : 0.96 + ((indice * 2654435761) % 1000) / 1000 * 0.08;   // l'autostrada ha un asfalto solo
+        const alzata = (strada.w >= 7 ? 0.014 : (strada.w >= 5.5 ? 0.008 : 0.002)) + ((indice * 7) % 5) * 0.0012;
+        const bordo = strada.b ? null : function (x, z, y) { return quotaSuAltra(strade, indice, x, z, y); };
+        const fondo = strada.sf === "c" ? gruppo.selciato : (strada.sf === "t" ? gruppo.sterrato : gruppo.asfalto);
+        nastroConUV(strada.p, lar, alzata, fondo, new THREE.Color(v, v, v), 0, bordo);
+      }
+      // righe: non sulle strade che in OpenStreetMap non ne hanno (lane_markings=no), sull'acciottolato e sullo sterrato
+      if ((strada.w >= 5.5 || stradaVeloce(strada)) && strada.m !== 0 && !strada.sf) {
+        // righe tra le corsie (tratteggiate) + linee di bordo continue (interrotte dove passa un'altra strada)
+        aggiungiLinee(indice, strada, strade, gruppo.righe);
+      }
+      if (!strada.g && !strada.b && !strada.sf) {
+        aggiungiUsuraAsfalto(indice, strada, strade, gruppo.asfalto, tombini, caditoie, marciapiedi && TIPI_CON_MARCIAPIEDE.includes(strada.t));
+      }
+      opere.indice = indice;
+      const stradina = strada.vl === 1 && (strada.m === 0 || strada.w < 5.2);   // stradina di valle a una corsia
+      if (strada.b) {
+        aggiungiParapetti(strada, opere);
+      } else if (!strada.g && terreno && stradina) {
+        aggiungiMuretti(strada, terreno, opere);
+      } else if (!strada.g && terreno && TIPI_CON_GUARDRAIL.includes(strada.t)) {
+        aggiungiGuardrail(strada, terreno, guardrail, paletti);
+      }
+      if (!strada.g && !strada.b && terreno) {
+        if (stradaVeloce(strada)) aggiungiMuri(strada, terreno, muri, strade);
+        else aggiungiMuri(strada, terreno, opere.sasso, strade, opere.grigio);
+      }
+      // marciapiedi: dove OpenStreetMap dice che non ci sono (sidewalk=no, e nei nuclei delle valli) non si disegnano
+      if (marciapiedi && !strada.g && !strada.b && strada.w >= 4 && strada.mp !== 0 && !strada.sf && TIPI_CON_MARCIAPIEDE.includes(strada.t)) {
+        aggiungiMarciapiedi(indice, strada, ctx, gruppo.marciapiedi, terreno);
+      }
+      if (marciapiedi && !strada.g && !strada.b && !strada.sf && !stradaVeloce(strada) && strada.w >= 3) aggiungiBanchine(indice, strada, ctx, gruppo.banchine);
+    }
 
-  // Tombini di ghisa e caditoie: tutti insieme in due InstancedMesh
-  if (tombini.length > 0) {
-    const forma = new THREE.CylinderGeometry(0.33, 0.33, 0.02, 10);
-    // coperchio di ghisa: grigio chiaro-scuro (non nero: senza mappa ambiente un metallo pieno viene nero) con anello e croce
-    let mappa = null;
-    if (typeof document !== "undefined") {
-      const tela = document.createElement("canvas");
-      tela.width = tela.height = 128;
-      const c = tela.getContext("2d");
-      c.fillStyle = "#8a8782"; c.fillRect(0, 0, 128, 128);
-      c.strokeStyle = "#55534f"; c.lineWidth = 6;
-      c.beginPath(); c.arc(64, 64, 50, 0, 7); c.stroke();
-      c.beginPath(); c.arc(64, 64, 30, 0, 7); c.lineWidth = 3; c.stroke();
-      c.lineWidth = 5;
-      for (let a = 0; a < 4; a++) { c.beginPath(); c.moveTo(64 + Math.cos(a * 0.785) * 34, 64 + Math.sin(a * 0.785) * 34); c.lineTo(64 - Math.cos(a * 0.785) * 34, 64 - Math.sin(a * 0.785) * 34); c.stroke(); }
-      mappa = new THREE.CanvasTexture(tela);
-      mappa.colorSpace = THREE.SRGBColorSpace;
-      mappa.anisotropy = 4;
+    const insieme = new THREE.Group();
+    insieme.matrixAutoUpdate = false;
+    if (opere.cemento.posizioni.length > 0) {
+      const cordoli = creaMesh(opere.cemento.posizioni, opere.cemento.indici, 0xa8a69f, 0);
+      cordoli.material = cementoPonti;
+      cordoli.castShadow = true;
+      insieme.add(cordoli);
     }
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: mappa, roughness: 0.6, metalness: 0.15, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
-    const ist = new THREE.InstancedMesh(forma, mat, tombini.length / 3);
-    const m = new THREE.Matrix4();
-    for (let i = 0; i < tombini.length; i += 3) { m.makeTranslation(tombini[i], tombini[i + 1], tombini[i + 2]); ist.setMatrixAt(i / 3, m); }
-    ist.receiveShadow = true;
-    scena.add(ist);
-  }
-  if (caditoie.length > 0) {
-    const forma = new THREE.BoxGeometry(0.34, 0.02, 0.6);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x33363a, roughness: 0.5, metalness: 0.55, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
-    const ist = new THREE.InstancedMesh(forma, mat, caditoie.length / 4);
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), asseY = new THREE.Vector3(0, 1, 0), pos = new THREE.Vector3(), unita = new THREE.Vector3(1, 1, 1);
-    for (let i = 0; i < caditoie.length; i += 4) {
-      q.setFromAxisAngle(asseY, caditoie[i + 3]);
-      m.compose(pos.set(caditoie[i], caditoie[i + 1], caditoie[i + 2]), q, unita);
-      ist.setMatrixAt(i / 4, m);
+    if (opere.ringhiere.posizioni.length > 0) insieme.add(creaMesh(opere.ringhiere.posizioni, opere.ringhiere.indici, 0x4b5157, 0));
+    if (opere.montanti.length > 0) {
+      const montanti = new THREE.InstancedMesh(formaMontante, materialeMontanti, opere.montanti.length / 3);
+      const m4 = new THREE.Matrix4();
+      for (let i = 0; i < opere.montanti.length; i += 3) {
+        m4.makeTranslation(opere.montanti[i], opere.montanti[i + 1], opere.montanti[i + 2]);
+        montanti.setMatrixAt(i / 3, m4);
+      }
+      montanti.computeBoundingSphere();
+      insieme.add(montanti);
     }
-    ist.receiveShadow = true;
-    scena.add(ist);
-  }
+    {
+      const murature = meshDa(opere.sasso, sassoMateriale, true);
+      if (murature) { murature.castShadow = true; insieme.add(murature); }
+    }
+    if (guardrail.posizioni.length > 0) insieme.add(creaMesh(guardrail.posizioni, guardrail.indici, 0xc9ccd0, 0));
+    if (muri.posizioni.length > 0) {
+      const muro = creaMesh(muri.posizioni, muri.indici, 0x9a968d, 0);
+      muro.material = cementoMuri;
+      muro.castShadow = true;
+      insieme.add(muro);
+    }
+    // Paletti del guardrail: tutti insieme in una "InstancedMesh" (veloce)
+    if (paletti.length > 0) {
+      const istanze = new THREE.InstancedMesh(formaPaletto, materialePaletti, paletti.length / 3);
+      const matrice = new THREE.Matrix4();
+      for (let i = 0; i < paletti.length; i += 3) {
+        matrice.makeTranslation(paletti[i], paletti[i + 1], paletti[i + 2]);
+        istanze.setMatrixAt(i / 3, matrice);
+      }
+      istanze.computeBoundingSphere();
+      insieme.add(istanze);
+    }
+    // tombini di ghisa e caditoie del pezzo: forme e materiali in comune a tutti i pezzi
+    if (tombini.length > 0) {
+      const ist = new THREE.InstancedMesh(forma_tombino, mat_tombino, tombini.length / 3);
+      const m4 = new THREE.Matrix4();
+      for (let i = 0; i < tombini.length; i += 3) { m4.makeTranslation(tombini[i], tombini[i + 1], tombini[i + 2]); ist.setMatrixAt(i / 3, m4); }
+      ist.receiveShadow = true;
+      ist.computeBoundingSphere();
+      insieme.add(ist);
+    }
+    if (caditoie.length > 0) {
+      const ist = new THREE.InstancedMesh(forma_caditoia, mat_caditoia, caditoie.length / 4);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), asseY = new THREE.Vector3(0, 1, 0), pos = new THREE.Vector3(), unita = new THREE.Vector3(1, 1, 1);
+      for (let i = 0; i < caditoie.length; i += 4) {
+        q.setFromAxisAngle(asseY, caditoie[i + 3]);
+        m4.compose(pos.set(caditoie[i], caditoie[i + 1], caditoie[i + 2]), q, unita);
+        ist.setMatrixAt(i / 4, m4);
+      }
+      ist.receiveShadow = true;
+      ist.computeBoundingSphere();
+      insieme.add(ist);
+    }
+    for (const [dati, materiale, ricevi] of [[gruppo.asfalto, asfaltoMateriale, true], [gruppo.selciato, selciatoMateriale, true], [gruppo.sterrato, sterratoMateriale, true], [gruppo.gallerie, galleriaMateriale, true], [gruppo.marciapiedi, marciapiedeMateriale, true], [gruppo.banchine, banchinaMateriale, true], [gruppo.righe, righeMateriale, true]]) {
+      const mesh = meshDa(dati, materiale, ricevi);
+      if (mesh) insieme.add(mesh);
+    }
+    scena.add(insieme);
+    pezzo.gruppo = insieme;
+    pezzo.lavoro = null;
+    pezzo.pre = null;
+    return true;
+  };
+
+  strade.disegno = { scena: scena, pezzi: Array.from(pezzi.values()), costruisci: costruisci, raggio: 3500, attesa: 0 };
 
   aggiungiIncroci(strade, asfaltoMateriale, scena);
   aggiungiRotonde(strade, scena);
   aggiungiBarriere(strade.barriere, scena);
+}
 
-  for (const g of gruppi.values()) {
-    for (const [dati, materiale, ricevi] of [[g.asfalto, asfaltoMateriale, true], [g.gallerie, galleriaMateriale, true], [g.marciapiedi, marciapiedeMateriale, true], [g.banchine, banchinaMateriale, true], [g.righe, righeMateriale, true]]) {
-      const mesh = meshDa(dati, materiale, ricevi);
-      if (mesh) scena.add(mesh);
+const MARGINE_TOGLI_STRADE = 1500;   // metri: un pezzo si toglie solo quando e' cosi' tanto oltre il raggio
+
+// Costruisce i pezzi di strada entro "raggio" metri (dal piu' vicino) per al massimo "millisecondi" e toglie
+// quelli lontani. Ritorna quanti ne restano da costruire.
+function costruisciStradeVicine(d, x, z, raggio, millisecondi) {
+  const scadenza = performance.now() + millisecondi;
+  const vicini = [];
+  for (const pezzo of d.pezzi) {
+    // distanza dal rettangolo del pezzo (0 se ci si e' dentro)
+    const distanza = Math.hypot(Math.max(pezzo.minX - x, 0, x - pezzo.maxX), Math.max(pezzo.minZ - z, 0, z - pezzo.maxZ));
+    if (pezzo.gruppo === null) {
+      // un pezzo cominciato si finisce per primo (distanza -1)
+      if (distanza < raggio) vicini.push([pezzo.lavoro ? -1 : distanza, pezzo]);
+      else if (pezzo.lavoro) pezzo.lavoro = null;   // cominciato ma ormai lontano: si lascia perdere
+    } else if (distanza > d.raggio + MARGINE_TOGLI_STRADE) {
+      d.scena.remove(pezzo.gruppo);
+      for (const m of pezzo.gruppo.children) {
+        // le forme dei paletti sono in comune a tutti i pezzi: quelle non si buttano
+        if (m.isInstancedMesh) m.dispose();
+        else m.geometry.dispose();
+      }
+      pezzo.gruppo = null;
     }
   }
+  vicini.sort(function (a, b) { return a[0] - b[0]; });
+  let fatti = 0;
+  for (const voce of vicini) {
+    if (!d.costruisci(voce[1], scadenza)) break;
+    fatti++;
+    if (performance.now() > scadenza) break;
+  }
+  return vicini.length - fatti;
+}
+
+// All'avvio e dopo uno spostamento improvviso: tutte le strade entro "raggio" metri, subito
+export function preparaStradeVicine(strade, x, z, raggio) {
+  if (!strade.disegno) return;
+  costruisciStradeVicine(strade.disegno, x, z, Math.min(raggio, strade.disegno.raggio), Infinity);
+  strade.disegno.attesa = 0;
+}
+
+// Da chiamare a ogni fotogramma: guidando costruisce le strade che si avvicinano, pochi millisecondi alla volta
+export function aggiornaStrade(strade, x, z, dt) {
+  const d = strade.disegno;
+  if (!d) return;
+  d.attesa -= dt;
+  if (d.attesa > 0) return;
+  const mancano = costruisciStradeVicine(d, x, z, d.raggio, 4);
+  d.attesa = mancano > 0 ? 0 : 0.25;
+}
+
+// Impostazioni di qualita': fino a che distanza si disegnano le strade
+export function impostaStrade(strade, raggio) {
+  if (!strade.disegno) return;
+  strade.disegno.raggio = Math.max(1500, Math.min(raggio, 6000));
+  strade.disegno.attesa = 0;
 }
 
 // Righe tra le corsie (tratteggiate) e linee di bordo (continue, a 0.35 m dal bordo dell'asfalto).
