@@ -3,7 +3,13 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.15.3) – TUTTO IL CANTON TICINO
+### Novità di questa versione (0.15.4) – impennate e fiammelle
+
+- **Freno dietro in impennata (Spazio)**: tenuto premuto riporta giù la ruota davanti; a colpetti la abbassa un po' alla volta, così si tiene l'impennata senza ribaltarsi. L'impennata sale anche meno di scatto.
+- **Mappa impennate (tasto I, solo sui motard)**: appena si accelera la moto impenna e resta su da sola a un angolo fisso senza ribaltarsi; mollando il gas torna giù piano. Sul cruscotto compare "MAPPA IMPENNATE"; la scelta resta salvata.
+- **MRW SM 450**: quando scoppietta in rilascio escono le fiammelle dai due scarichi.
+
+### Novità della 0.15.3 – TUTTO IL CANTON TICINO
 
 - **Tutto il cantone**: da Chiasso ad Airolo, da Bosco Gurin a Olivone. 19 regioni da 24 × 24 km, 3 692 km di strade, 262 549 edifici, 1 007 località, 78 laghi.
 - **Pulsante "Ticino" (tasto K)**: mappa di tutto il cantone con rilievo, confine, distretti e strade principali; si cerca qualsiasi località e si sceglie la partenza dove si vuole.

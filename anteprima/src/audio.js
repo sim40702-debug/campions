@@ -65,7 +65,20 @@ function avvia() {
 }
 
 // Un colpo dallo scarico all'istante "quando" (secondi del contesto audio)
+// Momenti (orologio dell'audio) in cui parte ogni scoppio: servono per accendere le fiammelle allo scarico
+const momentiScoppi = [];
+
+// true per un attimo (7 centesimi) a ogni scoppio dello scarico
+export function scoppioInCorso() {
+  if (!contesto) return false;
+  const ora = contesto.currentTime;
+  while (momentiScoppi.length > 0 && momentiScoppi[0] < ora - 0.07) momentiScoppi.shift();
+  return momentiScoppi.length > 0 && momentiScoppi[0] <= ora;
+}
+
 function colpo(quando, forza) {
+  momentiScoppi.push(quando);
+  momentiScoppi.sort(function (a, b) { return a - b; });
   const sorgente = contesto.createBufferSource();
   sorgente.buffer = rumore;
   const filtroColpo = contesto.createBiquadFilter();
