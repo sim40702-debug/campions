@@ -17,6 +17,7 @@ export const uniformiHD = {
 };
 
 const stato = { indice: null, cache: new Map(), raggio: 0, anisotropia: 8, caricatore: new THREE.TextureLoader(), blocco: "", disponibili: new Set() };
+// (le righe seguenti usano eventiStreaming, definito piu' sotto: e' un export const, inizializzato prima di ogni chiamata)
 
 export async function caricaFotoHD() {
   try {
@@ -42,6 +43,7 @@ export function impostaFotoHD(raggio, anisotropia) {
     // libera la memoria
     for (const v of stato.cache.values()) if (v.tex) v.tex.dispose();
     stato.cache.clear();
+    eventiStreaming.hdPresenti = 0;
     stato.blocco = "";
   }
 }
@@ -50,14 +52,30 @@ export function fotoHDAttiva() {
   return stato.raggio > 0;
 }
 
-function carica(c, r) {
+// Contatori per l'analisi del pop-in e della memoria (letti dai test: window.__mrw.eventiStreaming)
+export const eventiStreaming = { hdCaricati: 0, hdScaricati: 0, hdInCorso: 0, hdPresenti: 0, foto2mCaricate: 0, foto2mScaricate: 0, foto2mInCorso: 0 };
+const SECONDI_DISSOLVENZA = 0.8;   // un tassello compare in 0.8 s, mai di colpo
+
+// Avvia il caricamento di un tassello, ma uno solo alla volta (niente picchi di rete e di decodifica)
+function carica(c, r, avvia) {
   const chiave = c + "_" + r;
   let voce = stato.cache.get(chiave);
-  if (voce) return voce;
-  voce = { tex: null, pronta: false, uso: 0 };
+  if (voce) {
+    if (voce.stato === "attesa" && avvia && eventiStreaming.hdInCorso < 1) avviaCaricamento(voce, chiave);
+    return voce;
+  }
+  voce = { tex: null, pronta: false, peso: 0, stato: "attesa", c: c, r: r };
   stato.cache.set(chiave, voce);
-  if (!stato.disponibili.has(chiave)) return voce;
+  if (!stato.disponibili.has(chiave)) { voce.stato = "assente"; return voce; }
+  if (avvia && eventiStreaming.hdInCorso < 1) avviaCaricamento(voce, chiave);
+  return voce;
+}
+
+function avviaCaricamento(voce, chiave) {
+  voce.stato = "carico";
+  eventiStreaming.hdInCorso++;
   stato.caricatore.load("dati/foto_hd/hd_" + chiave + ".jpg", function (t) {
+    eventiStreaming.hdInCorso--;
     if (stato.cache.get(chiave) !== voce) { t.dispose(); return; }   // nel frattempo ci si e' allontanati
     t.flipY = false;
     t.colorSpace = THREE.SRGBColorSpace;
@@ -67,13 +85,14 @@ function carica(c, r) {
     t.minFilter = THREE.LinearMipmapLinearFilter;
     voce.tex = t;
     voce.pronta = true;
+    voce.stato = "pronto";
+    eventiStreaming.hdCaricati++;
     stato.blocco = "";   // rifa' i collegamenti
-  }, undefined, function () { voce.pronta = false; });
-  return voce;
+  }, undefined, function () { eventiStreaming.hdInCorso--; voce.stato = "assente"; });
 }
 
-// Da chiamare di frequente con la posizione del giocatore (x, z locali)
-export function aggiornaFotoHD(x, z) {
+// Da chiamare di frequente con la posizione del giocatore (x, z locali) e il tempo trascorso (secondi)
+export function aggiornaFotoHD(x, z, dt) {
   if (stato.raggio === 0 || !stato.indice) return;
   const T = stato.indice.lato_m;
   const gx = (x + stato.indice.meta_x) / T, gz = (z + stato.indice.meta_z) / T;
@@ -82,30 +101,36 @@ export function aggiornaFotoHD(x, z) {
   const c0 = (gx - ix) < 0.5 ? ix - 1 : ix;
   const r0 = (gz - iz) < 0.5 ? iz - 1 : iz;
   uniformiHD.uHDcentro.value.set(x, z);
-  const chiave = c0 + "," + r0;
-  const nuovo = chiave !== stato.blocco;
   const slot = [[c0, r0], [c0 + 1, r0], [c0, r0 + 1], [c0 + 1, r0 + 1]];
-  const voci = slot.map(function (s) { return carica(s[0], s[1]); });
-  let ok = true;
-  for (const v of voci) if (!v.pronta && v.tex === null) ok = ok && true;
-  if (!nuovo && stato.pronti === voci.map(function (v) { return v.pronta ? 1 : 0; }).join("")) return;
-  stato.pronti = voci.map(function (v) { return v.pronta ? 1 : 0; }).join("");
-  stato.blocco = chiave;
+  // dal piu' vicino al giocatore al piu' lontano: il primo a caricarsi e' quello su cui si sta
+  const ordine = slot.map(function (s, i) { return { i: i, d: Math.hypot(s[0] + 0.5 - gx, s[1] + 0.5 - gz) }; }).sort(function (a, b) { return a.d - b.d; });
+  const voci = [null, null, null, null];
+  for (const o of ordine) voci[o.i] = carica(slot[o.i][0], slot[o.i][1], true);
+  // dissolvenza: il peso sale da 0 a 1 in SECONDI_DISSOLVENZA dopo l'arrivo del tassello
+  const passo = (dt > 0 ? Math.min(dt, 0.1) : 0.016) / SECONDI_DISSOLVENZA;
+  const w = uniformiHD.uHDok.value;
+  const pesi = [0, 0, 0, 0];
+  for (let i = 0; i < 4; i++) {
+    const v = voci[i];
+    if (v.pronta) v.peso = Math.min(1, v.peso + passo);
+    pesi[i] = v.pronta ? v.peso : 0;
+  }
+  w.set(pesi[0], pesi[1], pesi[2], pesi[3]);
   uniformiHD.uHDorigine.value.set(c0 * T - stato.indice.meta_x, r0 * T - stato.indice.meta_z);
   uniformiHD.tHD0.value = voci[0].tex || vuoto;
   uniformiHD.tHD1.value = voci[1].tex || vuoto;
   uniformiHD.tHD2.value = voci[2].tex || vuoto;
   uniformiHD.tHD3.value = voci[3].tex || vuoto;
-  uniformiHD.uHDok.value.set(voci[0].pronta ? 1 : 0, voci[1].pronta ? 1 : 0, voci[2].pronta ? 1 : 0, voci[3].pronta ? 1 : 0);
-  // si tolgono i tasselli che non servono piu' (tieni solo il blocco attuale)
-  const tenere = new Set(slot.map(function (s) { return s[0] + "_" + s[1]; }));
+  // si tolgono solo i tasselli lontani piu' di 1.6 tasselli dal giocatore (isteresi: niente carica e scarica al confine del blocco)
   for (const [k, v] of stato.cache) {
-    if (!tenere.has(k)) {
-      if (v.tex) v.tex.dispose();
+    const lontano = Math.hypot(v.c + 0.5 - gx, v.r + 0.5 - gz) > 1.6 + 0.5;
+    if (lontano && v.stato !== "carico") {
+      if (v.tex) { v.tex.dispose(); eventiStreaming.hdScaricati++; }
       stato.cache.delete(k);
     }
   }
-  void ok;
+  eventiStreaming.hdPresenti = 0;
+  for (const v of stato.cache.values()) if (v.tex) eventiStreaming.hdPresenti++;
 }
 
 // Aggiunge il livello di dettaglio a un materiale del terreno (si concatena a onBeforeCompile)

@@ -19,7 +19,7 @@ import { caricaUsoSuolo, creaMascheraUso } from "./uso_suolo.js";
 import { creaPrecipitazioni } from "./precipitazioni.js";
 import { creaBenchmark, inMarkdown } from "./benchmark.js";
 import { creaPostprocesso } from "./postprocesso.js";
-import { caricaFotoHD, uniformiHD } from "./terreno_hd.js";
+import { caricaFotoHD, uniformiHD, eventiStreaming } from "./terreno_hd.js";
 import { creaErba, aggiornaErba } from "./erba.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
@@ -391,6 +391,7 @@ async function avvia() {
     window.__mrw.dettagli = dettagli;
     window.__mrw.erba = erba;
     window.__mrw.fotoHD = uniformiHD;
+    window.__mrw.eventiStreaming = eventiStreaming;
     window.__mrw.terrenoMesh = terrenoMesh;   // (prove automatiche: tools/anteprima_prova/valida_rete.mjs)
     window.__mrw.terreno = terreno;
     window.__mrw.strade = strade;

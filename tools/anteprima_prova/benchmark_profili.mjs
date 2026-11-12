@@ -54,7 +54,7 @@ function nvidiaSmi() {
   } catch (e) { return null; }
 }
 function ramBrowser(pid) {
-  // RAM (RSS) del browser e dei suoi processi figli, in MB. Solo Linux/Mac (ps); su Windows resta vuoto
+  // RAM (RSS) di questo programma e dei suoi processi figli (il browser), in MB. Solo Linux/Mac (ps); su Windows resta vuoto
   try {
     if (process.platform === "win32") return null;
     const righe = execSync("ps -A -o pid=,ppid=,rss=", { timeout: 5000 }).toString().trim().split("\n").map((r) => r.trim().split(/\s+/).map(Number));
@@ -69,7 +69,7 @@ const argsBrowser = conGpu
   ? ["--ignore-gpu-blocklist", "--enable-gpu-rasterization", "--enable-zero-copy", "--enable-precise-memory-info", "--disable-frame-rate-limit", "--disable-gpu-vsync"]
   : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info"];
 const browser = await chromium.launch({ headless: !conGpu, channel: canale || undefined, args: argsBrowser });
-const pidBrowser = browser.process() ? browser.process().pid : null;
+const pidBrowser = process.pid;   // i processi del browser sono figli di questo (Playwright non espone il pid in tutte le versioni)
 
 const risultati = [];
 for (const qualita of profili) {
@@ -79,6 +79,9 @@ for (const qualita of profili) {
   p.setDefaultTimeout(900000);
   const errori = [];
   p.on("pageerror", (e) => errori.push(e.message));
+  const mancanti = [];   // richieste fallite (404 ecc.): servono a trovare texture o file mancanti
+  p.on("response", (r) => { if (r.status() >= 400) mancanti.push(r.status() + " " + r.url().replace(/^http:\/\/localhost:\d+\//, "")); });
+  p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errori.push(m.text()); });
   await p.addInitScript((q) => { localStorage.setItem("mrw-qualita", q); localStorage.setItem("mrw-meteo", "sereno"); localStorage.setItem("mrw-ora", "15"); }, qualita);
   const t0 = Date.now();
   await p.goto("http://localhost:" + porta + "/index.html");
@@ -151,6 +154,7 @@ for (const qualita of profili) {
     return {
       tempi: tempi.slice(2), fotogrammiGioco: m.fotogrammi - f0, ritorniAllInizio: ritorni, scheda: scheda, memoriaJS: mem,
       render: { chiamate: i.render.calls, triangoli: i.render.triangles, geometrie: i.memory.geometries, texture: i.memory.textures, programmi: i.programs ? i.programs.length : 0 },
+      streaming: Object.assign({ foto2mPezziPresenti: m.terrenoMesh ? m.terrenoMesh.fotoCaricate : null, raggioFoto2m: m.terrenoMesh ? m.terrenoMesh.raggioFoto : null }, m.eventiStreaming || {}),
       erba: m.erba ? { celle: m.erba.statistiche.celle, msCella: +m.erba.statistiche.ms.toFixed(2) } : null,
       pixelRatio: m.disegnatore.getPixelRatio(), moto: { kmh: Math.round(Math.abs(m.moto.velocita) * 3.6) }
     };
@@ -173,7 +177,7 @@ for (const qualita of profili) {
     scatti_oltre_33ms: ord.filter((x) => x > 33.4).length, scatti_oltre_50ms: ord.filter((x) => x > 50).length,
     memoria_js: misura.memoriaJS, ram_browser_MB: pidBrowser ? ramBrowser(pidBrowser) : null,
     vram_nvidia_smi_MB: vramDopo && vramPrima ? { prima: vramPrima.usataMB, dopo: vramDopo.usataMB, differenza: vramDopo.usataMB - vramPrima.usataMB, totale: vramDopo.totaleMB } : "non disponibile (serve una scheda NVIDIA con nvidia-smi: altrimenti guarda Gestione attivita' > GPU > memoria dedicata durante la corsa)",
-    render: misura.render, erba: misura.erba, ritorni_all_inizio_del_tratto: misura.ritorniAllInizio, errori_console: errori.slice(0, 5)
+    render: misura.render, streaming: misura.streaming, richieste_fallite: Array.from(new Set(mancanti)).slice(0, 20), erba: misura.erba, ritorni_all_inizio_del_tratto: misura.ritorniAllInizio, errori_console: errori.slice(0, 5)
   };
   risultati.push(r);
   console.log("   " + (software ? "[GRAFICA SOFTWARE, NON FPS VERI] " : "") + r.fps_medi + " fps medi, 1% low " + r.fps_1pc_low_p99 + ", caricamento " + r.caricamento_s + " s");

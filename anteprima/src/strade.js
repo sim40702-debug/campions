@@ -1943,7 +1943,23 @@ export function aggiungiStrade(strade, scena, terreno, contesto) {
   // Tombini di ghisa e caditoie: tutti insieme in due InstancedMesh
   if (tombini.length > 0) {
     const forma = new THREE.CylinderGeometry(0.33, 0.33, 0.02, 10);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x4a4d52, roughness: 0.42, metalness: 0.6, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+    // coperchio di ghisa: grigio chiaro-scuro (non nero: senza mappa ambiente un metallo pieno viene nero) con anello e croce
+    let mappa = null;
+    if (typeof document !== "undefined") {
+      const tela = document.createElement("canvas");
+      tela.width = tela.height = 128;
+      const c = tela.getContext("2d");
+      c.fillStyle = "#8a8782"; c.fillRect(0, 0, 128, 128);
+      c.strokeStyle = "#55534f"; c.lineWidth = 6;
+      c.beginPath(); c.arc(64, 64, 50, 0, 7); c.stroke();
+      c.beginPath(); c.arc(64, 64, 30, 0, 7); c.lineWidth = 3; c.stroke();
+      c.lineWidth = 5;
+      for (let a = 0; a < 4; a++) { c.beginPath(); c.moveTo(64 + Math.cos(a * 0.785) * 34, 64 + Math.sin(a * 0.785) * 34); c.lineTo(64 - Math.cos(a * 0.785) * 34, 64 - Math.sin(a * 0.785) * 34); c.stroke(); }
+      mappa = new THREE.CanvasTexture(tela);
+      mappa.colorSpace = THREE.SRGBColorSpace;
+      mappa.anisotropy = 4;
+    }
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: mappa, roughness: 0.6, metalness: 0.15, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
     const ist = new THREE.InstancedMesh(forma, mat, tombini.length / 3);
     const m = new THREE.Matrix4();
     for (let i = 0; i < tombini.length; i += 3) { m.makeTranslation(tombini[i], tombini[i + 1], tombini[i + 2]); ist.setMatrixAt(i / 3, m); }
