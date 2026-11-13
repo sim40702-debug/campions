@@ -315,7 +315,7 @@ jobs:
           $p = Start-Process -FilePath $inst.FullName -ArgumentList "/S", "/D=C:\mrw-prova" -Wait -PassThru
           Write-Host "codice di uscita dell'installer: $($p.ExitCode)"
           Get-ChildItem C:\mrw-prova | Select-Object -First 20 | Format-Table Name, Length
-          if (-not (Test-Path "C:\mrw-prova\MRW Anteprima Ticino.exe")) { throw "eseguibile installato non trovato" }
+          if (-not (Test-Path "C:\mrw-prova\Swissgass.exe")) { throw "eseguibile installato non trovato" }
           if (-not (Test-Path "C:\mrw-prova\resources\app\dati\terreno.bin")) { throw "dati non installati" }
 
       - name: "Windows: app installata - avvio, profili grafici, LOD, errori in console"
@@ -323,14 +323,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p uscita/profili
-          node tools/anteprima_prova/prova_profili_lod.mjs "C:\\mrw-prova\\MRW Anteprima Ticino.exe" "C:\\mrw-prova\\resources\\app" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
+          node tools/anteprima_prova/prova_profili_lod.mjs "C:\\mrw-prova\\Swissgass.exe" "C:\\mrw-prova\\resources\\app" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
 
       - name: "Windows: app installata - download delle regioni, passaggio tra regioni, memoria"
         if: matrix.nome == 'windows'
         shell: bash
         run: |
           mkdir -p uscita/regioni
-          node tools/anteprima_prova/prova_ticino_regioni.mjs "C:\\mrw-prova\\resources\\app" "$PWD/pacchetti" "$PWD/uscita/regioni" "C:\\mrw-prova\\MRW Anteprima Ticino.exe" | tee uscita/regioni.log
+          node tools/anteprima_prova/prova_ticino_regioni.mjs "C:\\mrw-prova\\resources\\app" "$PWD/pacchetti" "$PWD/uscita/regioni" "C:\\mrw-prova\\Swissgass.exe" | tee uscita/regioni.log
 
       # Il portatile e' un lanciatore che estrae l'app e avvia un processo figlio, quindi Playwright non puo' lanciarlo direttamente.
       # Lo si avvia come farebbe un utente, con --remote-debugging-port (il lanciatore passa gli argomenti all'app), e ci si

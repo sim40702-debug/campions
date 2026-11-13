@@ -1,4 +1,4 @@
-// Garage: moto ORIGINALI di MOTO RACING WORLD (nomi e forme inventati),
+// Garage: moto ORIGINALI di Swissgass (nomi e forme inventati),
 // con prestazioni realistiche per la loro categoria.
 
 import * as THREE from "three";

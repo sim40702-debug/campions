@@ -1,10 +1,10 @@
-# MOTO RACING WORLD
+# Swissgass
 
 Gioco di moto open world. La prima mappa esplorabile è il **Canton Ticino** (Svizzera), ricostruito da dati geografici aperti: terreno di swisstopo, strade ed edifici di OpenStreetMap.
 
 Il progetto ha due parti:
 
-- **Anteprima Ticino** – versione giocabile leggera (Three.js + Electron) di **tutto il Canton Ticino** (2 812 km², 19 regioni da 24 × 24 km: la regione di Locarno è nell'app, le altre si scaricano entrando). È quella che si scarica e si gioca oggi.
+- **Swissgass** (prima "MRW Anteprima Ticino") – versione giocabile leggera (Three.js + Electron) di **tutto il Canton Ticino** (2 812 km², 19 regioni da 24 × 24 km: la regione di Locarno è nell'app, le altre si scaricano entrando). È quella che si scarica e si gioca oggi.
 - **Versione Unreal Engine 5** – il gioco principale, in costruzione (cartella `unreal/`).
 
 ## Giocare l'anteprima
@@ -62,6 +62,7 @@ Non ci sono ancora: avversari, multiplayer, un mondo unico senza il breve carica
 | [`anteprima/`](anteprima/) | L'anteprima giocabile: pagina, codice del gioco (`src/`), app Electron. Vedi [`anteprima/LEGGIMI.md`](anteprima/LEGGIMI.md) |
 | [`tools/geo/`](tools/geo/) | Script Python che scaricano i dati (swisstopo, OpenStreetMap) e li preparano. Vedi [`tools/geo/LEGGIMI.md`](tools/geo/LEGGIMI.md) |
 | [`tools/moto/`](tools/moto/) | Script Blender che creano i modelli 3D di moto, auto e alberi |
+| [`tools/icona/`](tools/icona/) | Disegna il logo e crea le icone dell'app (`anteprima/grafica/`, `anteprima/build/`) |
 | [`tools/anteprima_prova/`](tools/anteprima_prova/) | Prove automatiche dell'anteprima (screenshot, anche "dalla sella" con `vista_strada.mjs`, quote delle strade, benchmark) |
 | [`unreal/`](unreal/) | Progetto Unreal Engine 5. Vedi [`docs/GUIDA_UNREAL.md`](docs/GUIDA_UNREAL.md) e [`docs/unreal/`](docs/unreal/) |
 | [`docs/`](docs/) | Stima, backlog, bug, licenze, piani e report degli sprint |

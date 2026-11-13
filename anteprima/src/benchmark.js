@@ -226,7 +226,7 @@ export function creaBenchmark(ctx) {
 export function inMarkdown(r) {
   const e = r.ambiente;
   const righe = [];
-  righe.push("# Benchmark MRW Anteprima " + r.versione);
+  righe.push("# Benchmark Swissgass " + r.versione);
   righe.push("");
   righe.push("- Scheda video: " + e.scheda_video + (e.grafica_software ? "  **(grafica software!)**" : ""));
   righe.push("- Browser: " + e.browser);

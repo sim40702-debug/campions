@@ -2,24 +2,90 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>MOTO RACING WORLD - Anteprima Ticino</title>
-  <link rel="icon" href="data:,">
+  <title>Swissgass</title>
+  <link rel="icon" type="image/png" href="grafica/icona.png">
   <link rel="stylesheet" href="stile.css">
   <script type="importmap">
     { "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./terzi/three/" } }
   </script>
 </head>
-<body>
+<body class="caricando">
   <div id="caricamento" role="status" aria-live="polite">
-    <h1>MOTO RACING WORLD</h1>
-    <p>Anteprima Ticino - Locarnese e Valle Verzasca</p>
-    <!-- Ruota che gira e strada che scorre: si muovono anche quando il programma sta lavorando sodo.
-         Se la ruota si ferma per molto tempo, il programma e' bloccato. -->
-    <div id="ruotaCarica"><div id="mozzoCarica"></div></div>
-    <div id="stradaCarica"><div id="righeCarica"></div></div>
-    <p id="stato">Caricamento del territorio...</p>
-    <div id="barraCarica"><div id="riempimentoCarica"></div></div>
-    <p id="tempoCarica">0 s</p>
+    <div id="sfondoCarica" aria-hidden="true">
+      <svg viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice">
+        <path d="M0,420 V300 L140,220 L260,280 L420,120 L560,250 L700,170 L860,290 L1010,150 L1150,260 L1290,200 L1440,280 L1600,210 V420 Z" fill="#161f2b"/>
+        <path d="M0,420 V350 L180,290 L340,340 L520,230 L690,330 L880,260 L1060,345 L1240,275 L1420,340 L1600,290 V420 Z" fill="#111821"/>
+      </svg>
+    </div>
+    <div id="centroCarica">
+    <!-- logo:inizio -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" id="logoCarica" aria-hidden="true">
+    <defs>
+    <linearGradient id="mrwCielo" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2a3a52"/><stop offset="0.65" stop-color="#18212e"/><stop offset="1" stop-color="#0e1319"/>
+    </linearGradient>
+    <radialGradient id="mrwBagliore" cx="0.62" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#ffd75a" stop-opacity="0.34"/><stop offset="0.5" stop-color="#ff4650" stop-opacity="0.16"/><stop offset="1" stop-color="#ff4650" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mrwCarena" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ff5a63"/><stop offset="1" stop-color="#c8222d"/>
+    </linearGradient>
+    <clipPath id="mrwForma"><rect width="1024" height="1024" rx="228"/></clipPath>
+    </defs>
+    <g clip-path="url(#mrwForma)">
+    <rect width="1024" height="1024" fill="url(#mrwCielo)"/>
+    <rect width="1024" height="1024" fill="url(#mrwBagliore)"/>
+    <rect x="0" y="926" width="1024" height="98" fill="#0b0f14"/>
+    <circle cx="60" cy="500" r="150" fill="#5d6c80"/><circle cx="215" cy="392" r="112" fill="#5d6c80"/><circle cx="-20" cy="760" r="180" fill="#5d6c80"/><circle cx="120" cy="300" r="70" fill="#5d6c80"/><circle cx="110" cy="690" r="150" fill="#aab6c4"/><circle cx="20" cy="900" r="160" fill="#aab6c4"/><circle cx="200" cy="560" r="96" fill="#aab6c4"/>
+    <!-- ruota davanti e forcella (lontane) -->
+    <circle cx="852" cy="768" r="122" fill="#0b0f14"/>
+    <circle cx="852" cy="768" r="82" fill="none" stroke="#3a4658" stroke-width="10"/>
+    <circle cx="852" cy="768" r="20" fill="#3a4658"/>
+    <path d="M748,452 L852,768" stroke="#aab4c0" stroke-width="30" stroke-linecap="round"/>
+    <!-- pancia della moto vista da sotto: motore e scarico -->
+    <path d="M470,470 L760,500 L800,640 L690,720 L520,700 L420,628 Z" fill="#1c2633"/>
+    <path d="M420,628 L640,600 L700,676 L430,674 Z" fill="#3a4658"/>
+    <path d="M560,690 L770,650 L800,690 L590,742 Z" fill="#aab4c0"/>
+    <!-- carena: codone in alto, serbatoio, muso -->
+    <path d="M250,214 L480,286 L560,262 L700,300 L800,410 L776,520 L640,540 L470,470 L350,372 Z" fill="url(#mrwCarena)"/>
+    <path d="M250,214 L330,239 L420,330 L350,372 Z" fill="#a51b25"/>
+    <path d="M330,239 L480,286 L560,262 L520,318 L420,330 Z" fill="#18212e"/>
+    <path d="M700,300 L800,410 L776,520 L716,452 Z" fill="#ffd75a"/>
+    <path d="M664,286 L742,236" stroke="#e8edf3" stroke-width="22" stroke-linecap="round"/>
+    <!-- ruota dietro, vicina -->
+    <circle cx="420" cy="628" r="300" fill="#0b0f14"/>
+    <circle cx="420" cy="628" r="300" fill="none" stroke="#3a4658" stroke-width="8"/>
+    <path d="M714,628L678.1,659.7M704,704.1L661.1,725.4M674.6,775L627.6,784.5M627.9,835.9L580.1,832.9M567,882.6L521.6,867.3M496.1,912L456.2,885.5M420,922L388.3,886.1M343.9,912L322.6,869.1M273,882.6L263.5,835.6M212.1,835.9L215.1,788.1M165.4,775L180.7,729.6M136,704.1L162.5,664.2M126,628L161.9,596.3M136,551.9L178.9,530.6M165.4,481L212.4,471.5M212.1,420.1L259.9,423.1M273,373.4L318.4,388.7M343.9,344L383.8,370.5M420,334L451.7,369.9M496.1,344L517.4,386.9M567,373.4L576.5,420.4M627.9,420.1L624.9,467.9M674.6,481L659.3,526.4M704,551.9L677.5,591.8" fill="none" stroke="#2c3848" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="420" cy="628" r="248" fill="#18212e"/>
+    <circle cx="420" cy="628" r="238" fill="none" stroke="#ff4650" stroke-width="22"/>
+    <g fill="none" stroke="#e8edf3" stroke-linecap="round"><path d="M638,707.3A232,232 0 0 1 340.7,846" stroke-width="9" stroke-opacity="0.9"/><path d="M241.6,731A206,206 0 0 1 251.3,509.8" stroke-width="13" stroke-opacity="0.75"/><path d="M359.1,460.7A178,178 0 0 1 574.2,539" stroke-width="9" stroke-opacity="0.85"/><path d="M495,757.9A150,150 0 0 1 290.1,703" stroke-width="14" stroke-opacity="0.6"/><path d="M305.4,586.3A122,122 0 0 1 481,522.3" stroke-width="9" stroke-opacity="0.8"/><path d="M503.1,580A96,96 0 0 1 468,711.1" stroke-width="12" stroke-opacity="0.6"/></g>
+    <circle cx="420" cy="628" r="62" fill="#3a4658"/>
+    <circle cx="420" cy="628" r="30" fill="#ffd75a"/>
+    <circle cx="210" cy="880" r="130" fill="#eef2f6"/><circle cx="80" cy="985" r="120" fill="#eef2f6"/><circle cx="345" cy="960" r="96" fill="#eef2f6"/><circle cx="478" cy="985" r="64" fill="#eef2f6"/><circle cx="262" cy="745" r="70" fill="#eef2f6"/><circle cx="580" cy="1000" r="42" fill="#eef2f6"/>
+    <!-- strisce della rotazione fuori dalla gomma -->
+    <g fill="none" stroke="#e8edf3" stroke-linecap="round" stroke-opacity="0.85">
+    <path d="M98.9,535.9A334,334 0 0 1 214.4,364.8" stroke-width="12"/>
+    <path d="M91,467.6A366,366 0 0 1 165.8,364.7" stroke-width="9"/>
+    </g>
+    </g>
+    </svg>
+    <!-- logo:fine -->
+      <h1>SWISS<span>GASS</span></h1>
+      <p id="sottotitoloCarica">Tutto il Canton Ticino &middot; strade e montagne vere</p>
+      <!-- La riga che scorre nella barra e l'anello accanto al testo si muovono anche quando il programma sta
+           lavorando sodo. Se si fermano per molto tempo, il programma e' bloccato. -->
+      <div id="rigaStato"><span id="anelloCarica" aria-hidden="true"></span><p id="stato">Caricamento del territorio...</p></div>
+      <div id="barraCarica"><div id="riempimentoCarica"><div id="righeCarica"></div></div></div>
+      <div id="numeriCarica"><span id="percentoCarica">0 %</span><span id="tempoCarica">0 s</span></div>
+    </div>
+    <div id="piedeCarica">
+      <span><kbd>W A S D</kbd> guida</span>
+      <span><kbd>C</kbd> telecamera</span>
+      <span><kbd>N</kbd> mappa</span>
+      <span><kbd>K</kbd> Ticino</span>
+      <span><kbd>G</kbd> garage</span>
+      <span id="versioneCarica"></span>
+    </div>
   </div>
 
   <div id="hud">

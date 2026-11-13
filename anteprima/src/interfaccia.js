@@ -65,6 +65,7 @@ export function mostraStato(testo) {
   passiFatti = passiFatti + 1;
   const percento = Math.min(100, Math.round((passiFatti / PASSI_CARICAMENTO) * 100));
   document.getElementById("riempimentoCarica").style.width = percento + "%";
+  document.getElementById("percentoCarica").textContent = percento + " %";
   return new Promise(function (fatto) {
     requestAnimationFrame(function () {
       setTimeout(fatto, 0);
@@ -75,4 +76,5 @@ export function mostraStato(testo) {
 export function nascondiCaricamento() {
   clearInterval(orologioCaricamento);
   document.getElementById("caricamento").style.display = "none";
+  document.body.classList.remove("caricando");
 }

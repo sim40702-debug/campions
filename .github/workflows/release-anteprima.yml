@@ -115,7 +115,7 @@ jobs:
           fi
           # BUG-008: i file che il gioco importa devono esserci tutti nell'app (non solo sul computer di sviluppo)
           for file in cantone/cantone.json cantone/regioni.json cantone/stato.json dati/terreno.json regioni_main.js terzi/three/loaders/GLTFLoader.js terzi/three/objects/Sky.js terzi/three/environments/RoomEnvironment.js \
-                      node_modules/three/build/three.module.js src/gioco.js modelli/SM450_Telaio.glb; do
+                      node_modules/three/build/three.module.js src/gioco.js modelli/SM450_Telaio.glb grafica/icona.png; do
             if [ "$(find dist -path "*app/$file" | wc -l)" -eq 0 ]; then
               echo "::error::Nell'app manca $file"
               exit 1
@@ -158,6 +158,6 @@ jobs:
         with:
           tag_name: anteprima-v${{ needs.versione.outputs.numero }}
           target_commitish: ${{ github.sha }}
-          name: "Anteprima Ticino ${{ needs.versione.outputs.numero }}"
+          name: "Swissgass ${{ needs.versione.outputs.numero }}"
           body_path: anteprima/NOTE_RELEASE.md
           files: uscita/*

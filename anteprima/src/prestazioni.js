@@ -100,7 +100,7 @@ async function mostraRisultato(test) {
   const lento = tempi[Math.floor(tempi.length * 0.99)] || tempi[tempi.length - 1];   // 1% piu' lenti
   const memoria = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "n.d.";
   const testo = [
-    "MOTO RACING WORLD - Anteprima Ticino " + versione,
+    "Swissgass " + versione,
     "Test prestazioni (45 s sopra il Locarnese)",
     "Qualita': " + QUALITA[qualitaSalvata()].nome,
     "Schermo: " + window.innerWidth + " x " + window.innerHeight + " (pixel ratio " + window.devicePixelRatio + ")",
