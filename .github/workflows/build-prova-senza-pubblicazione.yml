@@ -4,7 +4,9 @@
 # GitHub Actions (7 giorni). Questo workflow NON e' quello di pubblicazione ufficiale (quello e' "Release anteprima Ticino").
 #
 # Garanzie (verificabili nel file):
-#  - parte SOLO a mano (workflow_dispatch): nessun "push" lo avvia;
+#  - parte a mano (workflow_dispatch, disponibile quando il file sara' in main) oppure con un push sul solo ramo
+#    claude/brave-turing-mztbtd che modifichi QUESTO file (un file nuovo non e' avviabile a mano finche' non e' in main);
+#    non parte con gli altri push, per non consumare minuti dei runner Mac/Windows;
 #  - il token ha SOLO permessi di lettura (contents: read): non puo' creare tag, release, pre-release ne' caricare file
 #    in una release, neanche per errore;
 #  - non esegue mai "gh release create/upload/edit/delete", "git tag" o "git push";
@@ -23,6 +25,10 @@
 name: Build di prova (NESSUNA pubblicazione)
 
 on:
+  push:
+    branches: [claude/brave-turing-mztbtd]
+    paths:
+      - ".github/workflows/build-prova-senza-pubblicazione.yml"
   workflow_dispatch:
     inputs:
       secondi_benchmark:
@@ -184,7 +190,7 @@ jobs:
 
       - name: Benchmark in grafica software (sviluppo, poi main), stessa macchina
         run: |
-          S="${{ inputs.secondi_benchmark }}"
+          S="${{ inputs.secondi_benchmark || '20' }}"
           mkdir -p misure/sviluppo misure/main
           xvfb-run -a node tools/anteprima_prova/benchmark_profili.mjs --risoluzione 800x450 --secondi "$S" --uscita misure/sviluppo
           RADICE_APP="$PWD/../mrw-main/anteprima" xvfb-run -a node tools/anteprima_prova/benchmark_profili.mjs --risoluzione 800x450 --secondi "$S" --uscita misure/main
