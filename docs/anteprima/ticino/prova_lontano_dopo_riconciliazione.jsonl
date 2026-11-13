@@ -1,0 +1,4 @@
+{"profilo":"bassa","celleTotali":1204,"sagomeVisibili":0,"verticiStrade":80836,"chiamate":[790,847],"triangoli":[2881332,2889000],"geometrie":[687,755],"texture":[82,82],"memoriaJS_MB":[695,713],"errori":[]}
+{"profilo":"media","celleTotali":1204,"sagomeVisibili":58,"verticiStrade":80836,"chiamate":[1057,1069],"triangoli":[3990674,3991908],"geometrie":[856,866],"texture":[135,135],"memoriaJS_MB":[669,654],"errori":[]}
+{"profilo":"alta","celleTotali":1204,"sagomeVisibili":205,"verticiStrade":80836,"chiamate":[1542,1570],"triangoli":[4465861,4474753],"geometrie":[1010,1040],"texture":[159,159],"memoriaJS_MB":[650,646],"errori":[]}
+{"profilo":"ultra","celleTotali":1204,"sagomeVisibili":343,"verticiStrade":80836,"chiamate":[1822,1880],"triangoli":[5151789,5188884],"geometrie":[1088,1141],"texture":[165,166],"memoriaJS_MB":[665,687],"errori":[]}

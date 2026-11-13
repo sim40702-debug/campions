@@ -1,0 +1,18 @@
+OK      1. avvio nella regione inclusa (Locarno) - 51 s
+OK      1. regione attuale = regione inclusa, profilo Alta - R_2696_1106, qualita alta
+OK      1. foto di dettaglio nella regione inclusa (assenti: non richieste) - raggio HD 0
+OK      1. nessuna richiesta di pacchetto HD per la regione inclusa - []
+OK      2. partenza a Lugano: scaricata e in uso la regione R_2712_1090 - R_2712_1090, 82 s, richieste regione_R_2712_1090.tar.gz
+OK      2. moto sulla strada, dentro il cuore di Lugano - {"x":-2498.8000066872996,"z":2000.3001304023414,"suStrada":true}
+OK      3. con profilo Alta il gioco chiede il pacchetto HD della regione in secondo piano - ["hd_R_2712_1090.tar.gz"]
+OK      3. pacchetto HD scaricato, aperto e controllato (indice + tutti i tasselli) - indice su disco: true
+OK      3. foto di dettaglio caricate dal gioco senza riavviare (raggio HD > 0) - raggio 215, conFotoHD ["R_2712_1090"]
+OK      3. almeno un tassello HD caricato nella memoria della scheda - {"hdCaricati":4,"hdScaricati":0,"hdInCorso":0,"hdPresenti":4,"foto2mCaricate":4,"foto2mScaricate":0,"foto2mInCorso":2}
+OK      4. coordinate del terreno disponibili per la prova di passaggio - [2720000,1098000]
+OK      4. la regione vicina (nord) si prepara guidando a 1,5 km dal bordo - ["regione_R_2712_1090.tar.gz","hd_R_2712_1090.tar.gz","regione_R_2712_1106.tar.gz"]
+OK      4. passaggio a R_2712_1106 guidando - R_2712_1106
+OK      4. dopo il passaggio la moto e' nello stesso punto LV95 (entro 150 m: la moto si rimette sulla strada piu' vicina) - 0 m
+OK      4. un solo terreno in memoria dopo il passaggio (regione vecchia scaricata) - {"colonne":6097,"righe":6097,"centro":[2720000,1114000]}
+OK      nessun errore di runtime in console
+
+16 prove riuscite, 0 fallite

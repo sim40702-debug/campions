@@ -1,3 +1,5 @@
+> **Aggiornato il 13/11/2026: vedi `REPORT_FASE_FINALE_0.16.0.md`** (rigenerazione dati, prove rifatte, stato del ramo). Le sezioni 2, 4, 7 e 8 qui sotto sono superate.
+
 # Ticino completo + Fasi 2–4 → 0.16.0: report di validazione
 
 **La 0.16.0 NON è pubblicata e NON è dichiarata completa.** Nessun tag, nessuna GitHub Release. Tutte le misure sono in **grafica software** (CPU, SwiftShader): gli FPS non dicono nulla di un PC o Mac vero. Nessuna prova su GPU hardware, su Windows o su Mac.

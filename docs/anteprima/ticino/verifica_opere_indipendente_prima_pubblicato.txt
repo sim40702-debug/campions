@@ -1,0 +1,22 @@
+vertici gallerie: 49977  sopra il terreno (>0.5 m): 513
+vertici ponti: 60136  sotto il terreno (<-0.5 m): 601
+galleria sopra terreno: max 19.5 m; > 0.5: 513; > 2: 41; > 5: 4; > 10: 3
+ponte sotto terreno: max 8.3 m; > 0.5: 601; > 2: 56; > 5: 7; > 10: 0
+ponti: punti presenti in piu' regioni: 14496; con scarto > 1 m: 588; scarto massimo: 60.010 m
+gallerie: punti presenti in piu' regioni: 9372; con scarto > 1 m: 1831; scarto massimo: 27.800 m
+
+Candidati San Gottardo (gallerie > 1,5 km nell'area di Airolo): [('R_2680_1154', 16489), ('R_2680_1138', 4903)]
+regione R_2680_1154, lunghezza 16489 m, da E2688222 N1169172 (y 1072.6) a E2689118 N1153598 (y 1146.7)
+        0 m  y=1072.58  terreno= 1080.7  copertura=   8.1
+     2044 m  y=1081.77  terreno= 1340.4  copertura= 258.6
+     4120 m  y=1091.10  terreno= 1538.4  copertura= 447.3
+     6194 m  y=1100.42  terreno= 1610.2  copertura= 509.8
+     8268 m  y=1109.75  terreno= 1665.0  copertura= 555.2
+    10326 m  y=1119.00  terreno= 2456.0  copertura=1337.0
+    12391 m  y=1128.28  terreno= 2569.2  copertura=1440.9
+    14454 m  y=1137.55  terreno= 2063.6  copertura= 926.1
+    16489 m  y=1146.70  terreno= 1146.4  copertura=  -0.3
+  tratti in salita > 0.5 m: 2 ; salto massimo tra vertici consecutivi: 24.69 m
+  copertura minima a >150 m dagli ingressi: 25.3 m
+
+ESITO: ATTENZIONE
