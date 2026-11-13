@@ -24,7 +24,7 @@ import { caricaFotoHD, uniformiHD, eventiStreaming } from "./terreno_hd.js";
 import { creaErba, aggiornaErba } from "./erba.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
-const VERSIONE = "0.16.1";
+const VERSIONE = "0.16.2";
 document.getElementById("versioneCarica").textContent = "v" + VERSIONE;
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";

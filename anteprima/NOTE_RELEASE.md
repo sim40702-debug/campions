@@ -3,7 +3,13 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.16.1) – Il gioco si chiama Swissgass: nuovo nome, nuovo logo, nuova schermata di caricamento
+### Novità di questa versione (0.16.2) – moto più veloci e mappa impennate su tutte le moto
+
+- **MRW Sport 1000 RR**: velocità massima da 295 a **360 km/h**.
+- **MRW SM 450**: velocità massima da 165 a **180 km/h**.
+- **Mappa impennate (tasto I) su tutte le moto**, scooter compreso (prima solo sui motard): col gas la moto impenna e resta su da sola, senza gas scende. Non vale per la macchina.
+
+### Novità della 0.16.1 – Il gioco si chiama Swissgass: nuovo nome, nuovo logo, nuova schermata di caricamento
 
 - **Nuovo nome: Swissgass** (prima "MOTO RACING WORLD – Anteprima Ticino"). Cambiano il nome dell'app, della finestra, dei collegamenti e dei file da scaricare (`Swissgass-0.16.1-...`). Le regioni già scaricate e le impostazioni restano: al primo avvio la cartella dei dati di prima viene rinominata. Su Mac, aggiornando dal pulsante "Aggiorna" della 0.16.0, il file dell'app conserva ancora il nome vecchio; prenderà quello nuovo all'aggiornamento seguente (oppure basta installarla dal `.dmg`).
 
