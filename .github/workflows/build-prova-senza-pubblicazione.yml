@@ -19,8 +19,8 @@
 #  2. "regressione":    confronta la build in sviluppo con quella di main (0.15.7), stessi dati, stessa macchina, grafica software;
 #  3. "installer":      costruisce gli installer Mac e Windows, li controlla, INSTALLA e AVVIA quello Windows e quello Mac
 #                       (arm64) e prova avvio, regione, profili grafici, LOD lontano, errori in console.
-# Un installer che non e' stato avviato non viene dichiarato verificato: l'x64 del Mac non si avvia qui (runner arm64) ed e'
-# segnato come "costruito, non avviato".
+#  4. "mac-x64":       avvia il dmg x64 su un runner Intel nativo (macos-15-intel): prova profili, LOD, regioni, errori.
+# Un installer che non e' stato avviato non viene dichiarato verificato. Il portatile Windows si prova via CDP sulla finestra vera.
 
 name: Build di prova (NESSUNA pubblicazione)
 
@@ -332,22 +332,18 @@ jobs:
           mkdir -p uscita/regioni
           node tools/anteprima_prova/prova_ticino_regioni.mjs "C:\\mrw-prova\\resources\\app" "$PWD/pacchetti" "$PWD/uscita/regioni" "C:\\mrw-prova\\MRW Anteprima Ticino.exe" | tee uscita/regioni.log
 
-      # Il portatile e' un lanciatore che estrae l'app e avvia un processo figlio: Playwright non puo' agganciarlo.
-      # Si controlla quindi solo che parta, che il processo dell'app resti in vita e non si chiuda da solo (NESSUN controllo
-      # dell'interfaccia: il portatile NON e' verificato come l'installer).
-      - name: "Windows: versione portatile - parte e resta in esecuzione 60 s (interfaccia non controllata)"
+      # Il portatile e' un lanciatore che estrae l'app e avvia un processo figlio, quindi Playwright non puo' lanciarlo direttamente.
+      # Lo si avvia come farebbe un utente, con --remote-debugging-port (il lanciatore passa gli argomenti all'app), e ci si
+      # collega via CDP alla finestra vera: versione, regione inclusa, profili Bassa e Alta, LOD, errori in console.
+      # Se il collegamento non riesce il passo FALLISCE (non si ricade su un controllo piu' debole): il portatile resterebbe non verificato.
+      - name: "Windows: versione portatile - avvio e interfaccia (collegamento alla finestra vera)"
         if: matrix.nome == 'windows'
-        shell: pwsh
+        shell: bash
         run: |
-          $p = (Get-ChildItem anteprima/dist -Filter "*Portatile.exe" | Select-Object -First 1).FullName
-          Write-Host "portatile: $p"
-          $proc = Start-Process -FilePath $p -PassThru
-          Start-Sleep -Seconds 60
-          $vivo = -not $proc.HasExited
-          $figli = @(Get-Process | Where-Object { $_.ProcessName -like "MRW*" })
-          Write-Host "lanciatore ancora attivo: $vivo; processi MRW attivi: $($figli.Count)"
-          $figli | Stop-Process -Force -ErrorAction SilentlyContinue
-          if (-not $vivo -or $figli.Count -lt 2) { throw "il portatile non e' rimasto in esecuzione" }
+          mkdir -p uscita/portatile
+          p=$(ls anteprima/dist/*Portatile.exe | head -1)
+          echo "portatile: $p"
+          node tools/anteprima_prova/prova_portatile_cdp.mjs "$PWD/$p" "$PWD/uscita/portatile" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/portatile.log
 
       # ---------------- MAC: monta il dmg arm64, copia l'app, avvia, prova ----------------
       - name: "Mac (arm64): monta il dmg e copia l'app"
@@ -383,12 +379,12 @@ jobs:
           nome=$(basename "$APP" .app)
           node tools/anteprima_prova/prova_ticino_regioni.mjs "$APP/Contents/Resources/app" "$PWD/pacchetti" "$PWD/uscita/regioni" "$APP/Contents/MacOS/$nome" | tee uscita/regioni.log
 
-      - name: "Mac (x64): costruito, NON avviato"
+      - name: "Mac (x64): costruito qui; l'avvio e' nel job mac-x64 (runner Intel)"
         if: matrix.nome == 'mac'
         shell: bash
         run: |
           ls -la anteprima/dist/*x64.dmg
-          echo "::notice::Il dmg x64 e' stato costruito ma NON avviato: il runner e' arm64. Non e' verificato."
+          echo "::notice::Il dmg x64 e' costruito qui e viene avviato nel job mac-x64 su un runner Intel."
 
       - name: Riassunto
         if: always()
@@ -408,4 +404,78 @@ jobs:
           name: prove-installer-${{ matrix.nome }}
           path: |
             uscita
+          retention-days: 7
+
+  # Il dmg x64 si avvia su un runner Intel nativo (macos-15-intel): arm64 non puo' provarlo.
+  mac-x64:
+    name: installer mac x64 (avvio su runner Intel)
+    needs: installer
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          name: installer-mac-PROVA-NON-UFFICIALE
+          path: dmg
+      - name: Pacchetti per la prova di download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p scarico pacchetti
+          gh release download "$TAG_DATI" -D scarico -p regione_R_2712_1090.tar.gz -p regione_R_2712_1106.tar.gz
+          (cd scarico && sha256sum -c <(grep -E ' (regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_sha256.txt))
+          cp scarico/*.tar.gz pacchetti/
+      - name: Strumenti di prova
+        shell: bash
+        run: npm --prefix tools/anteprima_prova install --no-save --no-package-lock playwright@1.63.0
+      - name: "Mac (x64): macchina, monta il dmg x64 e copia l'app"
+        shell: bash
+        run: |
+          echo "macchina: $(uname -m)"
+          [ "$(uname -m)" = "x86_64" ] || { echo "::error::il runner non e' Intel"; exit 1; }
+          dmg=$(ls dmg/*x64.dmg | head -1)
+          echo "dmg: $dmg ($(du -h "$dmg" | cut -f1))"
+          mkdir -p /tmp/mnt
+          hdiutil attach -nobrowse -readonly -mountpoint /tmp/mnt "$dmg"
+          cp -R /tmp/mnt/*.app /Applications/
+          hdiutil detach /tmp/mnt || true
+          xattr -cr /Applications/*.app || true
+          APP=$(ls -d /Applications/MRW*.app | head -1)
+          nome=$(basename "$APP" .app)
+          echo "architettura dell'eseguibile: $(lipo -archs "$APP/Contents/MacOS/$nome")"
+          lipo -archs "$APP/Contents/MacOS/$nome" | grep -q x86_64 || { echo "::error::l'eseguibile non e' x86_64"; exit 1; }
+          test -f "$APP/Contents/Resources/app/dati/terreno.bin" || { echo "::error::dati non presenti nell'app"; exit 1; }
+          echo "APP=$APP" >> "$GITHUB_ENV"
+      - name: "Mac (x64): avvio, profili grafici, LOD, errori in console"
+        shell: bash
+        run: |
+          mkdir -p uscita/profili
+          nome=$(basename "$APP" .app)
+          node tools/anteprima_prova/prova_profili_lod.mjs "$APP/Contents/MacOS/$nome" "$APP/Contents/Resources/app" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
+      - name: "Mac (x64): download delle regioni, passaggio tra regioni, memoria"
+        shell: bash
+        run: |
+          mkdir -p uscita/regioni
+          nome=$(basename "$APP" .app)
+          node tools/anteprima_prova/prova_ticino_regioni.mjs "$APP/Contents/Resources/app" "$PWD/pacchetti" "$PWD/uscita/regioni" "$APP/Contents/MacOS/$nome" | tee uscita/regioni.log
+      - name: Riassunto
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Installer mac x64 su runner Intel ($NOTA)"
+            for f in uscita/profili.log uscita/regioni.log; do
+              if [ -f "$f" ]; then echo "### $f"; echo '```'; tail -n 30 "$f" | cut -c1-220; echo '```'; fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prove-installer-mac-x64
+          path: uscita
           retention-days: 7
