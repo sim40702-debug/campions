@@ -1,4 +1,4 @@
-> **Aggiornato il 13/11/2026: vedi `REPORT_FASE_FINALE_0.16.0.md`** (rigenerazione dati, prove rifatte, stato del ramo). Le sezioni 2, 4, 7 e 8 qui sotto sono superate.
+> **Superato: vedi `REPORT_BUILD_E_DATI_0.16.0.md` (report valido e unico). Aggiornamento precedente: `REPORT_FASE_FINALE_0.16.0.md`** (rigenerazione dati, prove rifatte, stato del ramo). Le sezioni 2, 4, 7 e 8 qui sotto sono superate.
 
 # Ticino completo + Fasi 2–4 → 0.16.0: report di validazione
 

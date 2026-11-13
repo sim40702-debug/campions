@@ -1,3 +1,5 @@
+> **Superato il 13/11/2026 (pomeriggio):** il report valido e unico è `REPORT_BUILD_E_DATI_0.16.0.md` (con `ANALISI_QUOTE_OPERE.md` e `PROVA_WINDOWS_GPU.md`). In questo file i dati delle quote di ponti e gallerie (riconciliazione v1) sono superati dalla v2.
+
 # 0.16.0 — fase finale di validazione: report aggiornato (13/11/2026)
 
 **La 0.16.0 NON è pubblicata e NON è dichiarata completa.** Nessun tag, nessuna release creata o modificata, nessun pacchetto HD caricato, release 0.15.x intatte. Tutti gli FPS e i tempi sono in **grafica software** (CPU): non valgono per un PC vero. **Prova GPU Windows: non eseguita** (nessun risultato tuo).
