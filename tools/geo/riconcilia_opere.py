@@ -15,8 +15,19 @@
 #     (meno vicino agli ingressi, rampa di 80 m), sempre misurata dagli ingressi VERI, poi lisciata come nel passo 7;
 #  4. ogni vertice riceve UNA quota, uguale in tutte le regioni che lo contengono.
 # Le catene con un capo tagliato dal limite dei dati restano piatte da quel lato (come prima): ma lo stesso in ogni
-# regione. Le opere ramificate (carreggiate unite, svincoli) non si toccano e vengono contate.
+# regione.
 # Non si forza nessuna strada sul terreno: ponti e gallerie mantengono la loro geometria.
+#
+# REGOLE DI SICUREZZA PER LE RETI RAMIFICATE (aggiunte il 13/11/2026, versione 2 della riconciliazione):
+# la prima versione portava ogni rete ramificata (svincoli, viadotti con carreggiate unite) a un unico piano per interpolazione.
+# Il confronto con swissSURFACE3D (verifica_ponti_dsm.py) ha mostrato che per lo svincolo di Monte Carasso peggiorava (mediana
+# dell'errore da -0,01 a +3,5 m) e un controllo delle pendenze ha trovato rami trascinati fino a 222 m piu' in basso. Percio':
+#  A. una rete ramificata (piu' di un tratto) si riscrive SOLO se le copie dei suoi vertici in regioni diverse discordano di almeno
+#     SOGLIA_BORDO_RAMIFICATE_M (la soglia della verifica dei confini): senza discordanza non c'e' niente da riconciliare e i dati
+#     originali restano. Le catene semplici (un solo tratto) si riconciliano sempre, come prima.
+#  B. controllo per tratto dopo il calcolo: se la pendenza massima su 20 m del tratto riconciliato supera il 30 % e peggiora di piu'
+#     di 10 punti rispetto agli originali, il tratto torna ai dati originali. Se un tratto riconciliato vicino resterebbe con un
+#     gradino di oltre 1 m rispetto alla giunzione ripristinata, torna all'originale anche lui (propagazione).
 #
 # Uso:
 #   python riconcilia_opere.py <cartella con le regioni e "cantone/"> [--applica] [--json esito.json]
@@ -26,6 +37,7 @@
 
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -37,6 +49,30 @@ SOPRA_TERRENO_M = 0.2       # come passo7_esporta_anteprima.py
 COPERTURA_GALLERIA_M = 7.0  # come anteprima_strade.py
 RAMPA_GALLERIA_M = 80.0
 TOLLERANZA_BORDO_M = 3.0    # un capo a meno di 3 m dal bordo dei dati e' "tagliato", non un ingresso
+SOGLIA_BORDO_RAMIFICATE_M = 1.0   # come la verifica dei confini (verifica_cantone.py): sotto questa discordanza tra regioni non si tocca la rete ramificata
+FINESTRA_PENDENZA_M = 20.0        # pendenza misurata su almeno 20 m di strada (i vertici a 3-4 m danno valori rumorosi)
+SOGLIA_PENDENZA = 0.30            # un tratto riconciliato con pendenza su 20 m oltre il 30 %...
+PEGGIORAMENTO_PENDENZA = 0.10     # ...e peggiorata di oltre 10 punti rispetto agli originali, torna all'originale
+SOGLIA_GRADINO_GIUNZIONE_M = 1.0  # gradino massimo ammesso tra un tratto ripristinato e uno riconciliato che si toccano
+SOGLIA_GIUNZIONE_FALSA_M = 5.0    # se negli originali due tratti che si toccano hanno gia' un salto di oltre 5 m, non sono davvero collegati
+
+
+def pendenza_finestra(s, y, finestra=FINESTRA_PENDENZA_M):
+    # pendenza massima |dy|/ds su tratti di almeno `finestra` metri lungo la strada (s = distanze progressive)
+    m = 0.0
+    j = 0
+    n = len(s)
+    for i in range(n):
+        if j <= i:
+            j = i + 1
+        while j < n and s[j] - s[i] < finestra:
+            j += 1
+        if j >= n:
+            break
+        m = max(m, abs(y[j] - y[i]) / (s[j] - s[i]))
+    if m == 0.0 and n >= 2 and s[-1] > 2 and s[-1] < finestra:
+        m = abs(y[-1] - y[0]) / s[-1]     # tratto piu' corto della finestra: pendenza dell'intero tratto
+    return m
 
 
 class Nodi:
@@ -90,6 +126,7 @@ def riconcilia(base, applica, uscita_json=None):
     # per ogni nodo: la regione dove e' piu' lontano dal bordo dell'area, e la sua quota (stored y) li'
     quota_nodo = {}      # (tipo, nodo) -> (distanza dal bordo migliore, y salvata)
     ys_per_nodo = {}     # (tipo, nodo) -> lista di y salvate (per misurare lo scarto di partenza)
+    ys_per_regione = {}  # (tipo, nodo) -> {id regione: prima y salvata}: discordanza TRA REGIONI (il difetto dei confini)
     for tipo in ("b", "g"):
         for r, k, ids in pezzi[tipo]:
             p = dati_regione[r.id]["strade"][k]["p"]
@@ -98,12 +135,38 @@ def riconcilia(base, applica, uscita_json=None):
                 d = distanza_dal_bordo(r, e, n)
                 y = p[j * 3 + 1]
                 ys_per_nodo.setdefault((tipo, nid), []).append(y)
+                ys_per_regione.setdefault((tipo, nid), {}).setdefault(r.id, y)
                 if (tipo, nid) not in quota_nodo or d > quota_nodo[(tipo, nid)][0]:
                     quota_nodo[(tipo, nid)] = (d, y, r)
 
+    # profilo ORIGINALE di ogni arco (due vertici consecutivi di una strada): (distanza dal bordo, y primo vertice, y secondo vertice), copia piu' interna.
+    # Serve a misurare le pendenze e i gradini di un tratto con le quote della SUA strada, non con quelle di un'altra che passa nello stesso punto.
+    y_arco = {}
+    for tipo in ("b", "g"):
+        for r, k, ids in pezzi[tipo]:
+            p = dati_regione[r.id]["strade"][k]["p"]
+            for j in range(len(ids) - 1):
+                a, b = ids[j], ids[j + 1]
+                if a == b:
+                    continue
+                d = min(distanza_dal_bordo(r, *nodi.pos[a]), distanza_dal_bordo(r, *nodi.pos[b]))
+                v = (d, p[j * 3 + 1], p[(j + 1) * 3 + 1])
+                for chiave, val in (((tipo, a, b), v), ((tipo, b, a), (d, v[2], v[1]))):
+                    if chiave not in y_arco or d > y_arco[chiave][0]:
+                        y_arco[chiave] = val
+
+    def y_originale_segmento(tipo, ordine):
+        ys = [y_arco[(tipo, ordine[j], ordine[j + 1])][1] for j in range(len(ordine) - 1)]
+        ys.append(y_arco[(tipo, ordine[-2], ordine[-1])][2])
+        return ys
+
     nuovo_y = {}         # (tipo, nodo) -> y nuova
-    statistiche = {"segmenti": 0, "gruppi_corretti": 0, "segmenti_corretti": 0, "gruppi_senza_ingressi": 0, "cambio_max_m": 0.0, "scarto_prima_max_m": 0.0}
+    archi_ripristinati = set()   # (tipo, a, b) degli archi dei tratti ripristinati agli originali: i loro vertici non si riscrivono (per arco, non per nodo:
+                                 # un'altra strada che passa dallo stesso nodo, per esempio la galleria principale, si riscrive normalmente)
+    statistiche = {"segmenti": 0, "gruppi_corretti": 0, "segmenti_corretti": 0, "gruppi_senza_ingressi": 0, "cambio_max_m": 0.0, "scarto_prima_max_m": 0.0,
+                   "gruppi_ramificati_non_toccati": 0, "segmenti_ripristinati": 0}
     dettagli = []
+    esclusi = []         # reti ramificate lasciate ai dati originali e tratti ripristinati dal controllo delle pendenze
     SOGLIA_SCARTO_M = 0.3
     for tipo in ("b", "g"):
         # grafo: archi tra vertici consecutivi
@@ -187,6 +250,22 @@ def riconcilia(base, applica, uscita_json=None):
             statistiche["scarto_prima_max_m"] = max(statistiche["scarto_prima_max_m"], scarto_prima)
             if scarto_prima <= SOGLIA_SCARTO_M:
                 continue            # le copie nelle regioni gia' combaciano: non si tocca niente
+            if len(gruppo) > 1:
+                # rete ramificata: discordanza TRA REGIONI (stesso vertice in regioni diverse)
+                scarto_regioni = 0.0
+                for i in gruppo:
+                    for v in segmenti[i]:
+                        vals = list(ys_per_regione[(tipo, v)].values())
+                        if len(vals) > 1:
+                            scarto_regioni = max(scarto_regioni, max(vals) - min(vals))
+                if scarto_regioni < SOGLIA_BORDO_RAMIFICATE_M:
+                    statistiche["gruppi_ramificati_non_toccati"] += 1
+                    nodo0 = segmenti[gruppo[0]][0]
+                    esclusi.append({"tipo": tipo, "motivo": "rete ramificata senza discordanza tra regioni (< " + str(SOGLIA_BORDO_RAMIFICATE_M) + " m): dati originali",
+                                    "segmenti": len(gruppo), "lunghezza_totale_m": round(sum(lunghezze[i][-1] for i in gruppo)),
+                                    "scarto_regioni_m": round(scarto_regioni, 2), "scarto_copie_m": round(scarto_prima, 2),
+                                    "esempio_LV95": [round(nodi.pos[nodo0][0]), round(nodi.pos[nodo0][1])]})
+                    continue
             # --- rete ridotta: nodi capo e segmenti con conduttanza 1/lunghezza
             nodi_capo = sorted({v for i in gruppo for v in (segmenti[i][0], segmenti[i][-1])})
             indice = {v: k for k, v in enumerate(nodi_capo)}
@@ -285,6 +364,7 @@ def riconcilia(base, applica, uscita_json=None):
                         dist[a] = dist[b] + l; cambiato = True
 
             massimo_cambio = 0.0
+            proposte = {}        # indice segmento -> lista di y nuove (con SOPRA_TERRENO_M)
             for i in gruppo:
                 ordine, s = segmenti[i], lunghezze[i]
                 L_seg = s[-1]
@@ -313,11 +393,59 @@ def riconcilia(base, applica, uscita_json=None):
                         liscio[0] = nuova[0]
                         liscio[-1] = nuova[-1]
                         nuova = liscio
-                for v, qn in zip(ordine, nuova):
-                    y = round(qn + SOPRA_TERRENO_M, 2)
+                proposte[i] = [round(qn + SOPRA_TERRENO_M, 2) for qn in nuova]
+
+            # --- regola B: controllo delle pendenze per tratto e ripristino degli originali dove la riconciliazione peggiora
+            def estremi(i):
+                return (segmenti[i][0], segmenti[i][-1])
+            rifiutati = {}
+            originali = {i: y_originale_segmento(tipo, segmenti[i]) for i in proposte}
+            for i, ys_nuove in proposte.items():
+                prima_y = originali[i]
+                g_prima = pendenza_finestra(lunghezze[i], prima_y)
+                g_dopo = pendenza_finestra(lunghezze[i], ys_nuove)
+                if g_dopo > SOGLIA_PENDENZA and g_dopo > g_prima + PEGGIORAMENTO_PENDENZA:
+                    rifiutati[i] = "pendenza su " + str(int(FINESTRA_PENDENZA_M)) + " m " + str(round(g_prima * 100)) + " % -> " + str(round(g_dopo * 100)) + " %"
+            cambiato = bool(rifiutati)
+            while cambiato:
+                cambiato = False
+                for i, ys_nuove in proposte.items():
+                    if i in rifiutati:
+                        continue
+                    for pos_v, v in ((0, segmenti[i][0]), (-1, segmenti[i][-1])):
+                        for j in list(rifiutati):
+                            if v in estremi(j):
+                                # y originale del tratto ripristinato j nella giunzione v, e del tratto i
+                                y_j = originali[j][0 if segmenti[j][0] == v else -1]
+                                gradino_nuovo = abs(ys_nuove[pos_v] - y_j)
+                                gradino_orig = abs(originali[i][pos_v] - y_j)
+                                # si propaga solo se la riconciliazione AUMENTA il gradino: una giunzione gia' discontinua negli originali
+                                # (strade di superficie che toccano la galleria nello stesso punto 2D) non e' una vera giunzione: non si propaga
+                                if os.environ.get("RICONCILIA_DEBUG"):
+                                    print("   giunzione", [round(c) for c in nodi.pos[v]], "tratto", i, "L", round(lunghezze[i][-1]), "y orig", round(originali[i][pos_v], 1), "y nuova", round(ys_nuove[pos_v], 1),
+                                          "| ripristinato", j, "L", round(lunghezze[j][-1]), "y orig", round(y_j, 1), "| gradino orig", round(gradino_orig, 1), "nuovo", round(gradino_nuovo, 1))
+                                if gradino_orig <= SOGLIA_GIUNZIONE_FALSA_M and gradino_nuovo > SOGLIA_GRADINO_GIUNZIONE_M and gradino_nuovo > gradino_orig + SOGLIA_GRADINO_GIUNZIONE_M:
+                                    rifiutati[i] = "il gradino alla giunzione con un tratto ripristinato aumenterebbe di oltre " + str(SOGLIA_GRADINO_GIUNZIONE_M) + " m"
+                                    cambiato = True
+                                    break
+                        if i in rifiutati:
+                            break
+            for i, ys_nuove in proposte.items():
+                if i in rifiutati:
+                    for a_, b_ in zip(segmenti[i], segmenti[i][1:]):
+                        archi_ripristinati.add((tipo, a_, b_))
+                        archi_ripristinati.add((tipo, b_, a_))
+                    statistiche["segmenti_ripristinati"] += 1
+                    nodo0 = segmenti[i][0]
+                    esclusi.append({"tipo": tipo, "motivo": "tratto ripristinato ai dati originali: " + rifiutati[i], "segmenti": 1, "lunghezza_totale_m": round(lunghezze[i][-1]),
+                                    "esempio_LV95": [round(nodi.pos[nodo0][0]), round(nodi.pos[nodo0][1])]})
+                    continue
+                for v, y, y_orig in zip(segmenti[i], ys_nuove, originali[i]):
                     nuovo_y[(tipo, v)] = y
-                    massimo_cambio = max(massimo_cambio, max(abs(y - old) for old in ys_per_nodo[(tipo, v)]))
+                    massimo_cambio = max(massimo_cambio, abs(y - y_orig))      # rispetto alla quota della STESSA strada (non di un'altra che passa nel nodo)
                 statistiche["segmenti_corretti"] += 1
+            if len(rifiutati) == len(proposte):
+                continue
             statistiche["gruppi_corretti"] += 1
             statistiche["cambio_max_m"] = max(statistiche["cambio_max_m"], massimo_cambio)
             tot_l = sum(lunghezze[i][-1] for i in gruppo)
@@ -326,11 +454,12 @@ def riconcilia(base, applica, uscita_json=None):
 
     print("\nSegmenti di ponti/gallerie (tratti tra capi e giunzioni): " + str(statistiche["segmenti"]) + "; gruppi (reti collegate) corretti: " + str(statistiche["gruppi_corretti"]) +
           " (" + str(statistiche["segmenti_corretti"]) + " segmenti); gruppi senza ingressi veri (non toccati): " + str(statistiche["gruppi_senza_ingressi"]))
+    print("Reti ramificate lasciate ai dati originali (nessuna discordanza tra regioni): " + str(statistiche["gruppi_ramificati_non_toccati"]) + "; tratti ripristinati dal controllo delle pendenze: " + str(statistiche["segmenti_ripristinati"]))
     print("Scarto massimo tra le copie PRIMA: " + str(round(statistiche["scarto_prima_max_m"], 1)) + " m; cambio massimo di quota applicato a un vertice: " + str(round(statistiche["cambio_max_m"], 1)) + " m")
     for d in sorted(dettagli, key=lambda x: -x["scarto_prima_m"])[:14]:
         print("   " + ("galleria" if d["tipo"] == "g" else "ponte") + ": " + str(d["segmenti"]) + " segmenti, " + str(d["lunghezza_totale_m"]) + " m, " + str(d["ingressi_veri"]) + " ingressi veri, scarto prima " + str(d["scarto_prima_m"]) + " m, cambio max " + str(d["cambio_max_m"]) + " m, vicino a " + str(d["esempio_LV95"]))
     if uscita_json:
-        Path(uscita_json).write_text(json.dumps({"statistiche": statistiche, "segmenti_corretti": dettagli}, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(uscita_json).write_text(json.dumps({"statistiche": statistiche, "segmenti_corretti": dettagli, "non_toccati_o_ripristinati": esclusi}, indent=1, ensure_ascii=False), encoding="utf-8")
 
     if not applica:
         print("\n(analisi: niente e' stato scritto; usa --applica)")
@@ -347,6 +476,8 @@ def riconcilia(base, applica, uscita_json=None):
                 p = strade["strade"][k]["p"]
                 for j, nid in enumerate(ids):
                     y = nuovo_y.get((tipo, nid))
+                    if (j > 0 and (tipo, ids[j - 1], nid) in archi_ripristinati) or (j < len(ids) - 1 and (tipo, nid, ids[j + 1]) in archi_ripristinati):
+                        continue          # vertice di un tratto ripristinato agli originali
                     if y is not None and p[j * 3 + 1] != y:
                         p[j * 3 + 1] = y
                         cambiato = True

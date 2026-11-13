@@ -1,0 +1,469 @@
+{
+ "statistiche": {
+  "segmenti": 3785,
+  "gruppi_corretti": 27,
+  "segmenti_corretti": 53,
+  "gruppi_senza_ingressi": 0,
+  "cambio_max_m": 108.05000000000018,
+  "scarto_prima_max_m": 197.31000000000017,
+  "gruppi_ramificati_non_toccati": 9,
+  "segmenti_ripristinati": 2,
+  "gruppi_con_media": 4
+ },
+ "segmenti_corretti": [
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 36,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 1.4,
+   "cambio_max_m": 0.5,
+   "esempio_LV95": [
+    2716022,
+    1093728
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 35,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.6,
+   "cambio_max_m": 0.5,
+   "esempio_LV95": [
+    2692036,
+    1102372
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 10,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 0.6,
+   "esempio_LV95": [
+    2692470,
+    1102321
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 14,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 0.0,
+   "esempio_LV95": [
+    2693504,
+    1102193
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 15,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.6,
+   "cambio_max_m": 0.5,
+   "esempio_LV95": [
+    2694133,
+    1102139
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 9,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.4,
+   "cambio_max_m": 0.5,
+   "esempio_LV95": [
+    2692107,
+    1102337
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 15,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.5,
+   "cambio_max_m": 0.0,
+   "esempio_LV95": [
+    2694323,
+    1102176
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 25,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.4,
+   "cambio_max_m": 1.2,
+   "esempio_LV95": [
+    2729776,
+    1103200
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 24,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 1.0,
+   "esempio_LV95": [
+    2730312,
+    1106096
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 54,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 1.0,
+   "esempio_LV95": [
+    2730072,
+    1102028
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 7,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 0.0,
+   "esempio_LV95": [
+    2730134,
+    1102676
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 117,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 1.6,
+   "cambio_max_m": 0.0,
+   "esempio_LV95": [
+    2676032,
+    1109394
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 160,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 0.1,
+   "esempio_LV95": [
+    2682243,
+    1109472
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 35,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 0.3,
+   "esempio_LV95": [
+    2683959,
+    1107714
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 48,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.3,
+   "cambio_max_m": 1.3,
+   "esempio_LV95": [
+    2679028,
+    1114001
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 58,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.4,
+   "cambio_max_m": 0.1,
+   "esempio_LV95": [
+    2708048,
+    1123879
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 1,
+   "lunghezza_totale_m": 259,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.7,
+   "cambio_max_m": 0.2,
+   "esempio_LV95": [
+    2721874,
+    1117852
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 3,
+   "lunghezza_totale_m": 1667,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 60.6,
+   "cambio_max_m": 60.5,
+   "esempio_LV95": [
+    2709105,
+    1142000
+   ]
+  },
+  {
+   "tipo": "b",
+   "segmenti": 4,
+   "lunghezza_totale_m": 1672,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 61.3,
+   "cambio_max_m": 61.1,
+   "esempio_LV95": [
+    2709132,
+    1141921
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 3,
+   "lunghezza_totale_m": 1757,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 7.5,
+   "cambio_max_m": 7.5,
+   "esempio_LV95": [
+    2716913,
+    1090746
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 1,
+   "lunghezza_totale_m": 1727,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 7.8,
+   "cambio_max_m": 0.9,
+   "esempio_LV95": [
+    2715361,
+    1091377
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 1,
+   "lunghezza_totale_m": 11,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 0.5,
+   "cambio_max_m": 0.4,
+   "esempio_LV95": [
+    2718670,
+    1081135
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 11,
+   "lunghezza_totale_m": 1214,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 10.1,
+   "cambio_max_m": 10.1,
+   "esempio_LV95": [
+    2731305,
+    1085580
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 4,
+   "lunghezza_totale_m": 108,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 1.9,
+   "cambio_max_m": 1.9,
+   "esempio_LV95": [
+    2709537,
+    1117971
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 3,
+   "lunghezza_totale_m": 1317,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 27.8,
+   "cambio_max_m": 11.6,
+   "esempio_LV95": [
+    2708481,
+    1117268
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 7,
+   "lunghezza_totale_m": 17927,
+   "ingressi_veri": 6,
+   "scarto_prima_m": 197.3,
+   "cambio_max_m": 28.5,
+   "esempio_LV95": [
+    2689118,
+    1153598
+   ]
+  },
+  {
+   "tipo": "g",
+   "segmenti": 1,
+   "lunghezza_totale_m": 496,
+   "ingressi_veri": 2,
+   "scarto_prima_m": 17.8,
+   "cambio_max_m": 108.1,
+   "esempio_LV95": [
+    2716850,
+    1157788
+   ]
+  }
+ ],
+ "non_toccati_o_ripristinati": [
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 5,
+   "lunghezza_totale_m": 497,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 1.28,
+   "esempio_LV95": [
+    2710915,
+    1073268
+   ]
+  },
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 5,
+   "lunghezza_totale_m": 842,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 0.4,
+   "esempio_LV95": [
+    2725482,
+    1077536
+   ]
+  },
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 4,
+   "lunghezza_totale_m": 46,
+   "scarto_regioni_m": 0.8,
+   "scarto_copie_m": 0.8,
+   "esempio_LV95": [
+    2716000,
+    1097227
+   ]
+  },
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 3,
+   "lunghezza_totale_m": 79,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 2.32,
+   "esempio_LV95": [
+    2715026,
+    1098520
+   ]
+  },
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 3,
+   "lunghezza_totale_m": 648,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 0.47,
+   "esempio_LV95": [
+    2718222,
+    1112207
+   ]
+  },
+  {
+   "tipo": "b",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 21,
+   "lunghezza_totale_m": 1030,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 0.57,
+   "esempio_LV95": [
+    2721257,
+    1116692
+   ]
+  },
+  {
+   "tipo": "g",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 5,
+   "lunghezza_totale_m": 2792,
+   "scarto_regioni_m": 0.69,
+   "scarto_copie_m": 0.69,
+   "esempio_LV95": [
+    2715715,
+    1098501
+   ]
+  },
+  {
+   "tipo": "g",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 5,
+   "lunghezza_totale_m": 5728,
+   "scarto_regioni_m": 0.06,
+   "scarto_copie_m": 2.54,
+   "esempio_LV95": [
+    2708243,
+    1115208
+   ]
+  },
+  {
+   "tipo": "g",
+   "motivo": "rete ramificata senza discordanza tra regioni (< 1.0 m): dati originali",
+   "segmenti": 4,
+   "lunghezza_totale_m": 3088,
+   "scarto_regioni_m": 0.0,
+   "scarto_copie_m": 22.7,
+   "esempio_LV95": [
+    2675272,
+    1132012
+   ]
+  },
+  {
+   "tipo": "g",
+   "motivo": "tratto ripristinato ai dati originali: pendenza su 20 m 11 % -> 37 %",
+   "segmenti": 1,
+   "lunghezza_totale_m": 507,
+   "esempio_LV95": [
+    2687594,
+    1167748
+   ]
+  },
+  {
+   "tipo": "g",
+   "motivo": "tratto ripristinato ai dati originali: pendenza su 20 m 16 % -> 139 %",
+   "segmenti": 1,
+   "lunghezza_totale_m": 181,
+   "esempio_LV95": [
+    2687781,
+    1167303
+   ]
+  }
+ ]
+}

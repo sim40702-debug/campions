@@ -1,0 +1,3270 @@
+[
+ {
+  "tipo": "galleria",
+  "est": 2687732,
+  "nord": 1167429,
+  "vertici": 203,
+  "lunghezza_m": 688,
+  "regioni": [
+   "R_2680_1154"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 222.0,
+  "pendenza_max_prima": 0.238,
+  "pendenza_max_dopo": 4.075,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2716870,
+  "nord": 1158017,
+  "vertici": 141,
+  "lunghezza_m": 721,
+  "regioni": [
+   "R_2712_1138",
+   "R_2712_1154"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 6.6,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 108.1,
+  "pendenza_max_prima": 11.954,
+  "pendenza_max_dopo": 3.428,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2708054,
+  "nord": 1117709,
+  "vertici": 347,
+  "lunghezza_m": 2361,
+  "regioni": [
+   "R_2696_1106",
+   "R_2696_1122",
+   "R_2712_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 9,
+  "scarto_copie_prima_m": 27.8,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 27.8,
+  "pendenza_max_prima": 3.684,
+  "pendenza_max_dopo": 0.189,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2687346,
+  "nord": 1161603,
+  "vertici": 4374,
+  "lunghezza_m": 22142,
+  "regioni": [
+   "R_2680_1138",
+   "R_2680_1154"
+  ],
+  "ramificata": true,
+  "giunzioni": 11,
+  "scarto_copie_prima_m": 22.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 27.1,
+  "pendenza_max_prima": 6.853,
+  "pendenza_max_dopo": 0.676,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2675800,
+  "nord": 1132706,
+  "vertici": 21,
+  "lunghezza_m": 75,
+  "regioni": [
+   "R_2664_1122"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 22.6,
+  "pendenza_max_prima": 1.469,
+  "pendenza_max_dopo": 3.7,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2705783,
+  "nord": 1115110,
+  "vertici": 1462,
+  "lunghezza_m": 6027,
+  "regioni": [
+   "R_2696_1106",
+   "R_2712_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 4,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 10.8,
+  "pendenza_max_prima": 0.616,
+  "pendenza_max_dopo": 0.11,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2731305,
+  "nord": 1086148,
+  "vertici": 369,
+  "lunghezza_m": 1870,
+  "regioni": [
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 14,
+  "scarto_copie_prima_m": 8.8,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 10.1,
+  "pendenza_max_prima": 1.4,
+  "pendenza_max_dopo": 0.555,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2716143,
+  "nord": 1091070,
+  "vertici": 449,
+  "lunghezza_m": 4174,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 2,
+  "scarto_copie_prima_m": 7.8,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 7.8,
+  "pendenza_max_prima": 1.343,
+  "pendenza_max_dopo": 0.193,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2716153,
+  "nord": 1091094,
+  "vertici": 453,
+  "lunghezza_m": 4153,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 7.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 7.5,
+  "pendenza_max_prima": 1.278,
+  "pendenza_max_dopo": 0.143,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2717045,
+  "nord": 1098820,
+  "vertici": 724,
+  "lunghezza_m": 3061,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 7,
+  "scarto_copie_prima_m": 0.7,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 7.1,
+  "pendenza_max_prima": 0.986,
+  "pendenza_max_dopo": 0.396,
+  "fuori_terreno_prima": 5,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2709521,
+  "nord": 1118010,
+  "vertici": 30,
+  "lunghezza_m": 241,
+  "regioni": [
+   "R_2696_1106",
+   "R_2696_1122",
+   "R_2712_1106",
+   "R_2712_1122"
+  ],
+  "ramificata": true,
+  "giunzioni": 2,
+  "scarto_copie_prima_m": 1.7,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 1.9,
+  "pendenza_max_prima": 0.333,
+  "pendenza_max_dopo": 0.225,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2675473,
+  "nord": 1132708,
+  "vertici": 774,
+  "lunghezza_m": 3014,
+  "regioni": [
+   "R_2664_1122"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.7,
+  "pendenza_max_prima": 0.204,
+  "pendenza_max_dopo": 0.328,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2718663,
+  "nord": 1081134,
+  "vertici": 5,
+  "lunghezza_m": 11,
+  "regioni": [
+   "R_2712_1074"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.5,
+  "pendenza_max_prima": 0.054,
+  "pendenza_max_dopo": 0.121,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2693377,
+  "nord": 1102662,
+  "vertici": 4,
+  "lunghezza_m": 31,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.113,
+  "pendenza_max_dopo": 0.113,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2708527,
+  "nord": 1091431,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.259,
+  "pendenza_max_dopo": 0.259,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "galleria",
+  "est": 2708512,
+  "nord": 1091396,
+  "vertici": 3,
+  "lunghezza_m": 23,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.176,
+  "pendenza_max_dopo": 0.176,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2709295,
+  "nord": 1141566,
+  "vertici": 436,
+  "lunghezza_m": 5790,
+  "regioni": [
+   "R_2696_1122",
+   "R_2696_1138",
+   "R_2712_1122",
+   "R_2712_1138"
+  ],
+  "ramificata": true,
+  "giunzioni": 3,
+  "scarto_copie_prima_m": 57.1,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 61.2,
+  "pendenza_max_prima": 8.823,
+  "pendenza_max_dopo": 0.291,
+  "fuori_terreno_prima": 30,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 435,
+   "prima_mediana_m": -7.79,
+   "dopo_mediana_m": -2.38,
+   "prima_entro_tol": 0.046,
+   "dopo_entro_tol": 0.444
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2709276,
+  "nord": 1141575,
+  "vertici": 442,
+  "lunghezza_m": 5809,
+  "regioni": [
+   "R_2696_1122",
+   "R_2696_1138",
+   "R_2712_1122",
+   "R_2712_1138"
+  ],
+  "ramificata": true,
+  "giunzioni": 2,
+  "scarto_copie_prima_m": 60.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 60.5,
+  "pendenza_max_prima": 9.158,
+  "pendenza_max_dopo": 0.531,
+  "fuori_terreno_prima": 55,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 441,
+   "prima_mediana_m": -7.16,
+   "dopo_mediana_m": -3.04,
+   "prima_entro_tol": 0.048,
+   "dopo_entro_tol": 0.177
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2717905,
+  "nord": 1112159,
+  "vertici": 183,
+  "lunghezza_m": 655,
+  "regioni": [
+   "R_2712_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 18.0,
+  "pendenza_max_prima": 0.533,
+  "pendenza_max_dopo": 0.378,
+  "fuori_terreno_prima": 9,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 183,
+   "prima_mediana_m": -13.65,
+   "dopo_mediana_m": -4.78,
+   "prima_entro_tol": 0.06,
+   "dopo_entro_tol": 0.202
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2721099,
+  "nord": 1116737,
+  "vertici": 323,
+  "lunghezza_m": 1043,
+  "regioni": [
+   "R_2712_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 12,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 14.7,
+  "pendenza_max_prima": 0.61,
+  "pendenza_max_dopo": 0.158,
+  "fuori_terreno_prima": 5,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 323,
+   "prima_mediana_m": -0.01,
+   "dopo_mediana_m": 3.53,
+   "prima_entro_tol": 0.585,
+   "dopo_entro_tol": 0.477
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2725227,
+  "nord": 1077586,
+  "vertici": 230,
+  "lunghezza_m": 854,
+  "regioni": [
+   "R_2712_1074"
+  ],
+  "ramificata": true,
+  "giunzioni": 2,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 12.7,
+  "pendenza_max_prima": 1.091,
+  "pendenza_max_dopo": 0.648,
+  "fuori_terreno_prima": 19,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710936,
+  "nord": 1073285,
+  "vertici": 145,
+  "lunghezza_m": 508,
+  "regioni": [
+   "R_2712_1074"
+  ],
+  "ramificata": true,
+  "giunzioni": 2,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 5.2,
+  "pendenza_max_prima": 0.479,
+  "pendenza_max_dopo": 0.111,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2715994,
+  "nord": 1097234,
+  "vertici": 14,
+  "lunghezza_m": 70,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 0.8,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 2.4,
+  "pendenza_max_prima": 0.479,
+  "pendenza_max_dopo": 0.936,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 13,
+   "prima_mediana_m": -1.77,
+   "dopo_mediana_m": -3.06,
+   "prima_entro_tol": 0.538,
+   "dopo_entro_tol": 0.385
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2714993,
+  "nord": 1098531,
+  "vertici": 23,
+  "lunghezza_m": 166,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 2.2,
+  "pendenza_max_prima": 0.673,
+  "pendenza_max_dopo": 0.023,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 22,
+   "prima_mediana_m": -3.24,
+   "dopo_mediana_m": -3.25,
+   "prima_entro_tol": 0.0,
+   "dopo_entro_tol": 0.0
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2675978,
+  "nord": 1109413,
+  "vertici": 34,
+  "lunghezza_m": 151,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 3,
+  "scarto_copie_prima_m": 1.6,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.6,
+  "pendenza_max_prima": 0.257,
+  "pendenza_max_dopo": 0.051,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2716005,
+  "nord": 1093736,
+  "vertici": 11,
+  "lunghezza_m": 83,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 0.9,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.4,
+  "pendenza_max_prima": 0.169,
+  "pendenza_max_dopo": 0.223,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 10,
+   "prima_mediana_m": -3.22,
+   "dopo_mediana_m": -3.22,
+   "prima_entro_tol": 0.3,
+   "dopo_entro_tol": 0.3
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679021,
+  "nord": 1113978,
+  "vertici": 13,
+  "lunghezza_m": 95,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.3,
+  "pendenza_max_prima": 0.718,
+  "pendenza_max_dopo": 1.041,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729773,
+  "nord": 1103212,
+  "vertici": 8,
+  "lunghezza_m": 76,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.4,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.2,
+  "pendenza_max_prima": 0.283,
+  "pendenza_max_dopo": 0.636,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692047,
+  "nord": 1102359,
+  "vertici": 10,
+  "lunghezza_m": 104,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.6,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.0,
+  "pendenza_max_prima": 0.084,
+  "pendenza_max_dopo": 0.229,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2694138,
+  "nord": 1102134,
+  "vertici": 5,
+  "lunghezza_m": 44,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.6,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.0,
+  "pendenza_max_prima": 0.197,
+  "pendenza_max_dopo": 0.355,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692111,
+  "nord": 1102339,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.4,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.0,
+  "pendenza_max_prima": 0.22,
+  "pendenza_max_dopo": 0.386,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2730312,
+  "nord": 1106108,
+  "vertici": 7,
+  "lunghezza_m": 71,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.0,
+  "pendenza_max_prima": 0.306,
+  "pendenza_max_dopo": 0.424,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2730060,
+  "nord": 1102052,
+  "vertici": 15,
+  "lunghezza_m": 161,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 1.0,
+  "pendenza_max_prima": 0.168,
+  "pendenza_max_dopo": 0.421,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2721775,
+  "nord": 1117948,
+  "vertici": 72,
+  "lunghezza_m": 307,
+  "regioni": [
+   "R_2712_1106",
+   "R_2712_1122"
+  ],
+  "ramificata": true,
+  "giunzioni": 5,
+  "scarto_copie_prima_m": 0.5,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.7,
+  "pendenza_max_prima": 0.081,
+  "pendenza_max_dopo": 0.062,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 70,
+   "prima_mediana_m": -1.55,
+   "dopo_mediana_m": -1.55,
+   "prima_entro_tol": 0.714,
+   "dopo_entro_tol": 0.714
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692475,
+  "nord": 1102321,
+  "vertici": 4,
+  "lunghezza_m": 30,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.6,
+  "pendenza_max_prima": 0.201,
+  "pendenza_max_dopo": 0.356,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682175,
+  "nord": 1109430,
+  "vertici": 42,
+  "lunghezza_m": 321,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.5,
+  "pendenza_max_prima": 0.027,
+  "pendenza_max_dopo": 0.026,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683971,
+  "nord": 1107701,
+  "vertici": 10,
+  "lunghezza_m": 70,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.5,
+  "pendenza_max_prima": 0.124,
+  "pendenza_max_dopo": 0.197,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2694331,
+  "nord": 1102176,
+  "vertici": 5,
+  "lunghezza_m": 45,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.5,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.5,
+  "pendenza_max_prima": 0.003,
+  "pendenza_max_dopo": 0.003,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708024,
+  "nord": 1123897,
+  "vertici": 16,
+  "lunghezza_m": 233,
+  "regioni": [
+   "R_2696_1106",
+   "R_2696_1122",
+   "R_2712_1106",
+   "R_2712_1122"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.4,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.4,
+  "pendenza_max_prima": 0.061,
+  "pendenza_max_dopo": 0.018,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 16,
+   "prima_mediana_m": -5.42,
+   "dopo_mediana_m": -5.31,
+   "prima_entro_tol": 0.0,
+   "dopo_entro_tol": 0.0
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2693613,
+  "nord": 1102328,
+  "vertici": 24,
+  "lunghezza_m": 272,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.148,
+  "pendenza_max_dopo": 0.148,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2693511,
+  "nord": 1102192,
+  "vertici": 5,
+  "lunghezza_m": 41,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.02,
+  "pendenza_max_dopo": 0.012,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710112,
+  "nord": 1088555,
+  "vertici": 3,
+  "lunghezza_m": 20,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.243,
+  "pendenza_max_dopo": 0.243,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729041,
+  "nord": 1105496,
+  "vertici": 7,
+  "lunghezza_m": 71,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.191,
+  "pendenza_max_dopo": 0.191,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729503,
+  "nord": 1104926,
+  "vertici": 2,
+  "lunghezza_m": 8,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.131,
+  "pendenza_max_dopo": 0.131,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729921,
+  "nord": 1106367,
+  "vertici": 7,
+  "lunghezza_m": 66,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.04,
+  "pendenza_max_dopo": 0.04,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2730134,
+  "nord": 1102679,
+  "vertici": 3,
+  "lunghezza_m": 21,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.47,
+  "pendenza_max_dopo": 0.432,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0,
+  "dsm": {
+   "misurati": 0,
+   "prima_mediana_m": null,
+   "dopo_mediana_m": null,
+   "prima_entro_tol": null,
+   "dopo_entro_tol": null
+  }
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729536,
+  "nord": 1107725,
+  "vertici": 4,
+  "lunghezza_m": 24,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.3,
+  "scarto_copie_dopo_m": 0.3,
+  "cambio_max_m": 0.3,
+  "pendenza_max_prima": 0.188,
+  "pendenza_max_dopo": 0.188,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676346,
+  "nord": 1110115,
+  "vertici": 6,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.086,
+  "pendenza_max_dopo": 0.086,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680968,
+  "nord": 1110595,
+  "vertici": 12,
+  "lunghezza_m": 84,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.005,
+  "pendenza_max_dopo": 0.005,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683977,
+  "nord": 1111283,
+  "vertici": 7,
+  "lunghezza_m": 40,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.033,
+  "pendenza_max_dopo": 0.033,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681900,
+  "nord": 1110771,
+  "vertici": 15,
+  "lunghezza_m": 105,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.221,
+  "pendenza_max_dopo": 0.221,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681998,
+  "nord": 1108479,
+  "vertici": 3,
+  "lunghezza_m": 16,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.264,
+  "pendenza_max_dopo": 0.264,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681034,
+  "nord": 1108074,
+  "vertici": 3,
+  "lunghezza_m": 13,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.232,
+  "pendenza_max_dopo": 0.232,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681282,
+  "nord": 1108195,
+  "vertici": 5,
+  "lunghezza_m": 24,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.468,
+  "pendenza_max_dopo": 0.468,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680766,
+  "nord": 1107935,
+  "vertici": 5,
+  "lunghezza_m": 32,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.348,
+  "pendenza_max_dopo": 0.348,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683790,
+  "nord": 1109521,
+  "vertici": 6,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.2,
+  "pendenza_max_dopo": 0.2,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683751,
+  "nord": 1111082,
+  "vertici": 4,
+  "lunghezza_m": 17,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.141,
+  "pendenza_max_dopo": 0.141,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683678,
+  "nord": 1111006,
+  "vertici": 2,
+  "lunghezza_m": 8,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.099,
+  "pendenza_max_dopo": 0.099,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2696880,
+  "nord": 1104573,
+  "vertici": 4,
+  "lunghezza_m": 35,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.208,
+  "pendenza_max_dopo": 0.208,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692372,
+  "nord": 1102257,
+  "vertici": 3,
+  "lunghezza_m": 20,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.212,
+  "pendenza_max_dopo": 0.212,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692538,
+  "nord": 1102330,
+  "vertici": 6,
+  "lunghezza_m": 49,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.156,
+  "pendenza_max_dopo": 0.156,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692648,
+  "nord": 1102320,
+  "vertici": 4,
+  "lunghezza_m": 29,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.275,
+  "pendenza_max_dopo": 0.275,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2693410,
+  "nord": 1102209,
+  "vertici": 5,
+  "lunghezza_m": 44,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.078,
+  "pendenza_max_dopo": 0.078,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2693765,
+  "nord": 1102208,
+  "vertici": 4,
+  "lunghezza_m": 36,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.013,
+  "pendenza_max_dopo": 0.013,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708398,
+  "nord": 1091327,
+  "vertici": 10,
+  "lunghezza_m": 84,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.256,
+  "pendenza_max_dopo": 0.256,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708154,
+  "nord": 1088104,
+  "vertici": 4,
+  "lunghezza_m": 24,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.123,
+  "pendenza_max_dopo": 0.123,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2731630,
+  "nord": 1105241,
+  "vertici": 4,
+  "lunghezza_m": 34,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.114,
+  "pendenza_max_dopo": 0.114,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729931,
+  "nord": 1103010,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.094,
+  "pendenza_max_dopo": 0.094,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729516,
+  "nord": 1107790,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.2,
+  "scarto_copie_dopo_m": 0.2,
+  "cambio_max_m": 0.2,
+  "pendenza_max_prima": 0.398,
+  "pendenza_max_dopo": 0.398,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676458,
+  "nord": 1109194,
+  "vertici": 11,
+  "lunghezza_m": 74,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.071,
+  "pendenza_max_dopo": 0.071,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681416,
+  "nord": 1109954,
+  "vertici": 12,
+  "lunghezza_m": 82,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.186,
+  "pendenza_max_dopo": 0.186,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681476,
+  "nord": 1109394,
+  "vertici": 39,
+  "lunghezza_m": 298,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.013,
+  "pendenza_max_dopo": 0.013,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2678862,
+  "nord": 1110660,
+  "vertici": 15,
+  "lunghezza_m": 81,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.179,
+  "pendenza_max_dopo": 0.179,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2677862,
+  "nord": 1110276,
+  "vertici": 10,
+  "lunghezza_m": 69,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.004,
+  "pendenza_max_dopo": 0.004,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2677896,
+  "nord": 1110374,
+  "vertici": 9,
+  "lunghezza_m": 59,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.012,
+  "pendenza_max_dopo": 0.012,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681742,
+  "nord": 1108821,
+  "vertici": 3,
+  "lunghezza_m": 13,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.029,
+  "pendenza_max_dopo": 0.029,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680954,
+  "nord": 1110214,
+  "vertici": 6,
+  "lunghezza_m": 31,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.127,
+  "pendenza_max_dopo": 0.127,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681904,
+  "nord": 1108650,
+  "vertici": 5,
+  "lunghezza_m": 18,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.186,
+  "pendenza_max_dopo": 0.186,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682566,
+  "nord": 1108476,
+  "vertici": 6,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.068,
+  "pendenza_max_dopo": 0.068,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681755,
+  "nord": 1110749,
+  "vertici": 4,
+  "lunghezza_m": 20,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.032,
+  "pendenza_max_dopo": 0.032,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680266,
+  "nord": 1110641,
+  "vertici": 16,
+  "lunghezza_m": 113,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.148,
+  "pendenza_max_dopo": 0.148,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683926,
+  "nord": 1107892,
+  "vertici": 4,
+  "lunghezza_m": 23,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.454,
+  "pendenza_max_dopo": 0.454,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681493,
+  "nord": 1109138,
+  "vertici": 12,
+  "lunghezza_m": 86,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.03,
+  "pendenza_max_dopo": 0.03,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679331,
+  "nord": 1110651,
+  "vertici": 8,
+  "lunghezza_m": 49,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.001,
+  "pendenza_max_dopo": 0.001,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679437,
+  "nord": 1111005,
+  "vertici": 4,
+  "lunghezza_m": 24,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.062,
+  "pendenza_max_dopo": 0.062,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679065,
+  "nord": 1110740,
+  "vertici": 5,
+  "lunghezza_m": 22,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.235,
+  "pendenza_max_dopo": 0.235,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682358,
+  "nord": 1110710,
+  "vertici": 4,
+  "lunghezza_m": 17,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.031,
+  "pendenza_max_dopo": 0.031,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2678000,
+  "nord": 1109842,
+  "vertici": 4,
+  "lunghezza_m": 19,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.03,
+  "pendenza_max_dopo": 0.03,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679447,
+  "nord": 1110863,
+  "vertici": 3,
+  "lunghezza_m": 10,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.12,
+  "pendenza_max_dopo": 0.12,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679183,
+  "nord": 1110828,
+  "vertici": 3,
+  "lunghezza_m": 10,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.274,
+  "pendenza_max_dopo": 0.274,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683323,
+  "nord": 1110888,
+  "vertici": 3,
+  "lunghezza_m": 10,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.062,
+  "pendenza_max_dopo": 0.062,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682737,
+  "nord": 1110847,
+  "vertici": 11,
+  "lunghezza_m": 72,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.049,
+  "pendenza_max_dopo": 0.049,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679228,
+  "nord": 1111084,
+  "vertici": 4,
+  "lunghezza_m": 18,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.133,
+  "pendenza_max_dopo": 0.133,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679268,
+  "nord": 1111095,
+  "vertici": 4,
+  "lunghezza_m": 17,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.056,
+  "pendenza_max_dopo": 0.056,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683293,
+  "nord": 1108362,
+  "vertici": 3,
+  "lunghezza_m": 14,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.215,
+  "pendenza_max_dopo": 0.215,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2683403,
+  "nord": 1108305,
+  "vertici": 4,
+  "lunghezza_m": 18,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.171,
+  "pendenza_max_dopo": 0.171,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680425,
+  "nord": 1107838,
+  "vertici": 4,
+  "lunghezza_m": 18,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.013,
+  "pendenza_max_dopo": 0.013,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676045,
+  "nord": 1133042,
+  "vertici": 14,
+  "lunghezza_m": 94,
+  "regioni": [
+   "R_2664_1122",
+   "R_2680_1122"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.02,
+  "pendenza_max_dopo": 0.02,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2696721,
+  "nord": 1103471,
+  "vertici": 5,
+  "lunghezza_m": 41,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.121,
+  "pendenza_max_dopo": 0.121,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2697050,
+  "nord": 1103793,
+  "vertici": 4,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.042,
+  "pendenza_max_dopo": 0.042,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692326,
+  "nord": 1102882,
+  "vertici": 4,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.002,
+  "pendenza_max_dopo": 0.002,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2692827,
+  "nord": 1102269,
+  "vertici": 7,
+  "lunghezza_m": 67,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.158,
+  "pendenza_max_dopo": 0.158,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2691999,
+  "nord": 1140717,
+  "vertici": 9,
+  "lunghezza_m": 70,
+  "regioni": [
+   "R_2680_1122",
+   "R_2680_1138",
+   "R_2696_1122",
+   "R_2696_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.091,
+  "pendenza_max_dopo": 0.091,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2709384,
+  "nord": 1090712,
+  "vertici": 3,
+  "lunghezza_m": 13,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.184,
+  "pendenza_max_dopo": 0.184,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2709279,
+  "nord": 1090691,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.25,
+  "pendenza_max_dopo": 0.25,
+  "fuori_terreno_prima": 1,
+  "fuori_terreno_dopo": 1
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708378,
+  "nord": 1090107,
+  "vertici": 9,
+  "lunghezza_m": 91,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.096,
+  "pendenza_max_dopo": 0.096,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2709405,
+  "nord": 1090340,
+  "vertici": 7,
+  "lunghezza_m": 67,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.146,
+  "pendenza_max_dopo": 0.146,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710935,
+  "nord": 1089634,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.126,
+  "pendenza_max_dopo": 0.126,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710856,
+  "nord": 1089637,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.217,
+  "pendenza_max_dopo": 0.217,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710019,
+  "nord": 1089503,
+  "vertici": 5,
+  "lunghezza_m": 40,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.067,
+  "pendenza_max_dopo": 0.067,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708374,
+  "nord": 1090765,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.057,
+  "pendenza_max_dopo": 0.057,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2710160,
+  "nord": 1088517,
+  "vertici": 4,
+  "lunghezza_m": 25,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.036,
+  "pendenza_max_dopo": 0.036,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2730578,
+  "nord": 1105615,
+  "vertici": 5,
+  "lunghezza_m": 47,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.06,
+  "pendenza_max_dopo": 0.06,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729803,
+  "nord": 1105868,
+  "vertici": 4,
+  "lunghezza_m": 27,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.163,
+  "pendenza_max_dopo": 0.163,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2730675,
+  "nord": 1106268,
+  "vertici": 6,
+  "lunghezza_m": 53,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.1,
+  "scarto_copie_dopo_m": 0.1,
+  "cambio_max_m": 0.1,
+  "pendenza_max_prima": 0.477,
+  "pendenza_max_dopo": 0.477,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680325,
+  "nord": 1109915,
+  "vertici": 41,
+  "lunghezza_m": 307,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.05,
+  "pendenza_max_dopo": 0.05,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681438,
+  "nord": 1109663,
+  "vertici": 12,
+  "lunghezza_m": 87,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.045,
+  "pendenza_max_dopo": 0.045,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2677301,
+  "nord": 1110013,
+  "vertici": 6,
+  "lunghezza_m": 33,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.025,
+  "pendenza_max_dopo": 0.025,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2681755,
+  "nord": 1109045,
+  "vertici": 17,
+  "lunghezza_m": 126,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.001,
+  "pendenza_max_dopo": 0.001,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682541,
+  "nord": 1108496,
+  "vertici": 5,
+  "lunghezza_m": 30,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.047,
+  "pendenza_max_dopo": 0.047,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676689,
+  "nord": 1109586,
+  "vertici": 4,
+  "lunghezza_m": 17,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.04,
+  "pendenza_max_dopo": 0.04,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679438,
+  "nord": 1110845,
+  "vertici": 3,
+  "lunghezza_m": 13,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.011,
+  "pendenza_max_dopo": 0.011,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2682757,
+  "nord": 1108792,
+  "vertici": 5,
+  "lunghezza_m": 27,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.06,
+  "pendenza_max_dopo": 0.06,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679704,
+  "nord": 1110691,
+  "vertici": 3,
+  "lunghezza_m": 11,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.096,
+  "pendenza_max_dopo": 0.096,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679192,
+  "nord": 1110769,
+  "vertici": 5,
+  "lunghezza_m": 24,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.126,
+  "pendenza_max_dopo": 0.126,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679758,
+  "nord": 1110913,
+  "vertici": 3,
+  "lunghezza_m": 14,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.049,
+  "pendenza_max_dopo": 0.049,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2679728,
+  "nord": 1110813,
+  "vertici": 3,
+  "lunghezza_m": 16,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.125,
+  "pendenza_max_dopo": 0.125,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676843,
+  "nord": 1109895,
+  "vertici": 3,
+  "lunghezza_m": 11,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.124,
+  "pendenza_max_dopo": 0.124,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2680408,
+  "nord": 1105380,
+  "vertici": 4,
+  "lunghezza_m": 22,
+  "regioni": [
+   "R_2664_1106",
+   "R_2680_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.074,
+  "pendenza_max_dopo": 0.074,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676242,
+  "nord": 1134083,
+  "vertici": 8,
+  "lunghezza_m": 109,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.065,
+  "pendenza_max_dopo": 0.065,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676116,
+  "nord": 1136194,
+  "vertici": 9,
+  "lunghezza_m": 116,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.006,
+  "pendenza_max_dopo": 0.006,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676247,
+  "nord": 1135610,
+  "vertici": 7,
+  "lunghezza_m": 95,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.004,
+  "pendenza_max_dopo": 0.004,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676212,
+  "nord": 1135815,
+  "vertici": 3,
+  "lunghezza_m": 25,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.013,
+  "pendenza_max_dopo": 0.013,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676024,
+  "nord": 1136323,
+  "vertici": 9,
+  "lunghezza_m": 126,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.05,
+  "pendenza_max_dopo": 0.05,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676345,
+  "nord": 1135070,
+  "vertici": 5,
+  "lunghezza_m": 52,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.008,
+  "pendenza_max_dopo": 0.008,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676406,
+  "nord": 1134664,
+  "vertici": 4,
+  "lunghezza_m": 47,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.031,
+  "pendenza_max_dopo": 0.031,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676407,
+  "nord": 1134043,
+  "vertici": 6,
+  "lunghezza_m": 77,
+  "regioni": [
+   "R_2664_1122",
+   "R_2664_1138",
+   "R_2680_1122",
+   "R_2680_1138"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.036,
+  "pendenza_max_dopo": 0.036,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2676276,
+  "nord": 1133748,
+  "vertici": 5,
+  "lunghezza_m": 26,
+  "regioni": [
+   "R_2664_1122",
+   "R_2680_1122"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.033,
+  "pendenza_max_dopo": 0.033,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2697203,
+  "nord": 1102615,
+  "vertici": 21,
+  "lunghezza_m": 229,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.042,
+  "pendenza_max_dopo": 0.042,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2696743,
+  "nord": 1103525,
+  "vertici": 4,
+  "lunghezza_m": 26,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.188,
+  "pendenza_max_dopo": 0.188,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2696346,
+  "nord": 1103971,
+  "vertici": 4,
+  "lunghezza_m": 30,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.186,
+  "pendenza_max_dopo": 0.186,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2699265,
+  "nord": 1104129,
+  "vertici": 5,
+  "lunghezza_m": 36,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.153,
+  "pendenza_max_dopo": 0.153,
+  "fuori_terreno_prima": 4,
+  "fuori_terreno_dopo": 4
+ },
+ {
+  "tipo": "ponte",
+  "est": 2693102,
+  "nord": 1102261,
+  "vertici": 5,
+  "lunghezza_m": 37,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.236,
+  "pendenza_max_dopo": 0.236,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2696783,
+  "nord": 1103659,
+  "vertici": 3,
+  "lunghezza_m": 22,
+  "regioni": [
+   "R_2680_1106",
+   "R_2696_1090",
+   "R_2696_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.028,
+  "pendenza_max_dopo": 0.028,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708592,
+  "nord": 1091981,
+  "vertici": 4,
+  "lunghezza_m": 25,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.112,
+  "pendenza_max_dopo": 0.112,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2708970,
+  "nord": 1087061,
+  "vertici": 4,
+  "lunghezza_m": 35,
+  "regioni": [
+   "R_2696_1090",
+   "R_2712_1074",
+   "R_2712_1090"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.009,
+  "pendenza_max_dopo": 0.009,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2716871,
+  "nord": 1102001,
+  "vertici": 4,
+  "lunghezza_m": 12,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106"
+  ],
+  "ramificata": true,
+  "giunzioni": 1,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.006,
+  "pendenza_max_dopo": 0.006,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729149,
+  "nord": 1106819,
+  "vertici": 4,
+  "lunghezza_m": 28,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.105,
+  "pendenza_max_dopo": 0.105,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729122,
+  "nord": 1106681,
+  "vertici": 4,
+  "lunghezza_m": 27,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.459,
+  "pendenza_max_dopo": 0.459,
+  "fuori_terreno_prima": 2,
+  "fuori_terreno_dopo": 2
+ },
+ {
+  "tipo": "ponte",
+  "est": 2729118,
+  "nord": 1106742,
+  "vertici": 4,
+  "lunghezza_m": 29,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.045,
+  "pendenza_max_dopo": 0.045,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ },
+ {
+  "tipo": "ponte",
+  "est": 2728951,
+  "nord": 1107397,
+  "vertici": 4,
+  "lunghezza_m": 27,
+  "regioni": [
+   "R_2712_1090",
+   "R_2712_1106",
+   "R_2728_1106"
+  ],
+  "ramificata": false,
+  "giunzioni": 0,
+  "scarto_copie_prima_m": 0.0,
+  "scarto_copie_dopo_m": 0.0,
+  "cambio_max_m": 0.0,
+  "pendenza_max_prima": 0.039,
+  "pendenza_max_dopo": 0.039,
+  "fuori_terreno_prima": 0,
+  "fuori_terreno_dopo": 0
+ }
+]

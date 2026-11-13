@@ -45,9 +45,26 @@ on:
         description: "Con solo_riconcilia: carica i pacchetti riconciliati (solo regione_R_*, mai hd_*) nella pre-release dei dati, sovrascrivendo quelli pubblicati. Lasciare spento per verificare prima"
         type: boolean
         default: false
+      da_originali:
+        description: "Con solo_riconcilia: parte dagli ORIGINALI conservati (artefatto 'originali-pubblicati' del run indicato, SHA-256 controllati) invece che dai pacchetti pubblicati; salva come artefatto i pacchetti oggi pubblicati prima di toccarli"
+        type: boolean
+        default: false
+      run_originali:
+        description: "Con da_originali: id del run che ha conservato gli originali"
+        type: string
+        default: "43397221897"
+      attesi_cambiati:
+        description: "Con pubblica_riconciliati: numero di pacchetti che devono risultare diversi da quelli pubblicati (il caricamento si ferma se e' un altro numero)"
+        type: string
+        default: "16"
+      impronte_strade_attese:
+        description: "Con da_originali: file nel repository con lo SHA-256 atteso di ogni strade.json prodotto (calcolo locale); se non coincide, il job si ferma"
+        type: string
+        default: ""
 
 permissions:
   contents: write
+  actions: read
 
 env:
   TAG_DATI: ticino-completo-dati
@@ -330,12 +347,56 @@ jobs:
         run: pip install -r tools/geo/requirements.txt
 
       - name: Scarica i pacchetti pubblicati (solo lettura)
+        if: inputs.da_originali != true
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p fatte tools/geo/dati/cantone
           gh release download "$TAG_DATI" -D fatte -p "regione_R_*.tar.gz" -p cantone.tar.gz
+          tar -xzf fatte/cantone.tar.gz -C tools/geo/dati/cantone
+          ls fatte/regione_R_*.tar.gz | wc -l
+          (cd fatte && sha256sum regione_R_*.tar.gz) > prima_sha256.txt
+
+      # Modalita' da_originali: 1) i pacchetti OGGI pubblicati (v1) vengono controllati contro il registro e conservati per 90 giorni
+      # (e' la copia per tornare indietro); 2) si parte dagli originali conservati, con SHA-256 controllati.
+      - name: Scarica i pacchetti oggi pubblicati e controlla il registro (da_originali)
+        if: inputs.da_originali == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p attuali
+          gh release download "$TAG_DATI" -D attuali -p "regione_R_*.tar.gz" -p cantone.tar.gz
+          (cd attuali && grep -E ' (regione_R_.*\.tar\.gz|cantone\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_sha256.txt | sha256sum -c -)
+          (cd attuali && sha256sum regione_R_*.tar.gz) > attuali_sha256.txt
+          wc -l < attuali_sha256.txt
+      - name: Conserva i pacchetti oggi pubblicati (v1, artefatto per 90 giorni)
+        if: inputs.da_originali == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: pubblicati-v1
+          path: |
+            attuali/regione_R_*.tar.gz
+            attuali_sha256.txt
+          retention-days: 90
+          compression-level: 0
+      - name: Scarica gli originali conservati (artefatto) e controlla gli SHA-256
+        if: inputs.da_originali == true
+        uses: actions/download-artifact@v4
+        with:
+          name: originali-pubblicati
+          run-id: ${{ inputs.run_originali }}
+          github-token: ${{ github.token }}
+          path: originali_dl
+      - name: Prepara gli originali
+        if: inputs.da_originali == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p fatte tools/geo/dati/cantone
+          cp originali_dl/fatte/regione_R_*.tar.gz originali_dl/fatte/cantone.tar.gz fatte/
           tar -xzf fatte/cantone.tar.gz -C tools/geo/dati/cantone
           ls fatte/regione_R_*.tar.gz | wc -l
           (cd fatte && sha256sum regione_R_*.tar.gz) > prima_sha256.txt
@@ -351,6 +412,7 @@ jobs:
           sha256sum -c ../attesi.txt
 
       - name: Conserva gli originali (artefatto per 90 giorni)
+        if: inputs.da_originali != true
         uses: actions/upload-artifact@v4
         with:
           name: originali-pubblicati
@@ -399,6 +461,12 @@ jobs:
           # impronta di ogni strade.json (per confrontarla con il calcolo locale)
           (cd ../../scompatta_dopo && for d in R_*; do echo "$(sha256sum $d/strade.json | cut -d' ' -f1)  $d"; done) > ../../strade_sha256.txt
           cat ../../strade_sha256.txt
+          if [ -n "${{ inputs.impronte_strade_attese }}" ]; then
+            # il calcolo locale (stessi dati di partenza, stesso codice) deve dare gli stessi strade.json
+            sort -k2 ../../${{ inputs.impronte_strade_attese }} > ../../attese_strade.txt
+            sort -k2 ../../strade_sha256.txt > ../../prodotte_strade.txt
+            diff ../../attese_strade.txt ../../prodotte_strade.txt && echo "strade.json prodotti = quelli calcolati in locale (19/19)"
+          fi
           rm -rf ../../scompatta_dopo
           (cd ../../fatte && sha256sum regione_R_*.tar.gz) > ../../dopo_sha256.txt
           # nessun pacchetto HD deve essere presente
@@ -444,13 +512,28 @@ jobs:
           set -euo pipefail
           # solo i regione_R_* che sono davvero cambiati: niente HD, niente app, nessun nuovo tag, nessun altro file
           mkdir -p cambiati
-          while read -r hash nome; do
-            vecchio=$(grep " $nome\$" prima_sha256.txt | cut -d' ' -f1)
-            if [ "$hash" != "$vecchio" ]; then cp "fatte/$nome" cambiati/; fi
-          done < dopo_sha256.txt
+          if [ "${{ inputs.da_originali }}" = "true" ]; then
+            # confronto sul CONTENUTO (il gzip non e' riproducibile byte per byte): si carica solo se strade.json e' diverso da quello oggi pubblicato
+            for f in fatte/regione_R_*.tar.gz; do
+              nome=$(basename "$f")
+              nuovo=$(tar -xzOf "$f" strade.json | sha256sum | cut -d' ' -f1)
+              attuale=$(tar -xzOf "attuali/$nome" strade.json | sha256sum | cut -d' ' -f1)
+              if [ "$nuovo" != "$attuale" ]; then
+                cp "$f" cambiati/
+                # tutto il resto del pacchetto deve essere identico a quello oggi pubblicato (stessi membri, stesse dimensioni)
+                diff <(tar -tvzf "$f" | grep -v ' strade.json$' | awk '{print $3, $6}' | sort) <(tar -tvzf "attuali/$nome" | grep -v ' strade.json$' | awk '{print $3, $6}' | sort) > /dev/null \
+                  || { echo "::error::$nome: i membri diversi da strade.json non coincidono con quelli pubblicati"; exit 1; }
+              fi
+            done
+          else
+            while read -r hash nome; do
+              vecchio=$(grep " $nome\$" prima_sha256.txt | cut -d' ' -f1)
+              if [ "$hash" != "$vecchio" ]; then cp "fatte/$nome" cambiati/; fi
+            done < dopo_sha256.txt
+          fi
           n=$(ls cambiati | wc -l)
           echo "pacchetti cambiati: $n"; ls -la cambiati
-          if [ "$n" != "16" ]; then echo "::error::attesi 16 pacchetti modificati, trovati $n: mi fermo senza caricare niente"; exit 1; fi
+          if [ "$n" != "${{ inputs.attesi_cambiati }}" ]; then echo "::error::attesi ${{ inputs.attesi_cambiati }} pacchetti modificati, trovati $n: mi fermo senza caricare niente"; exit 1; fi
           if ls cambiati | grep -v '^regione_R_.*\.tar\.gz$'; then echo "::error::file non previsti"; exit 1; fi
           # stato della pre-release PRIMA (nome + impronta di ogni asset)
           gh api "repos/${{ github.repository }}/releases/tags/$TAG_DATI" --jq '.assets[] | "\(.name) \(.digest)"' | sort > release_prima.txt
@@ -474,7 +557,7 @@ jobs:
           echo "stesso elenco di asset"
           cambiati_nomi=$({ diff release_prima.txt release_dopo.txt || true; } | grep '^>' | cut -d' ' -f2 | sort)
           echo "$cambiati_nomi" | wc -l
-          if [ "$(echo "$cambiati_nomi" | wc -l)" != "16" ] || [ "$cambiati_nomi" != "$(ls cambiati | sort)" ]; then echo "::error::asset cambiati diversi da quelli previsti"; exit 1; fi
+          if [ "$(echo "$cambiati_nomi" | wc -l)" != "${{ inputs.attesi_cambiati }}" ] || [ "$cambiati_nomi" != "$(ls cambiati | sort)" ]; then echo "::error::asset cambiati diversi da quelli previsti"; exit 1; fi
           if grep -q '^hd_' release_dopo.txt; then echo "::error::pacchetti HD nella pre-release"; exit 1; fi
           cp release_prima.txt release_dopo.txt cambiati/ 2>/dev/null || true
           (cd cambiati && sha256sum regione_R_*.tar.gz) > pubblicati_sha256.txt

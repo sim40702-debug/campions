@@ -1,0 +1,285 @@
+{
+ "tolleranza_m": 2.0,
+ "reti": [
+  {
+   "est": 2709277,
+   "nord": 1141574,
+   "vertici": 442,
+   "misurati": 441,
+   "cambio_max_m": 60.5,
+   "prima_mediana_m": -7.16,
+   "prima_p10_p90": [
+    -18.1,
+    -3.4
+   ],
+   "prima_entro_tol": 0.048,
+   "dopo_mediana_m": -3.04,
+   "dopo_p10_p90": [
+    -3.9,
+    -1.7
+   ],
+   "dopo_entro_tol": 0.177
+  },
+  {
+   "est": 2709295,
+   "nord": 1141565,
+   "vertici": 436,
+   "misurati": 435,
+   "cambio_max_m": 61.2,
+   "prima_mediana_m": -7.79,
+   "prima_p10_p90": [
+    -19.6,
+    -3.9
+   ],
+   "prima_entro_tol": 0.046,
+   "dopo_mediana_m": -2.38,
+   "dopo_p10_p90": [
+    -4.9,
+    -0.4
+   ],
+   "dopo_entro_tol": 0.444
+  },
+  {
+   "est": 2721099,
+   "nord": 1116737,
+   "vertici": 323,
+   "misurati": 323,
+   "cambio_max_m": 14.7,
+   "prima_mediana_m": -0.01,
+   "prima_p10_p90": [
+    -11.9,
+    0.2
+   ],
+   "prima_entro_tol": 0.585,
+   "dopo_mediana_m": 3.53,
+   "dopo_p10_p90": [
+    -1.7,
+    7.0
+   ],
+   "dopo_entro_tol": 0.477
+  },
+  {
+   "est": 2724970,
+   "nord": 1077649,
+   "vertici": 230,
+   "misurati": 32,
+   "cambio_max_m": 12.7,
+   "prima_mediana_m": -2.75,
+   "prima_p10_p90": [
+    -4.0,
+    -1.3
+   ],
+   "prima_entro_tol": 0.281,
+   "dopo_mediana_m": -1.88,
+   "dopo_p10_p90": [
+    -2.4,
+    -0.8
+   ],
+   "dopo_entro_tol": 0.562
+  },
+  {
+   "est": 2717905,
+   "nord": 1112159,
+   "vertici": 183,
+   "misurati": 183,
+   "cambio_max_m": 18.0,
+   "prima_mediana_m": -13.65,
+   "prima_p10_p90": [
+    -23.3,
+    -3.1
+   ],
+   "prima_entro_tol": 0.06,
+   "dopo_mediana_m": -4.78,
+   "dopo_p10_p90": [
+    -8.2,
+    -1.0
+   ],
+   "dopo_entro_tol": 0.202
+  },
+  {
+   "est": 2710936,
+   "nord": 1073285,
+   "vertici": 145,
+   "misurati": 0
+  },
+  {
+   "est": 2721777,
+   "nord": 1117947,
+   "vertici": 72,
+   "misurati": 70,
+   "cambio_max_m": 0.7,
+   "prima_mediana_m": -1.55,
+   "prima_p10_p90": [
+    -2.2,
+    -0.2
+   ],
+   "prima_entro_tol": 0.714,
+   "dopo_mediana_m": -1.55,
+   "dopo_p10_p90": [
+    -2.2,
+    -0.2
+   ],
+   "dopo_entro_tol": 0.714
+  },
+  {
+   "est": 2682175,
+   "nord": 1109430,
+   "vertici": 42,
+   "misurati": 0
+  },
+  {
+   "est": 2675978,
+   "nord": 1109413,
+   "vertici": 34,
+   "misurati": 0
+  },
+  {
+   "est": 2714993,
+   "nord": 1098532,
+   "vertici": 23,
+   "misurati": 22,
+   "cambio_max_m": 2.2,
+   "prima_mediana_m": -3.24,
+   "prima_p10_p90": [
+    -4.7,
+    -2.8
+   ],
+   "prima_entro_tol": 0.0,
+   "dopo_mediana_m": -3.25,
+   "dopo_p10_p90": [
+    -3.3,
+    -2.8
+   ],
+   "dopo_entro_tol": 0.0
+  },
+  {
+   "est": 2708024,
+   "nord": 1123897,
+   "vertici": 16,
+   "misurati": 16,
+   "cambio_max_m": 0.2,
+   "prima_mediana_m": -5.42,
+   "prima_p10_p90": [
+    -5.5,
+    -5.3
+   ],
+   "prima_entro_tol": 0.0,
+   "dopo_mediana_m": -5.31,
+   "dopo_p10_p90": [
+    -5.5,
+    -5.1
+   ],
+   "dopo_entro_tol": 0.0
+  },
+  {
+   "est": 2730060,
+   "nord": 1102052,
+   "vertici": 15,
+   "misurati": 0
+  },
+  {
+   "est": 2715993,
+   "nord": 1097234,
+   "vertici": 14,
+   "misurati": 13,
+   "cambio_max_m": 2.3,
+   "prima_mediana_m": -1.77,
+   "prima_p10_p90": [
+    -6.2,
+    0.0
+   ],
+   "prima_entro_tol": 0.538,
+   "dopo_mediana_m": -3.06,
+   "dopo_p10_p90": [
+    -5.8,
+    0.1
+   ],
+   "dopo_entro_tol": 0.385
+  },
+  {
+   "est": 2679021,
+   "nord": 1113978,
+   "vertici": 13,
+   "misurati": 0
+  },
+  {
+   "est": 2716006,
+   "nord": 1093736,
+   "vertici": 11,
+   "misurati": 10,
+   "cambio_max_m": 1.4,
+   "prima_mediana_m": -3.22,
+   "prima_p10_p90": [
+    -5.4,
+    -0.8
+   ],
+   "prima_entro_tol": 0.3,
+   "dopo_mediana_m": -3.22,
+   "dopo_p10_p90": [
+    -5.3,
+    -0.7
+   ],
+   "dopo_entro_tol": 0.3
+  },
+  {
+   "est": 2683971,
+   "nord": 1107701,
+   "vertici": 10,
+   "misurati": 0
+  },
+  {
+   "est": 2692047,
+   "nord": 1102359,
+   "vertici": 10,
+   "misurati": 0
+  },
+  {
+   "est": 2729773,
+   "nord": 1103212,
+   "vertici": 8,
+   "misurati": 0
+  },
+  {
+   "est": 2730312,
+   "nord": 1106108,
+   "vertici": 7,
+   "misurati": 0
+  },
+  {
+   "est": 2693511,
+   "nord": 1102192,
+   "vertici": 5,
+   "misurati": 0
+  },
+  {
+   "est": 2694138,
+   "nord": 1102134,
+   "vertici": 5,
+   "misurati": 0
+  },
+  {
+   "est": 2694331,
+   "nord": 1102176,
+   "vertici": 5,
+   "misurati": 0
+  },
+  {
+   "est": 2692475,
+   "nord": 1102321,
+   "vertici": 4,
+   "misurati": 0
+  },
+  {
+   "est": 2692111,
+   "nord": 1102339,
+   "vertici": 4,
+   "misurati": 0
+  },
+  {
+   "est": 2730134,
+   "nord": 1102679,
+   "vertici": 3,
+   "misurati": 0
+  }
+ ]
+}
