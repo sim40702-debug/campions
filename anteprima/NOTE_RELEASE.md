@@ -19,7 +19,17 @@ Questa versione unisce il **Ticino completo** (19 regioni da 24 × 24 km, tutto 
 
 **Da sapere**
 - **Non provato su un Mac o un PC veri**: tutte le misure sono state fatte con grafica software (senza scheda video). I valori di memoria video sono stime di calcolo, non misure.
-- Ponti e gallerie lunghi che attraversano il bordo di una regione hanno quote diverse nelle due regioni (fino a 50 m nella galleria del San Gottardo); passando da una regione all'altra la moto si rimette sulla strada della regione nuova. Dettagli: `docs/anteprima/ticino/REPORT_TICINO_0.16.0.md`.
+- Le **quote di ponti e gallerie che attraversano il bordo di una regione** sono ora le stesse in tutte le regioni (galleria del San Gottardo compresa): i pacchetti dei dati sono stati aggiornati. Restano alcuni ingressi di gallerie e teste di ponte con piccoli scalini rispetto al terreno. Dettagli: `docs/anteprima/ticino/REPORT_FASE_FINALE_0.16.0.md`.
+
+### Novità della 0.15.7 – torna il suono di prima
+
+- **MRW SM 450: è tornato il suono di prima** (quello della 0.15.5). Il suono nuovo della 0.15.6 grattava ed è stato tolto.
+- Resta il **"mem-mem-mem" in impennata** con le monocilindriche: a ruota alzata e gas tenuto i giri salgono e scendono circa 3 volte al secondo.
+
+### Novità della 0.15.6 (suono tolto nella 0.15.7)
+
+- **MRW SM 450: suono nuovo da vero monocilindrico**: colpi secchi a ogni scoppio, tanti bassi, il soffio dello scarico che "respira" e un filo di rumore meccanico. È sempre creato al momento (nessun file audio nel gioco): è stato accordato misurando la registrazione di un vero 450, e a 5 500 giri le frequenze corrispondono entro 2–3 dB fino a 2 500 Hz.
+- **In impennata fa "mem-mem-mem"**: con un monocilindrico, quando la ruota davanti è su e tieni il gas, il motore sale e scende di giri circa 3 volte al secondo come i colpetti di gas di chi tiene un'impennata.
 
 ### Novità della 0.15.5 – mappa fluida e caricamento più corto
 

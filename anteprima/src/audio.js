@@ -9,6 +9,8 @@ let principale = null;
 let rombo = null;
 let filtro = null;
 let volume = null;
+let faseColpetti = 0;    // a che punto e' il "mem-mem-mem" dei colpetti di gas in impennata
+let ultimoSuono = 0;
 let acceso = true;
 let rumore = null;       // un secondo di rumore bianco: la base dei colpi
 let gasAperto = false;
@@ -113,13 +115,29 @@ window.addEventListener("keydown", function (evento) {
 export function aggiornaSuono(moto, inPausa) {
   if (contesto === null) return;
   const s = moto.scheda;
-  // scoppi al secondo: un motore a 4 tempi scoppia ogni 2 giri per ogni cilindro
-  const scoppi = (moto.giri / 60) * (s.cilindri / 2);
   const ora = contesto.currentTime;
+  const passato = Math.min(0.1, Math.max(0, ora - ultimoSuono));
+  ultimoSuono = ora;
+
+  // IMPENNATA con un monocilindrico: il pilota la tiene su a colpetti di gas e il motore fa "mem-mem-mem"
+  // (i giri salgono e scendono circa 3 volte al secondo, e con loro il volume)
+  let giri = moto.giri, gas = moto.gas;
+  if (s.cilindri === 1 && moto.impennata > 0.12 && moto.gas > 0.3 && !moto.caduta) {
+    faseColpetti += passato * 3.3;
+    const colpetto = Math.pow(Math.max(0, Math.sin(faseColpetti * Math.PI * 2)), 0.6);   // sale di scatto, scende piu' piano
+    const quanto = Math.min(1, (moto.impennata - 0.12) / 0.25);
+    giri = giri * (1 + quanto * (colpetto * 0.3 - 0.14));
+    gas = gas * (1 - quanto * 0.75) + quanto * 0.75 * colpetto;
+  } else {
+    faseColpetti = 0;
+  }
+
+  // scoppi al secondo: un motore a 4 tempi scoppia ogni 2 giri per ogni cilindro
+  const scoppi = (giri / 60) * (s.cilindri / 2);
   principale.frequency.setTargetAtTime(Math.max(20, scoppi), ora, 0.03);
   rombo.frequency.setTargetAtTime(Math.max(10, scoppi / 2), ora, 0.03);
-  filtro.frequency.setTargetAtTime(500 + moto.gas * 1500 + s.cilindri * 200, ora, 0.05);
-  const forte = acceso && !inPausa ? 0.05 + moto.gas * 0.09 : 0;
+  filtro.frequency.setTargetAtTime(500 + gas * 1500 + s.cilindri * 200, ora, 0.05);
+  const forte = acceso && !inPausa ? 0.05 + gas * 0.09 : 0;
   volume.gain.setTargetAtTime(forte, ora, 0.05);
 
   // Gomme che strisciano in derapata
