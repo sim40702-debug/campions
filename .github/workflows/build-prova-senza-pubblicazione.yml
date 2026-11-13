@@ -81,7 +81,7 @@ jobs:
 
       - name: Controlla gli SHA-256 dei dati scaricati (devono essere quelli pubblicati e verificati)
         run: |
-          grep -E ' (regione_R_.*\.tar\.gz|cantone\.tar\.gz)$' docs/anteprima/ticino/pubblicato_dopo_sha256.txt > attesi.txt
+          grep -E ' (regione_R_.*\.tar\.gz|cantone\.tar\.gz)$' docs/anteprima/ticino/pubblicato_dopo_v2_sha256.txt > attesi.txt
           wc -l < attesi.txt
           (cd pacchetti && sha256sum -c ../attesi.txt)
 
@@ -252,7 +252,7 @@ jobs:
         run: |
           mkdir -p scarico anteprima/cantone anteprima/dati pacchetti
           gh release download "$TAG_DATI" -D scarico -p cantone.tar.gz -p regione_R_2696_1106.tar.gz -p regione_R_2712_1090.tar.gz -p regione_R_2712_1106.tar.gz
-          (cd scarico && sha256sum -c <(grep -E ' (cantone\.tar\.gz|regione_R_2696_1106\.tar\.gz|regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_sha256.txt))
+          (cd scarico && sha256sum -c <(grep -E ' (cantone\.tar\.gz|regione_R_2696_1106\.tar\.gz|regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_v2_sha256.txt))
           tar -xzf scarico/cantone.tar.gz -C anteprima/cantone
           tar -xzf scarico/regione_R_2696_1106.tar.gz -C anteprima/dati
           cp scarico/regione_R_2712_1090.tar.gz scarico/regione_R_2712_1106.tar.gz pacchetti/
@@ -428,7 +428,7 @@ jobs:
         run: |
           mkdir -p scarico pacchetti
           gh release download "$TAG_DATI" -D scarico -p regione_R_2712_1090.tar.gz -p regione_R_2712_1106.tar.gz
-          (cd scarico && sha256sum -c <(grep -E ' (regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_sha256.txt))
+          (cd scarico && sha256sum -c <(grep -E ' (regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_v2_sha256.txt))
           cp scarico/*.tar.gz pacchetti/
       - name: Strumenti di prova
         shell: bash

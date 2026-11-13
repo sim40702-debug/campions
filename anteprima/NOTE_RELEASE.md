@@ -9,7 +9,7 @@ Questa versione unisce il **Ticino completo** (19 regioni da 24 × 24 km, tutto 
 
 **Dal lavoro grafico (fasi 2–4), ora in ogni regione**
 - **Incroci veri e rotonde** calcolati dalle strade di OpenStreetMap, raccordi circolari, linee di STOP e di precedenza, frecce di corsia dove OpenStreetMap ha `turn:lanes`, asfalto con usura, toppe, tombini più chiari.
-- **Foto aeree di dettaglio a 0,5 m** vicino alla moto (profili Media, Alta, Ultra), con dissolvenza dolce sulla foto a 2 m. Per le regioni scaricate sono un **pacchetto facoltativo** (da circa 20 a 250 MB a regione): il gioco parte subito con la foto a 2 m, scarica il pacchetto **in secondo piano** e aggiunge il dettaglio quando è pronto. Senza internet o senza pacchetto non cambia nient'altro. La regione di Locarno ha già il dettaglio nell'app.
+- **Foto aeree di dettaglio a 0,5 m** vicino alla moto (profili Media, Alta, Ultra), con dissolvenza dolce sulla foto a 2 m. Il meccanismo c'è (pacchetto facoltativo per regione, scaricato in secondo piano), **ma in questa versione i pacchetti HD (circa 2,1 GB in tutto) NON sono pubblicati e NON sono inclusi nell'app**: il gioco usa la foto a 2 m, senza errori. Il dettaglio a 0,5 m verrà attivato in una versione successiva, dopo aver verificato il suo impatto su un PC vero.
 - **Foto a 2 m caricate per profilo**: il raggio dipende dalla qualità (Bassa 3 km, Media 4,5 km, Alta 6 km, Ultra 8 km) e le foto lontane si tolgono, così la memoria della scheda video non cresce con la grandezza della regione.
 - **Ombre stabili**, erba e vegetazione bassa, banchine e cemento dei ponti, atmosfera e fogliame degli alberi.
 
@@ -19,7 +19,9 @@ Questa versione unisce il **Ticino completo** (19 regioni da 24 × 24 km, tutto 
 
 **Da sapere**
 - **Non provato su un Mac o un PC veri**: tutte le misure sono state fatte con grafica software (senza scheda video). I valori di memoria video sono stime di calcolo, non misure.
-- Le **quote di ponti e gallerie che attraversano il bordo di una regione** sono ora le stesse in tutte le regioni (galleria del San Gottardo compresa): i pacchetti dei dati sono stati aggiornati. Restano alcuni ingressi di gallerie e teste di ponte con piccoli scalini rispetto al terreno. Dettagli: `docs/anteprima/ticino/REPORT_FASE_FINALE_0.16.0.md`.
+- Le **quote di ponti e gallerie che attraversano il bordo di una regione** sono ora le stesse in tutte le regioni (galleria del San Gottardo compresa; prima 3 561 punti di ponti e gallerie nelle sovrapposizioni differivano di oltre 1 m, ora 0): i pacchetti dei dati sono stati aggiornati. Le reti di ponti complesse (svincoli) senza discordanza tra regioni, come lo svincolo di Monte Carasso, restano come prima. Restano alcuni ingressi di gallerie e teste di ponte con piccoli scalini rispetto al terreno, una lastra bianca nella galleria di Maccagno e scalini tra alcune carreggiate sovrapposte (difetti già presenti). Dettagli: `docs/anteprima/ticino/REPORT_BUILD_E_DATI_0.16.0.md` e `ANALISI_QUOTE_OPERE.md`.
+- **Prestazioni**: confrontata con la 0.15.7 in grafica software (stessa macchina) la 0.16.0 usa fino al 6 % di chiamate di disegno e triangoli in più e circa 60–100 MB di memoria JavaScript in più; i programmi shader passano da 44 a 106 nei profili Media, Alta e Ultra. Gli FPS e la memoria video su una scheda vera **non sono stati misurati**. Procedura di prova: `docs/anteprima/ticino/PROVA_WINDOWS_GPU.md`.
+- Gli installer non sono firmati: Windows (SmartScreen) e macOS (Gatekeeper) mostrano un avviso al primo avvio.
 
 ### Novità della 0.15.7 – torna il suono di prima
 

@@ -1,8 +1,8 @@
-# Prova sul tuo PC Windows con scheda video vera (0.16.0 in preparazione)
+# Prova sul tuo PC Windows con scheda video vera (0.16.0 — release pronta, NON pubblicata)
 
 **Stato: NON ESEGUITA.** Fino a quando non c'è un tuo risultato vero, nessun numero di prestazioni della 0.16.0 è "superato". Tutti i numeri misurati finora sono in grafica software (CPU, SwiftShader): servono solo a confrontare versioni sulla stessa macchina, mai a dire quanti FPS farà il tuo PC.
 
-Questa procedura **non pubblica niente** e non richiede la release 0.16.0 (che non esiste): si prova il codice dal ramo di sviluppo.
+Questa procedura **non pubblica niente** e non richiede la release 0.16.0 (che non esiste): si prova il codice dal ramo di sviluppo. **È l'unico blocco rimasto alla pubblicazione ufficiale**: finché non c'è un tuo esito (§9) la 0.16.0 non viene né taggata né pubblicata.
 
 ---
 
@@ -13,15 +13,15 @@ Questa procedura **non pubblica niente** e non richiede la release 0.16.0 (che n
 | Ramo | `claude/brave-turing-mztbtd` (contiene la 0.16.0 in sviluppo **unita a `main` 0.15.7**) |
 | Versione nell'app | `0.16.0` (finestra "Esc", e `anteprima/package.json`) |
 | Confronto | **0.15.7** = ultimo commit di `main` (`041c676`) |
-| Dati geografici | **già pubblicati** nella pre-release `ticino-completo-dati` (quote di ponti e gallerie riconciliate, 16 pacchetti, SHA-256 in `pubblicato_dopo_sha256.txt`): l'app li scarica da sola |
+| Dati geografici | **già pubblicati** nella pre-release `ticino-completo-dati`: quote di ponti e gallerie riconciliate, **versione 2 del 13/11/2026** (SHA-256 in `pubblicato_dopo_v2_sha256.txt`; la versione 1 del mattino è in `pubblicato_dopo_sha256.txt`). L'app li scarica da sola |
 
 ### Opzione A (consigliata): installer di prova da GitHub Actions — NON è una release
 L'installer è costruito dal workflow **"Build di prova (NESSUNA pubblicazione)"** e vive solo come artefatto temporaneo (7 giorni).
-1. Apri il [run #2 del build di prova](https://github.com/sim40702-debug/swissgass/actions/runs/43405255833) (tutti i job verdi, commit `7a7bc1e`; scade il 20/11/2026) → **Artifacts**, oppure direttamente: https://github.com/sim40702-debug/swissgass/actions/runs/43405255833/artifacts/14026468865
+1. Apri il [run del build di prova @@RUN@@](https://github.com/sim40702-debug/swissgass/actions/runs/@@RUN@@) (commit `@@COMMIT@@`; gli artefatti scadono il @@SCADE@@) → **Artifacts**: @@LINKWIN@@
 2. Scarica **`installer-windows-PROVA-NON-UFFICIALE`** (zip): dentro ci sono `…-Windows-Installazione.exe` (installer) e `…-Windows-Portatile.exe`.
 3. Esegui l'installer. Non è firmato: Windows mostrerà **"Windows ha protetto il PC"** → *Ulteriori informazioni* → *Esegui comunque*.
 4. Avvia **"MRW Anteprima Ticino"** dal menu Start.
-Cosa ha verificato la CI su questo installer (Windows Server, **grafica software**, non la tua GPU): installato in silenzio, avviato, caricamento di Locarno, quattro profili grafici, LOD lontano, download di Lugano e passaggio di regione, nessun errore in console. **Il portatile è stato solo avviato e tenuto in esecuzione 60 s, senza controllare l'interfaccia.** Quello che nessuna CI può dire: prestazioni, VRAM, aspetto sulla tua scheda.
+Cosa ha verificato la CI su questo installer (Windows Server, **grafica software**, non la tua GPU): installato in silenzio, avviato, caricamento di Locarno, quattro profili grafici, LOD lontano, download di Lugano e passaggio di regione, nessun errore in console; il **portatile** è stato avviato come lo avvierebbe un utente e controllato sulla finestra vera (versione, regione, profili Bassa/Alta, LOD, errori) — esito in `REPORT_BUILD_E_DATI_0.16.0.md` §4. Quello che nessuna CI può dire: prestazioni, VRAM, aspetto sulla tua scheda.
 
 ### Opzione B: dal sorgente (serve per i test ripetibili del punto 4 e per il confronto con la 0.15.7)
 Servono Node.js 20 e Git. PowerShell:
@@ -85,9 +85,10 @@ Guarda a occhio le immagini: dice se le sagome delle città (0,4–4 km) si vedo
 3. Guida fino al bordo di una regione e **passa il confine guidando**: nota eventuali scatti, salti della strada, ricaricamento.
 4. Nel tratto Airolo (regione nord) prova la **galleria del San Gottardo** (partenza vicino a Airolo): la strada deve scendere dritta, senza salti, ed entrare/uscire dal terreno senza gradini. Giudizio visivo mai fatto finora.
 5. Prova **un ponte lungo** (A2, viadotti della Biaschina, partenza vicino a Giornico) e **una galleria lunga**: sono i punti dove le quote sono state corrette. Guarda soprattutto, e annotalo nel `note.md`:
-   - **Svincolo di Monte Carasso** (partenza a LV95 2721127 / 1116742, o `K` e scegli Monte Carasso): la riconciliazione ha alzato tutto lo svincolo di 7–15 m; dimmi se sembra giusto o rotto (rampe sospese, salti).
-   - **Viadotti della Biaschina** (A2): i capi sono stati alzati fino a 60 m; guida da una parte all'altra e dimmi se l'impalcato è continuo.
-   - **Galleria "1. Maccagno inferiore"** (partenza a LV95 2701281 / 1098777): c'è una lastra bianca accanto alla moto, preesistente.
+   - **Viadotti della Biaschina** (A2, partenza a LV95 2709277 / 1141574): prima c'erano salti fino a 61 m tra le regioni; ora l'impalcato dovrebbe essere continuo (misurato con swisstopo: resta mediamente 2–3 m sotto la superficie reale). Dimmi se l'impalcato è continuo e se la strada resta sopra il terreno.
+   - **Galleria del San Gottardo** (partenza vicino a Airolo): deve scendere senza salti né gradini, anche al passaggio tra regioni; il ramo «Gotthardstrasse» a Göschenen è tornato com'era.
+   - **Svincolo di Monte Carasso** (partenza a LV95 2721127 / 1116742, o `K` e scegli Monte Carasso): **è tornato com'era prima della riconciliazione** (a terra, come nella 0.15.x). Dimmi solo se rampe e cavalcavia ti sembrano giusti.
+   - **Galleria «1. Maccagno inferiore»** (partenza a LV95 2701281 / 1098777): c'è una lastra bianca accanto alla moto, difetto preesistente non corretto.
    - **Imbocco di Airolo / Via San Gottardo** (LV95 2691297 / 1153282): la strada entra in una trincea; nessun salto atteso.
 6. Foto: confronta WebP/JPEG delle foto HD **solo se** hai un pacchetto HD (vedi punto 1).
 
@@ -130,5 +131,12 @@ In software la 0.16.0 usa circa +5 % di chiamate/triangoli e +70–110 MB di hea
 
 Regola pratica: **un problema è del gioco solo se è riproducibile, se peggiora rispetto alla 0.15.7 sullo stesso hardware, e se non compaiono errori di WebGL/driver.** Se manca anche solo uno di questi tre elementi, non lo dichiaro bug del gioco senza altre prove.
 
-## 8. Cosa NON dichiaro finché non mi mandi i risultati
+## 8. Criteri di accettazione per la pubblicazione ufficiale
+
+La 0.16.0 si pubblica quando mi dici **«GO»** dopo aver provato **almeno**: (1) avvio e guida di 5 minuti a Locarno con il profilo **Alta**, senza chiusure né schermo nero; (2) la tabella delle metriche del §5 per **Alta** (0.16.0 e 0.15.7); (3) nessun errore di WebGL/driver; (4) passaggio di almeno una regione; (5) Biaschina e San Gottardo senza salti. Soglie proposte nel §5: da **confermare tu** prima di guardare i numeri. Se manca anche uno solo di questi, la release **non** parte.
+
+## 9. Come mi consegni l'esito
+Un messaggio con: scheda e driver, risultato dei 5 punti sopra (OK / non OK e dove), la cartella `risultati_0160` / `risultati_0157` (o i numeri a mano), screenshot di Gestione attività → GPU. Con questi chiudo il report e, solo dopo il tuo «GO» scritto, creo il tag e la release.
+
+## 10. Cosa NON dichiaro finché non mi mandi i risultati
 Prestazioni su GPU, VRAM, confronto con 0.15.7, giudizio visivo su LOD lontano, ponti/gallerie, WebP/JPEG delle foto HD, download reale da GitHub dal tuo PC, installer Mac (arm64 provato solo in CI) e Windows sulla tua macchina.
