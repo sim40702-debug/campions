@@ -1,15 +1,17 @@
-## MOTO RACING WORLD – Anteprima Ticino
+## Swissgass
 
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.16.1) – Nuovo logo e nuova schermata di caricamento
+### Novità di questa versione (0.16.1) – Il gioco si chiama Swissgass: nuovo nome, nuovo logo, nuova schermata di caricamento
 
-- **Nuova icona del gioco**: una strada rossa che sale a curve verso le montagne, sotto l'arco di un contagiri. Sostituisce l'icona generica di Electron su Mac e Windows (app, programma di installazione, finestra).
+- **Nuovo nome: Swissgass** (prima "MOTO RACING WORLD – Anteprima Ticino"). Cambiano il nome dell'app, della finestra, dei collegamenti e dei file da scaricare (`Swissgass-0.16.1-...`). Le regioni già scaricate e le impostazioni restano: al primo avvio la cartella dei dati di prima viene rinominata. Su Mac, aggiornando dal pulsante "Aggiorna" della 0.16.0, il file dell'app conserva ancora il nome vecchio; prenderà quello nuovo all'aggiornamento seguente (oppure basta installarla dal `.dmg`).
+
+- **Nuova icona del gioco**: una moto vista dal basso, con la ruota dietro che gira in primo piano e il fumo della sgommata. Sostituisce l'icona generica di Electron su Mac e Windows (app, programma di installazione, finestra).
 - **Schermata di caricamento ridisegnata**: logo e titolo al centro, montagne sullo sfondo, barra sottile con la percentuale e i secondi passati, tasti principali e numero di versione in basso. Finché la riga nella barra e l'anello accanto al testo si muovono, il programma sta lavorando; in caso di errore si fermano e il testo diventa rosso.
 - La finestra si apre già scura (niente lampo azzurro prima del caricamento) e i menu di meteo e ora non compaiono più sopra la schermata mentre si carica.
-- Il sottotitolo dice "tutto il cantone" (prima era rimasto "Locarnese e Valle Verzasca").
-- **Da sapere**: nessun cambiamento a guida, grafica del mondo e dati. Le icone di Mac e Windows le crea la build automatica dalle immagini in `anteprima/build/`: **non sono state viste su un Mac o un PC veri**.
+- Il sottotitolo dice "Tutto il Canton Ticino" (prima era rimasto "Locarnese e Valle Verzasca").
+- **Da sapere**: nessun cambiamento a guida, grafica del mondo e dati. Le icone di Mac e Windows le crea la build automatica dalle immagini in `anteprima/build/`: **non sono state viste su un Mac o un PC veri**, e nemmeno il passaggio dei dati dal nome vecchio a quello nuovo.
 
 ### Novità della 0.16.0 – Tutto il Ticino con la grafica nuova
 
@@ -358,7 +360,7 @@ L'app non è firmata da Apple, quindi il Mac la blocca la prima volta:
 1. Apri il `.dmg` e trascina l'app in **Applicazioni**.
 2. In Applicazioni fai **clic destro sull'app → Apri → Apri**.
 3. Se dice che l'app è "danneggiata", apri il Terminale e scrivi:
-   `xattr -cr "/Applications/MRW Anteprima Ticino.app"`, poi riprova.
+   `xattr -cr "/Applications/Swissgass.app"`, poi riprova.
 
 ### Primo avvio su Windows
 

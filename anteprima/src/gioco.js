@@ -1,4 +1,4 @@
-// MOTO RACING WORLD - Anteprima Ticino
+// Swissgass
 // File principale: crea la scena, carica i dati e fa girare il gioco.
 
 import * as THREE from "three";

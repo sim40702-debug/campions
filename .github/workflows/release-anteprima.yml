@@ -158,6 +158,6 @@ jobs:
         with:
           tag_name: anteprima-v${{ needs.versione.outputs.numero }}
           target_commitish: ${{ github.sha }}
-          name: "Anteprima Ticino ${{ needs.versione.outputs.numero }}"
+          name: "Swissgass ${{ needs.versione.outputs.numero }}"
           body_path: anteprima/NOTE_RELEASE.md
           files: uscita/*

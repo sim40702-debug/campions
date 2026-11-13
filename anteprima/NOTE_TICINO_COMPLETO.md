@@ -1,4 +1,4 @@
-## MOTO RACING WORLD – Ticino completo (versione di prova)
+## Swissgass – Ticino completo (versione di prova)
 
 Versione **di prova** del branch `feature/ticino-completo`: tutto il Canton Ticino, diviso in regioni da 24 × 24 km che usano le stesse coordinate svizzere (LV95).
 Non sostituisce l'anteprima normale: si installa accanto, con un altro nome ("MRW Ticino Completo").

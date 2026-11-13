@@ -1,6 +1,6 @@
 {
-  "name": "moto-racing-world-anteprima-ticino",
-  "productName": "MOTO RACING WORLD - Anteprima Ticino",
+  "name": "swissgass",
+  "productName": "Swissgass",
   "version": "0.16.1",
   "description": "Tutto il Canton Ticino a regioni, con dati swisstopo e OpenStreetMap",
   "main": "main.js",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "ch.droneticino.motoracingworld.anteprima",
-    "productName": "MRW Anteprima Ticino",
+    "productName": "Swissgass",
     "asar": false,
     "files": [
       "main.js",
@@ -52,7 +52,7 @@
           ]
         }
       ],
-      "artifactName": "MRW-Anteprima-Ticino-${version}-Mac-${arch}.${ext}"
+      "artifactName": "Swissgass-${version}-Mac-${arch}.${ext}"
     },
     "win": {
       "icon": "build/icon-win.png",
@@ -74,10 +74,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Installazione.${ext}"
+      "artifactName": "Swissgass-${version}-Windows-Installazione.${ext}"
     },
     "portable": {
-      "artifactName": "MRW-Anteprima-Ticino-${version}-Windows-Portatile.${ext}"
+      "artifactName": "Swissgass-${version}-Windows-Portatile.${ext}"
     }
   }
 }

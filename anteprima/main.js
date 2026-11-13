@@ -9,6 +9,25 @@ const { pathToFileURL } = require("url");
 const aggiornamenti = require("./aggiornamenti.js");
 const regioni = require("./regioni_main.js");
 
+// Fino alla 0.16.0 il gioco si chiamava "MOTO RACING WORLD - Anteprima Ticino" e teneva li' le regioni scaricate
+// e le impostazioni. Con il nome nuovo la cartella sarebbe un'altra: la vecchia viene rinominata, cosi' non si perde
+// niente. Se non si riesce a rinominarla si continua a usare quella vecchia.
+(function tieniDatiDiPrima() {
+  const nuova = app.getPath("userData");
+  if (fs.existsSync(nuova)) return;
+  for (const nome of ["MOTO RACING WORLD - Anteprima Ticino", "MRW Anteprima Ticino", "moto-racing-world-anteprima-ticino"]) {
+    const vecchia = path.join(app.getPath("appData"), nome);
+    if (vecchia === nuova || !fs.existsSync(vecchia)) continue;
+    try {
+      fs.renameSync(vecchia, nuova);
+    } catch (errore) {
+      console.log("Cartella dei dati di prima non rinominata (" + errore.message + "): continuo a usare quella");
+      app.setPath("userData", vecchia);
+    }
+    return;
+  }
+})();
+
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } }
 ]);
@@ -17,7 +36,7 @@ function creaFinestra() {
   const finestra = new BrowserWindow({
     width: 1280,
     height: 800,
-    title: "MOTO RACING WORLD - Anteprima Ticino",
+    title: "Swissgass",
     backgroundColor: "#0e1319",   // come la schermata di caricamento: niente lampo chiaro all'apertura
     icon: path.join(__dirname, "grafica", "icona.png"),
     autoHideMenuBar: true,

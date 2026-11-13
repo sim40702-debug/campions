@@ -1,10 +1,10 @@
-# MOTO RACING WORLD
+# Swissgass
 
 Gioco di moto open world. La prima mappa esplorabile è il **Canton Ticino** (Svizzera), ricostruito da dati geografici aperti: terreno di swisstopo, strade ed edifici di OpenStreetMap.
 
 Il progetto ha due parti:
 
-- **Anteprima Ticino** – versione giocabile leggera (Three.js + Electron) di **tutto il Canton Ticino** (2 812 km², 19 regioni da 24 × 24 km: la regione di Locarno è nell'app, le altre si scaricano entrando). È quella che si scarica e si gioca oggi.
+- **Swissgass** (prima "MRW Anteprima Ticino") – versione giocabile leggera (Three.js + Electron) di **tutto il Canton Ticino** (2 812 km², 19 regioni da 24 × 24 km: la regione di Locarno è nell'app, le altre si scaricano entrando). È quella che si scarica e si gioca oggi.
 - **Versione Unreal Engine 5** – il gioco principale, in costruzione (cartella `unreal/`).
 
 ## Giocare l'anteprima

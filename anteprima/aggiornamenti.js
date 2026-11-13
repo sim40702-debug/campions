@@ -50,7 +50,7 @@ function fileGiusto(release) {
 
 async function controlla() {
   const risposta = await net.fetch(URL_ULTIMA_RELEASE, {
-    headers: { "User-Agent": "MRW-Anteprima", "Accept": "application/vnd.github+json" }
+    headers: { "User-Agent": "Swissgass", "Accept": "application/vnd.github+json" }
   });
   if (!risposta.ok) {
     throw new Error("GitHub non risponde (" + risposta.status + ")");
@@ -97,7 +97,7 @@ async function scarica(url, destinazione, avanzamento) {
 }
 
 function installaMac(dmg) {
-  // Cartella dell'app che sta girando: .../MRW Anteprima Ticino.app
+  // Cartella dell'app che sta girando: .../Swissgass.app (o il nome di prima: "MRW Anteprima Ticino.app")
   const appAttuale = path.resolve(process.execPath, "..", "..", "..");
   // Dove mettere la nuova: al posto della vecchia, oppure in Applicazioni se la vecchia
   // gira dal .dmg (/Volumes) o da una copia temporanea del Mac (AppTranslocation)
@@ -123,7 +123,8 @@ function installaMac(dmg) {
     nomeApp = fs.readdirSync(montaggio).find(function (nome) {
       return nome.endsWith(".app");
     });
-    if (inApplicazioni) destinazione = path.join("/Applications", nomeApp);
+    // la nuova prende il nome che ha nel .dmg (dalla 0.16.1 "Swissgass.app"), nella stessa cartella della vecchia
+    destinazione = path.join(inApplicazioni ? "/Applications" : path.dirname(appAttuale), nomeApp);
     // 1) copio la nuova ACCANTO alla vecchia (prima si cancellava subito la vecchia: se il Mac
     //    bloccava la copia a meta', restava un'app senza i dati del terreno)
     execFileSync("rm", ["-rf", destinazione + ".nuova"]);
@@ -175,6 +176,14 @@ function installaMac(dmg) {
   } catch (errore) {
     // se non riesce a toglierla non e' grave
   }
+  if (!inApplicazioni && destinazione !== appAttuale) {
+    // l'app ha cambiato nome: tolgo quella vecchia, che altrimenti resterebbe accanto alla nuova
+    try {
+      execFileSync("rm", ["-rf", appAttuale]);
+    } catch (errore) {
+      // se non riesce non e' grave
+    }
+  }
   try {
     execFileSync("xattr", ["-cr", destinazione]);
   } catch (errore) {
@@ -193,7 +202,7 @@ function puliziaDownloadWindows() {
   try {
     const cartella = app.getPath("downloads");
     for (const nome of fs.readdirSync(cartella)) {
-      if (/^MRW-Anteprima-Ticino-[0-9.]+-Windows-Installazione\.exe$/.test(nome)) {
+      if (/^(MRW-Anteprima-Ticino|Swissgass)-[0-9.]+-Windows-Installazione\.exe$/.test(nome)) {
         fs.unlinkSync(path.join(cartella, nome));
       }
     }

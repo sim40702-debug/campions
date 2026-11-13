@@ -1,4 +1,4 @@
-# Anteprima Ticino (Three.js + Electron)
+# Swissgass (Three.js + Electron)
 
 Versione giocabile leggera del Locarnese e della Valle Verzasca (16 × 32 km). Progetto: `docs/anteprima/PROGETTO_ANTEPRIMA.pdf`.
 
