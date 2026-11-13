@@ -1,0 +1,25 @@
+# Crea il tag "v0.16.0" come ALIAS del tag ufficiale "anteprima-v0.16.0" (stesso commit). Non crea release, non sovrascrive tag
+# esistenti, non tocca i pacchetti dei dati. La release ufficiale resta "anteprima-v0.16.0": l'aggiornamento automatico dell'app
+# legge l'ultima release e toglie il prefisso "anteprima-v" dal nome del tag, quindi un'altra release "v0.16.0" lo romperebbe.
+name: Tag alias v0.16.0
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  alias:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: anteprima-v0.16.0
+      - name: Crea il tag alias (mai sovrascrive)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/v0.16.0" > /dev/null; then echo "v0.16.0 esiste gia': non tocco niente"; exit 0; fi
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git tag -a v0.16.0 "$(git rev-parse HEAD)" -m "Moto Racing World 0.16.0 (alias del tag anteprima-v0.16.0)"
+          git push origin refs/tags/v0.16.0
+          git ls-remote --tags origin v0.16.0 'v0.16.0^{}'

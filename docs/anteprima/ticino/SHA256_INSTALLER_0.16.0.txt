@@ -10,3 +10,10 @@ e92559d03306f9cdd08cd0d15490a23c9972a3079e25deead5c2972efbeaa7ef  MRW-Anteprima-
 # Artefatto "installer-mac-PROVA-NON-UFFICIALE" (zip 432800307 byte, SHA-256 zip 781d26f7e962a19948943d165e845f578d7005619d91db310abcc9c7550f880f)
 1f08893104455db69d59e47c8be59e37042f4a87eae8fc958619c0c3d487bb0e  MRW-Anteprima-Ticino-0.16.0-Mac-arm64.dmg  (214115821 byte)
 378eb43a878a9c12621967fd234f7a6f0c87e685fb12ffd2543d0d3c3ce7a675  MRW-Anteprima-Ticino-0.16.0-Mac-x64.dmg  (218684120 byte)
+
+# ===== INSTALLER UFFICIALI (release anteprima-v0.16.0, run 43435336806, commit 266cdb8) =====
+# https://github.com/sim40702-debug/swissgass/releases/tag/anteprima-v0.16.0
+efba3fd58ada4c2b98c7d9cf8e337da547fcbebe61ccd8a2abfc5d2993a28d8a  MRW-Anteprima-Ticino-0.16.0-Windows-Installazione.exe  (169373305 byte)
+faad29b42bb3d230be04c38539c59a4c29c4810b8d0279bfeebe3f2b325e0206  MRW-Anteprima-Ticino-0.16.0-Windows-Portatile.exe  (169145366 byte)
+8e1a4b11b1a4daa37cee252fe5c80e54d0933851e1e2725afaef9b6c4a0d885d  MRW-Anteprima-Ticino-0.16.0-Mac-arm64.dmg  (214096340 byte)
+4129c2f897105cb64746b11cce936ad25aecbc6a9d429b95c64d0042ab734bfc  MRW-Anteprima-Ticino-0.16.0-Mac-x64.dmg  (218687939 byte)

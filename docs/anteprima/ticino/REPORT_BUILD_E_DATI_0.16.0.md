@@ -1,6 +1,10 @@
 # Moto Racing World 0.16.0 — report conclusivo (13/11/2026)
 
-**Decisione: GO CON LIMITAZIONI sul piano tecnico. Pubblicazione ufficiale NON eseguita e SOSPESA** (nessun tag, nessuna GitHub Release, nessun merge in `main`, nessun pacchetto HD). Il blocco è uno solo: **la prova su una scheda video vera, sul tuo PC Windows, non è stata eseguita** e nessuna prova software la sostituisce. Cosa manca esattamente è al §10.
+**STATO FINALE (13/11/2026, dopo la pubblicazione): la 0.16.0 è PUBBLICATA.** Release ufficiale: https://github.com/sim40702-debug/swissgass/releases/tag/anteprima-v0.16.0 (tag `anteprima-v0.16.0`, commit `266cdb8` di `main`). Autorizzazione dell'utente ricevuta dopo la **prova sul suo PC Windows, dichiarata «funziona tutto»**: l'esito è una dichiarazione dell'utente, **non sono state consegnate metriche** (FPS, VRAM, confronto con la 0.15.7), quindi **nessun numero di prestazioni su GPU è riportato in questo report**. Le sezioni qui sotto descrivono i test automatici eseguiti prima della pubblicazione (build di prova #3) e restano valide; dove parlano di «sospesa» o «non pubblicata» vale questo stato finale. Gli installer ufficiali (§6-bis) sono stati **ricostruiti** dal workflow di release e **non sono stati riprovati** come i file di prova: stesso codice (nessun file dell'app cambiato tra `b6ffe9a` e `266cdb8`), stesso processo di build, impronte diverse.
+
+**Tag:** la release usa `anteprima-v0.16.0`, non `v0.16.0`: l'aggiornamento automatico dell'app legge `releases/latest` e toglie il prefisso `anteprima-v`; una release `v0.16.0` come «ultima» lo romperebbe per chi ha la 0.15.x. Il tag `v0.16.0` è creato come alias sullo stesso commit (vedi stato nel report finale in chat).
+
+*Valutazione prima della pubblicazione (13/11, mattina): GO CON LIMITAZIONI sul piano tecnico; pubblicazione sospesa in attesa della prova GPU dell'utente.*
 
 Documenti collegati (coerenti tra loro): `ANALISI_QUOTE_OPERE.md` (quote di ponti e gallerie), `PROVA_WINDOWS_GPU.md` (come provare sul PC), `SHA256_INSTALLER_0.16.0.txt` (impronte degli installer). I report `REPORT_FASE_FINALE_0.16.0.md` e `REPORT_TICINO_0.16.0.md` sono segnati come superati.
 
@@ -80,7 +84,7 @@ Software SwiftShader su 4 core, Locarno, 800×450, 20 s per profilo, **stessa ma
 - **Profili grafici e LOD:** i quattro profili si selezionano e restano salvati; il LOD è spento in Bassa e acceso in Media/Alta/Ultra (23/23/208 sagome a Locarno su Mac; 118 sulla Alta del portatile).
 - **Regressioni funzionali rispetto alla 0.15.7:** nessuna trovata (0 errori in tutte le prove). `audio.js` (suono della SM 450 di 0.15.7) è identico a quello di `main`.
 
-## 6. Installer e link (artefatti temporanei, scadono il **20/11/2026**, serve il login GitHub)
+## 6. Installer DI PROVA (build #3, artefatti temporanei, scadono il **20/11/2026**, serve il login GitHub)
 
 | File | Dimensione (byte) | SHA-256 |
 |---|---|---|
@@ -94,6 +98,19 @@ Software SwiftShader su 4 core, Locarno, 800×450, 20 s per profilo, **stessa ma
 - Run: https://github.com/sim40702-debug/swissgass/actions/runs/43427840083 — risultati dei test: artefatti `prove-installer-windows`, `prove-installer-mac`, `prove-installer-mac-x64`, `controlli-risultati`, `regressione-0157`.
 - Il file `SHA256_INSTALLER_0.16.0.txt` contiene le stesse impronte. Gli hash sono stati calcolati sui file **estratti dagli artefatti scaricati** (stessi byte che scarichi tu); gli installer provati in CI sono quelli costruiti nello stesso job.
 - Gli installer **non sono firmati**: SmartScreen (Windows) e Gatekeeper (macOS) mostreranno un avviso.
+
+## 6-bis. Installer UFFICIALI (release `anteprima-v0.16.0`, pubblici, nessun login)
+
+Workflow «Release anteprima Ticino» [run #49 (43435336806)](https://github.com/sim40702-debug/swissgass/actions/runs/43435336806) su `main` `266cdb8`: 4 job su 4 verdi (versione, app Windows, app Mac, release). SHA-256 ricalcolati sui file scaricati in anonimo: coincidono con i digest di GitHub.
+
+| File | Byte | SHA-256 |
+|---|---|---|
+| [`MRW-Anteprima-Ticino-0.16.0-Windows-Installazione.exe`](https://github.com/sim40702-debug/swissgass/releases/download/anteprima-v0.16.0/MRW-Anteprima-Ticino-0.16.0-Windows-Installazione.exe) | 169 373 305 | `efba3fd58ada4c2b98c7d9cf8e337da547fcbebe61ccd8a2abfc5d2993a28d8a` |
+| [`MRW-Anteprima-Ticino-0.16.0-Windows-Portatile.exe`](https://github.com/sim40702-debug/swissgass/releases/download/anteprima-v0.16.0/MRW-Anteprima-Ticino-0.16.0-Windows-Portatile.exe) | 169 145 366 | `faad29b42bb3d230be04c38539c59a4c29c4810b8d0279bfeebe3f2b325e0206` |
+| [`MRW-Anteprima-Ticino-0.16.0-Mac-arm64.dmg`](https://github.com/sim40702-debug/swissgass/releases/download/anteprima-v0.16.0/MRW-Anteprima-Ticino-0.16.0-Mac-arm64.dmg) | 214 096 340 | `8e1a4b11b1a4daa37cee252fe5c80e54d0933851e1e2725afaef9b6c4a0d885d` |
+| [`MRW-Anteprima-Ticino-0.16.0-Mac-x64.dmg`](https://github.com/sim40702-debug/swissgass/releases/download/anteprima-v0.16.0/MRW-Anteprima-Ticino-0.16.0-Mac-x64.dmg) | 218 687 939 | `4129c2f897105cb64746b11cce936ad25aecbc6a9d429b95c64d0042ab734bfc` |
+
+Verificato qui: i due `.exe` sono installer NSIS PE32; i `.dmg` hanno nome `arm64`/`x64` e dimensioni coerenti con quelli di prova (214,1 e 218,7 MB). **Non verificato qui:** l'architettura interna dei `.dmg` ufficiali (non montabili su Linux) e l'avvio degli installer ufficiali in CI; l'architettura dei file di prova era stata confermata con `lipo` (x64 su Intel). Gli installer non sono firmati.
 
 ## 7. Problemi conosciuti e ancora aperti
 
@@ -110,7 +127,7 @@ Software SwiftShader su 4 core, Locarno, 800×450, 20 s per profilo, **stessa ma
 ## 8. Git, release e merge con `main`
 
 - `main` (`041c676`, 0.15.7) è **antenato** del ramo: un merge sarebbe un **fast-forward**, senza conflitti. Le funzioni 0.16.0 e le modifiche 0.15.6/0.15.7 sono tutte presenti (`audio.js` identico a `main`; `moto_modelli.js` differisce solo per i materiali PBR della 0.16.0).
-- **Non fatto, per le tue regole:** nessun merge in `main`, nessun tag, nessuna GitHub Release, nessuna pre-release nuova, nessun HD, nessun force-push, nessuna riscrittura della storia.
+- **Stato prima della pubblicazione (poi autorizzata ed eseguita, vedi inizio):** nessun merge in `main`, nessun tag, nessuna Release. **Mai fatti:** pacchetti HD, force-push, riscrittura della storia.
 - Pronti per la release: versione, `NOTE_RELEASE.md` (changelog e note: HD esclusi, dati v2, prestazioni, installer non firmati), installer con SHA-256, pacchetti geografici con SHA-256, documentazione, controlli finali.
 - Quando dirai «GO»: merge fast-forward in `main` (il workflow di release costruisce e pubblica gli installer ufficiali e il tag `anteprima-v0.16.0`). Gli installer ufficiali saranno **ricostruiti** dal workflow di release: avranno impronte diverse da quelle di prova.
 

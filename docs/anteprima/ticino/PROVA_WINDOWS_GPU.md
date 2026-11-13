@@ -1,6 +1,6 @@
 # Prova sul tuo PC Windows con scheda video vera (0.16.0 — release pronta, NON pubblicata)
 
-**Stato: NON ESEGUITA.** Fino a quando non c'è un tuo risultato vero, nessun numero di prestazioni della 0.16.0 è "superato". Tutti i numeri misurati finora sono in grafica software (CPU, SwiftShader): servono solo a confrontare versioni sulla stessa macchina, mai a dire quanti FPS farà il tuo PC.
+**Stato: eseguita dall'utente sul proprio PC Windows con esito dichiarato «funziona tutto»; metriche non consegnate.** Per questo nessun numero di prestazioni su GPU è riportato nei report. (Stato precedente: non eseguita.) Fino a quando non c'è un tuo risultato vero, nessun numero di prestazioni della 0.16.0 è "superato". Tutti i numeri misurati finora sono in grafica software (CPU, SwiftShader): servono solo a confrontare versioni sulla stessa macchina, mai a dire quanti FPS farà il tuo PC.
 
 Questa procedura **non pubblica niente** e non richiede la release 0.16.0 (che non esiste): si prova il codice dal ramo di sviluppo. **È l'unico blocco rimasto alla pubblicazione ufficiale**: finché non c'è un tuo esito (§9) la 0.16.0 non viene né taggata né pubblicata.
 
