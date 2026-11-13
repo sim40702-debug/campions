@@ -37,6 +37,14 @@ on:
         description: "Solo queste regioni (per esempio R_2712_1074,R_2696_1106). Vuoto = tutte"
         type: string
         default: ""
+      solo_riconcilia:
+        description: "SOLO riconciliazione di ponti e gallerie sui pacchetti gia' pubblicati + verifica del cantone. Non rifa' i dati, non crea foto HD, non costruisce l'app, non crea release ne' tag"
+        type: boolean
+        default: false
+      pubblica_riconciliati:
+        description: "Con solo_riconcilia: carica i pacchetti riconciliati (solo regione_R_*, mai hd_*) nella pre-release dei dati, sovrascrivendo quelli pubblicati. Lasciare spento per verificare prima"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -68,6 +76,7 @@ jobs:
           if [ -n "$solo" ]; then dati=true; fi
           echo "solo=$solo" >> $GITHUB_OUTPUT
           echo "Solo le regioni: ${solo:-tutte}"
+          if [ "${{ inputs.solo_riconcilia }}" = "true" ]; then dati=false; fi
           echo "dati=$dati" >> $GITHUB_OUTPUT
           echo "Rifare i dati: $dati"
 
@@ -303,9 +312,127 @@ jobs:
           fi
           gh release upload "$TAG_DATI" uscita/* --clobber
 
+  # Modalita' "solo_riconcilia": prende i pacchetti GIA' PUBBLICATI, ricalcola le quote di ponti e gallerie a cavallo dei
+  # bordi (riconcilia_opere.py), esegue le 11 verifiche di tutto il cantone sul risultato e lo salva come artefatto.
+  # NON rifa' i dati da OpenStreetMap, NON crea foto HD, NON costruisce l'app, NON crea release ne' tag.
+  # Scrive nella pre-release dei dati SOLO se "pubblica_riconciliati" e' attivo, e solo i regione_R_*.tar.gz cambiati.
+  riconcilia:
+    needs: decidi
+    if: github.event_name == 'workflow_dispatch' && inputs.solo_riconcilia == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installa le librerie Python
+        run: pip install -r tools/geo/requirements.txt
+
+      - name: Scarica i pacchetti pubblicati (solo lettura)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p fatte tools/geo/dati/cantone
+          gh release download "$TAG_DATI" -D fatte -p "regione_R_*.tar.gz" -p cantone.tar.gz
+          tar -xzf fatte/cantone.tar.gz -C tools/geo/dati/cantone
+          ls fatte/regione_R_*.tar.gz | wc -l
+          (cd fatte && sha256sum regione_R_*.tar.gz) > prima_sha256.txt
+
+      - name: Verifica PRIMA della riconciliazione (stato pubblicato)
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ../../scompatta_prima
+          for p in ../../fatte/regione_R_*.tar.gz; do
+            id=$(basename "$p" .tar.gz); id=${id#regione_}
+            mkdir -p ../../scompatta_prima/$id
+            tar -xzf "$p" -C ../../scompatta_prima/$id
+          done
+          cp -r dati/cantone ../../scompatta_prima/cantone
+          python -u verifica_cantone.py ../../scompatta_prima --json ../../verifica_prima.json 2>&1 | tee ../../verifica_prima.txt || true
+          rm -rf ../../scompatta_prima
+
+      - name: Riconcilia ponti e gallerie
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          python -u riconcilia_opere.py --pacchetti ../../fatte --cantone dati/cantone --json ../../riconciliazione.json 2>&1 | tee ../../riconciliazione.txt
+
+      - name: Verifica DOPO la riconciliazione (11 controlli, deve passare tutto)
+        working-directory: tools/geo
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ../../scompatta_dopo
+          for p in ../../fatte/regione_R_*.tar.gz; do
+            id=$(basename "$p" .tar.gz); id=${id#regione_}
+            mkdir -p ../../scompatta_dopo/$id
+            tar -xzf "$p" -C ../../scompatta_dopo/$id
+          done
+          cp -r dati/cantone ../../scompatta_dopo/cantone
+          python -u verifica_cantone.py ../../scompatta_dopo --json ../../verifica_dopo.json 2>&1 | tee ../../verifica_dopo.txt
+          # impronta di ogni strade.json (per confrontarla con il calcolo locale)
+          (cd ../../scompatta_dopo && for d in R_*; do echo "$(sha256sum $d/strade.json | cut -d' ' -f1)  $d"; done) > ../../strade_sha256.txt
+          cat ../../strade_sha256.txt
+          rm -rf ../../scompatta_dopo
+          (cd ../../fatte && sha256sum regione_R_*.tar.gz) > ../../dopo_sha256.txt
+          # nessun pacchetto HD deve essere presente
+          if ls ../../fatte/hd_* > /dev/null 2>&1; then echo "::error::ci sono pacchetti HD: non devono esserci"; exit 1; fi
+
+      - name: Riassunto
+        if: always()
+        shell: bash
+        run: |
+          echo '## Riconciliazione ponti e gallerie' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 40 riconciliazione.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '## Verifica del cantone dopo la riconciliazione' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 40 verifica_dopo.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Salva i risultati (pacchetti riconciliati, verifiche, impronte)
+        uses: actions/upload-artifact@v4
+        with:
+          name: riconciliati
+          path: |
+            fatte/regione_R_*.tar.gz
+            riconciliazione.json
+            riconciliazione.txt
+            verifica_prima.json
+            verifica_prima.txt
+            verifica_dopo.json
+            verifica_dopo.txt
+            prima_sha256.txt
+            dopo_sha256.txt
+            strade_sha256.txt
+          retention-days: 7
+          compression-level: 0
+
+      - name: Pubblica i pacchetti riconciliati nella pre-release dei dati (solo se richiesto)
+        if: inputs.pubblica_riconciliati == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # solo i pacchetti regione_R_* che sono cambiati: niente HD, niente app, nessun nuovo tag
+          mkdir -p cambiati
+          while read -r hash nome; do
+            vecchio=$(grep " $nome\$" prima_sha256.txt | cut -d' ' -f1)
+            if [ "$hash" != "$vecchio" ]; then cp "fatte/$nome" cambiati/; fi
+          done < dopo_sha256.txt
+          ls -la cambiati
+          gh release view "$TAG_DATI" > /dev/null
+          gh release upload "$TAG_DATI" cambiati/regione_R_*.tar.gz --clobber
+
   app:
     needs: [decidi, pubblica]
-    if: always() && (needs.pubblica.result == 'success' || needs.pubblica.result == 'skipped')
+    if: always() && inputs.solo_riconcilia != true && (needs.pubblica.result == 'success' || needs.pubblica.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
