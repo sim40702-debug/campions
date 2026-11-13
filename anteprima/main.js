@@ -18,7 +18,8 @@ function creaFinestra() {
     width: 1280,
     height: 800,
     title: "MOTO RACING WORLD - Anteprima Ticino",
-    backgroundColor: "#9cc3e6",
+    backgroundColor: "#0e1319",   // come la schermata di caricamento: niente lampo chiaro all'apertura
+    icon: path.join(__dirname, "grafica", "icona.png"),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js")

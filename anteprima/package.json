@@ -1,7 +1,7 @@
 {
   "name": "moto-racing-world-anteprima-ticino",
   "productName": "MOTO RACING WORLD - Anteprima Ticino",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "Tutto il Canton Ticino a regioni, con dati swisstopo e OpenStreetMap",
   "main": "main.js",
   "author": "Simone",
@@ -30,6 +30,7 @@
       "preload.js",
       "index.html",
       "stile.css",
+      "grafica/**/*",
       "src/**/*",
       "dati/**/*",
       "cantone/**/*",
@@ -40,6 +41,7 @@
     ],
     "mac": {
       "category": "public.app-category.games",
+      "icon": "build/icon-mac.png",
       "identity": "-",
       "target": [
         {
@@ -53,6 +55,7 @@
       "artifactName": "MRW-Anteprima-Ticino-${version}-Mac-${arch}.${ext}"
     },
     "win": {
+      "icon": "build/icon-win.png",
       "target": [
         {
           "target": "nsis",

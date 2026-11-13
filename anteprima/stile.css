@@ -21,72 +21,6 @@ canvas {
   z-index: 10;
 }
 
-#ruotaCarica {
-  width: 90px;
-  height: 90px;
-  margin: 28px 0 10px;
-  border-radius: 50%;
-  border: 9px solid #111;
-  box-shadow: 0 0 0 3px #444 inset;
-  /* raggi della ruota */
-  background: repeating-conic-gradient(#9aa3ad 0deg 3deg, transparent 3deg 30deg), #2a3442;
-  animation: giraRuota 0.8s linear infinite;
-  will-change: transform;
-}
-
-#mozzoCarica {
-  width: 18px;
-  height: 18px;
-  margin: 27px auto;
-  border-radius: 50%;
-  background: #e8323c;
-}
-
-#stradaCarica {
-  width: 220px;
-  height: 8px;
-  overflow: hidden;
-  background: #3a3f46;
-  border-radius: 4px;
-}
-
-#righeCarica {
-  width: 440px;
-  height: 2px;
-  margin-top: 3px;
-  background: repeating-linear-gradient(90deg, #f2f2f2 0 20px, transparent 20px 40px);
-  animation: scorreStrada 0.5s linear infinite;
-  will-change: transform;
-}
-
-#barraCarica {
-  width: 260px;
-  height: 6px;
-  border-radius: 3px;
-  background: #2f3a48;
-  overflow: hidden;
-}
-
-#riempimentoCarica {
-  width: 0%;
-  height: 100%;
-  background: #e8323c;
-  transition: width 0.3s;
-}
-
-#tempoCarica {
-  font-size: 12px;
-  color: #8f9aa8;
-}
-
-@keyframes giraRuota {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes scorreStrada {
-  to { transform: translateX(-40px); }
-}
-
 #caricamento h1 {
   margin: 0;
   letter-spacing: 3px;
@@ -694,25 +628,143 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
   outline-offset: 2px;
 }
 
-/* --- Caricamento --- */
+/* --- Caricamento ---
+   Logo, titolo, stato e barra al centro; montagne sul fondo; tasti principali in basso.
+   L'anello e la riga che scorre usano solo "transform": si muovono anche mentre il programma lavora. */
 #caricamento {
-  background: radial-gradient(ellipse at 50% 115%, #2a1218 0%, var(--notte) 62%);
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 108%, rgba(255, 70, 80, 0.2) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 70% at 50% -10%, #1d2838 0%, transparent 70%),
+    var(--notte);
   font-family: var(--font-testo);
+  overflow: hidden;
+}
+#sfondoCarica { position: absolute; left: 0; right: 0; bottom: 0; height: 46vh; pointer-events: none; }
+#sfondoCarica svg { display: block; width: 100%; height: 100%; }
+#centroCarica {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(460px, calc(100vw - 48px));
+  margin-bottom: 6vh;
+  text-align: center;
+  animation: entraCarica 0.5s ease-out both;
+}
+#logoCarica {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 26px;
+  border-radius: 25px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 #caricamento h1 {
+  margin: 0;
   font-family: var(--font-numeri);
-  font-size: 64px;
+  font-size: 44px;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: 8px;
+  letter-spacing: 7px;
+  margin-right: -7px;   /* la spaziatura dell'ultima lettera non sposta il titolo dal centro */
   text-transform: uppercase;
-  color: var(--segnale-chiaro);
-  text-shadow: 0 2px 24px rgba(255, 70, 80, 0.25);
+  white-space: nowrap;
+  color: var(--testo);
 }
-#caricamento p { color: var(--testo-2); letter-spacing: 1px; }
-#stato { color: var(--testo); font-weight: 500; }
-#barraCarica { width: 360px; height: 6px; background: #243040; }
-#riempimentoCarica { background: var(--segnale-chiaro); border-radius: 3px; }
-#tempoCarica { color: #8d99a8; font-variant-numeric: tabular-nums; }
+#caricamento h1 span { color: var(--segnale-chiaro); }
+#caricamento p { margin: 0; }
+#sottotitoloCarica { margin-top: 12px !important; font-size: 13px; letter-spacing: 0.4px; color: var(--testo-2); }
+#rigaStato { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 20px; margin-top: 44px; }
+#anelloCarica {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--segnale-chiaro);
+  animation: giraRuota 0.8s linear infinite;
+  will-change: transform;
+}
+#stato { font-size: 14px; font-weight: 500; color: var(--testo); }
+#barraCarica {
+  width: 100%;
+  height: 4px;
+  margin-top: 14px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+#riempimentoCarica {
+  position: relative;
+  width: 0%;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--segnale), var(--segnale-chiaro));
+  overflow: hidden;
+  transition: width 0.3s ease-out;
+}
+#righeCarica {
+  position: absolute;
+  top: 0;
+  left: -80px;
+  width: calc(100% + 80px);
+  height: 100%;
+  margin: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 28px, rgba(255, 255, 255, 0.5) 28px 40px);
+  animation: scorreStrada 0.7s linear infinite;
+  will-change: transform;
+}
+#numeriCarica {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 8px;
+  font-family: var(--font-numeri);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+  color: #8d99a8;
+}
+#percentoCarica { color: var(--testo); }
+#piedeCarica {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 22px;
+  padding: 0 24px;
+  font-size: 12px;
+  color: #8d99a8;
+}
+#piedeCarica kbd {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 2px 6px;
+  border: 1px solid var(--bordo);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-family: var(--font-numeri);
+  font-size: 11px;
+  color: var(--testo);
+}
+#versioneCarica { font-family: var(--font-numeri); font-variant-numeric: tabular-nums; }
+#caricamento.errore #anelloCarica { animation: none; border-color: var(--segnale-chiaro); }
+#caricamento.errore #righeCarica { animation: none; opacity: 0; }
+#caricamento.errore #stato { color: var(--segnale-chiaro); }
+/* finche' si carica, i menu di meteo e ora (ancora vuoti) non si vedono sopra la schermata */
+body.caricando #barraMeteo { visibility: hidden; }
+@keyframes giraRuota { to { transform: rotate(360deg); } }
+@keyframes scorreStrada { to { transform: translateX(40px); } }
+@keyframes entraCarica { from { opacity: 0; transform: translateY(8px); } }
+@media (max-height: 520px) {
+  #logoCarica { width: 72px; height: 72px; margin-bottom: 14px; border-radius: 16px; }
+  #caricamento h1 { font-size: 32px; }
+  #rigaStato { margin-top: 22px; }
+  #piedeCarica { bottom: 10px; }
+}
 
 /* --- HUD: velocita' grande in basso a sinistra --- */
 #hud {
@@ -905,7 +957,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 /* chi preferisce meno movimento: niente animazioni decorative */
 @media (prefers-reduced-motion: reduce) {
   .finestra { animation: none; }
-  #ruotaCarica, #righeCarica { animation-duration: 3s; }
+  #anelloCarica, #righeCarica { animation-duration: 3s; }
+  #centroCarica { animation: none; }
   #avvisoZona, #riempimentoCarica, #giriBarra { transition: none; }
 }
 

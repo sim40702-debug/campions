@@ -38,6 +38,7 @@ Su Windows scrivi `python` al posto di `python3`.
 | `main.js` | Finestra Electron |
 | `aggiornamenti.js` | Pulsante Aggiorna: controlla, scarica e installa la nuova release |
 | `preload.js` | Collega il pulsante della pagina con Electron |
+| `grafica/`, `build/` | Logo e icone dell'app: li crea `node tools/icona/crea_icona.mjs` (non modificarli a mano) |
 | `index.html`, `stile.css` | Pagina e scritte sullo schermo |
 | `src/gioco.js` | Scena, telecamera, tastiera, ciclo del gioco |
 | `src/terreno.js` | Terreno e lago |

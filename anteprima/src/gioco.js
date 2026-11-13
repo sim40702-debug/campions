@@ -24,7 +24,8 @@ import { caricaFotoHD, uniformiHD, eventiStreaming } from "./terreno_hd.js";
 import { creaErba, aggiornaErba } from "./erba.js";
 import { creaParticelle, aggiornaParticelle } from "./particelle.js";
 
-const VERSIONE = "0.16.0";
+const VERSIONE = "0.16.1";
+document.getElementById("versioneCarica").textContent = "v" + VERSIONE;
 import { creaAmbiente, aggiornaAmbiente, posizionaLuce, impostaOra } from "./ambiente.js";
 import { caricaAlberiSingoli, creaAlberi, aggiornaAlberi } from "./alberi.js";
 import { caricaDettagli, aggiungiDettagli, localitaVicina } from "./dettagli.js";
@@ -618,6 +619,7 @@ async function avvia() {
     ciclo();
   } catch (errore) {
     mostraStato("Errore: " + errore.message);
+    document.getElementById("caricamento").classList.add("errore");   // ferma le animazioni: non sta piu' caricando
     console.error(errore);
   }
 }

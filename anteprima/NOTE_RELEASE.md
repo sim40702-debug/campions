@@ -3,7 +3,15 @@
 Versione giocabile **leggera** di **tutto il Canton Ticino** (2 812 km², 19 regioni), con il terreno vero di swisstopo e le strade vere di OpenStreetMap.
 La versione principale del gioco resta quella in Unreal Engine 5.
 
-### Novità di questa versione (0.16.0) – Tutto il Ticino con la grafica nuova
+### Novità di questa versione (0.16.1) – Nuovo logo e nuova schermata di caricamento
+
+- **Nuova icona del gioco**: una strada rossa che sale a curve verso le montagne, sotto l'arco di un contagiri. Sostituisce l'icona generica di Electron su Mac e Windows (app, programma di installazione, finestra).
+- **Schermata di caricamento ridisegnata**: logo e titolo al centro, montagne sullo sfondo, barra sottile con la percentuale e i secondi passati, tasti principali e numero di versione in basso. Finché la riga nella barra e l'anello accanto al testo si muovono, il programma sta lavorando; in caso di errore si fermano e il testo diventa rosso.
+- La finestra si apre già scura (niente lampo azzurro prima del caricamento) e i menu di meteo e ora non compaiono più sopra la schermata mentre si carica.
+- Il sottotitolo dice "tutto il cantone" (prima era rimasto "Locarnese e Valle Verzasca").
+- **Da sapere**: nessun cambiamento a guida, grafica del mondo e dati. Le icone di Mac e Windows le crea la build automatica dalle immagini in `anteprima/build/`: **non sono state viste su un Mac o un PC veri**.
+
+### Novità della 0.16.0 – Tutto il Ticino con la grafica nuova
 
 Questa versione unisce il **Ticino completo** (19 regioni da 24 × 24 km, tutto il cantone) con il lavoro grafico delle fasi 2–4 fatto a Locarno. Tutto viene dagli stessi dati veri (swisstopo, OpenStreetMap): non ci sono dati inventati.
 
