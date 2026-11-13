@@ -17,9 +17,9 @@ Questa procedura **non pubblica niente** e non richiede la release 0.16.0 (che n
 
 ### Opzione A (consigliata): installer di prova da GitHub Actions — NON è una release
 L'installer è costruito dal workflow **"Build di prova (NESSUNA pubblicazione)"** e vive solo come artefatto temporaneo (7 giorni).
-1. Apri il [run del build di prova @@RUN@@](https://github.com/sim40702-debug/swissgass/actions/runs/@@RUN@@) (commit `@@COMMIT@@`; gli artefatti scadono il @@SCADE@@) → **Artifacts**: @@LINKWIN@@
+1. Apri il [run del build di prova 43427840083](https://github.com/sim40702-debug/swissgass/actions/runs/43427840083) (commit `b6ffe9a`; gli artefatti scadono il 20/11/2026) → **Artifacts**: direttamente https://github.com/sim40702-debug/swissgass/actions/runs/43427840083/artifacts/14037908299
 2. Scarica **`installer-windows-PROVA-NON-UFFICIALE`** (zip): dentro ci sono `…-Windows-Installazione.exe` (installer) e `…-Windows-Portatile.exe`.
-3. Esegui l'installer. Non è firmato: Windows mostrerà **"Windows ha protetto il PC"** → *Ulteriori informazioni* → *Esegui comunque*.
+3. **Controlla l'impronta** (opzionale ma consigliata): `Get-FileHash .\MRW-Anteprima-Ticino-0.16.0-Windows-Installazione.exe -Algorithm SHA256` deve dare `e92559d03306f9cdd08cd0d15490a23c9972a3079e25deead5c2972efbeaa7ef` (elenco completo in `SHA256_INSTALLER_0.16.0.txt`). Poi esegui l'installer. Non è firmato: Windows mostrerà **"Windows ha protetto il PC"** → *Ulteriori informazioni* → *Esegui comunque*.
 4. Avvia **"MRW Anteprima Ticino"** dal menu Start.
 Cosa ha verificato la CI su questo installer (Windows Server, **grafica software**, non la tua GPU): installato in silenzio, avviato, caricamento di Locarno, quattro profili grafici, LOD lontano, download di Lugano e passaggio di regione, nessun errore in console; il **portatile** è stato avviato come lo avvierebbe un utente e controllato sulla finestra vera (versione, regione, profili Bassa/Alta, LOD, errori) — esito in `REPORT_BUILD_E_DATI_0.16.0.md` §4. Quello che nessuna CI può dire: prestazioni, VRAM, aspetto sulla tua scheda.
 
@@ -106,7 +106,7 @@ Per ogni profilo, 0.16.0 **e** 0.15.7, stessa regione, stessa risoluzione:
 - nessun errore in console;
 - VRAM con almeno 1 GB di margine sotto la memoria dedicata;
 - nessun peggioramento oltre il 10 % rispetto alla 0.15.7 (stesso profilo, stessa regione).
-In software la 0.16.0 usa circa +5 % di chiamate/triangoli e +70–110 MB di heap (+2–7 % chiamate e triangoli nel confronto con la 0.15.7 fatto dalla CI) rispetto alla 0.15.7: la prova serve a dire se sulla tua GPU conta.
+In software, nel confronto con la 0.15.7 fatto dalla CI (due giri indipendenti), la 0.16.0 usa da −4 % a +8 % di chiamate di disegno, da −2 % a +6 % di triangoli, +70–140 MB di heap JavaScript e più programmi shader (da circa 43 a circa 106 nei profili Media/Alta/Ultra): la prova serve a dire se sulla tua GPU conta.
 
 ## 6. Come salvare il report
 1. Cartelle `risultati_0160`, `risultati_0157`, `risultati_lontano` (file `benchmark_*.md`, `benchmark_*.json`, immagini).
