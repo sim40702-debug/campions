@@ -177,7 +177,7 @@ window.addEventListener("keydown", function (evento) {
   cambiaTasto(evento, true);
   if (evento.code === "KeyC") modoTelecamera = (modoTelecamera + 1) % 3;
   if (evento.code === "KeyR") richiestaReset = true;
-  if (evento.code === "KeyI") richiestaMappa = true;   // mappa impennate (solo motard)
+  if (evento.code === "KeyI") richiestaMappa = true;   // mappa impennate (tutte le moto)
   if (evento.code === "KeyT") {
     // T: ora del giorno (mattino, mezzogiorno, tramonto, notte)
     const tappe = [7.5, 12.5, 18.4, 22.5];
@@ -509,7 +509,7 @@ async function avvia() {
       const dt = Math.min(vero, 0.05);           // tempo per la fisica (mai troppo grande)
       // R oppure fine di una caduta: si riparte dalla strada piu' vicina
       if (richiestaMappa) {
-        // tasto I: accende o spegne la mappa impennate (solo sui motard); la scelta resta salvata
+        // tasto I: accende o spegne la mappa impennate (tutte le moto, non la macchina); la scelta resta salvata
         richiestaMappa = false;
         if (haMappaImpennate(moto)) {
           moto.mappaImpennate = !moto.mappaImpennate;

@@ -43,7 +43,7 @@ export function creaMoto(scena, idMoto) {
     affondamento: 0,    // sospensioni: forcella che affonda in frenata (-), dietro schiacciato in accelerazione (+)
     impennata: 0,       // angolo della ruota davanti in alto (+) o della ruota dietro in alto (-), radianti
     velImpennata: 0,
-    mappaImpennate: false,   // tasto I: impennata tenuta da sola (solo motard)
+    mappaImpennate: false,   // tasto I: impennata tenuta da sola
     fiammata: 0              // secondi di fiamma allo scarico ancora da mostrare (scoppiettio del 450)
   };
   cambiaMoto(moto, idMoto);
@@ -124,9 +124,9 @@ const BARICENTRO_ALTO = 0.68;   // altezza del baricentro moto + pilota (m)
 const BARICENTRO_DIETRO = 0.62; // distanza del baricentro dalla ruota dietro (m)
 const ANGOLO_MAPPA = 0.72;      // angolo tenuto dalla "mappa impennate" (radianti, circa 41 gradi)
 
-// La mappa impennate c'e' solo sui supermotard e si accende con il tasto I
+// La mappa impennate c'e' su tutte le moto (non sulla macchina) e si accende con il tasto I
 export function haMappaImpennate(moto) {
-  return moto.scheda.forma === "supermotard";
+  return moto.scheda.tipo !== "auto";
 }
 function mappaAttiva(moto) {
   return moto.mappaImpennate === true && haMappaImpennate(moto);
@@ -317,7 +317,7 @@ export function aggiornaMoto(moto, tasti, dt, terreno, strade, edifici) {
     const alfaSu = ((accMotore - (tasti.frenoDietro ? accFreni : 0)) * h * c - G * (b * c - h * sn)) / (b * b + h * h);
     const alfaGiu = (accFreni * h * c - G * (d * c - h * sn)) / (d * d + h * h);
     if (mappaAttiva(moto) && !tasti.frenoDietro && (moto.impennata > 0 || (avanti && v > 2))) {
-      // MAPPA IMPENNATE (tasto I, solo sui motard): col gas la moto si alza e resta da sola a un angolo
+      // MAPPA IMPENNATE (tasto I, su tutte le moto): col gas la moto si alza e resta da sola a un angolo
       // sicuro (non si ribalta); mollando il gas torna giu' piano. Lo fa una "molla" verso l'angolo voluto.
       const voluto = avanti && v > 2 ? ANGOLO_MAPPA : 0;
       const forza = avanti ? 16 : 5;        // col gas sale decisa, senza gas scende dolce
