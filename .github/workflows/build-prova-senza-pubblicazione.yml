@@ -1,0 +1,397 @@
+# BUILD DI PROVA - NESSUNA PUBBLICAZIONE
+#
+# Costruisce l'app in sviluppo (Mac e Windows), la prova davvero e salva gli installer SOLO come artefatti temporanei di
+# GitHub Actions (7 giorni). Questo workflow NON e' quello di pubblicazione ufficiale (quello e' "Release anteprima Ticino").
+#
+# Garanzie (verificabili nel file):
+#  - parte SOLO a mano (workflow_dispatch): nessun "push" lo avvia;
+#  - il token ha SOLO permessi di lettura (contents: read): non puo' creare tag, release, pre-release ne' caricare file
+#    in una release, neanche per errore;
+#  - non esegue mai "gh release create/upload/edit/delete", "git tag" o "git push";
+#  - i dati geografici si SCARICANO (sola lettura) dalla pre-release dei dati; non si caricano ne' si rigenerano;
+#  - non usa mai i pacchetti HD.
+#
+# Cosa fa:
+#  1. "controlli":      scarica i dati pubblicati, ne controlla gli SHA-256 contro l'elenco registrato, le 11 verifiche del
+#                       cantone, le prove automatiche (download con ripresa, Electron dal sorgente con dati veri, regioni, luoghi);
+#  2. "regressione":    confronta la build in sviluppo con quella di main (0.15.7), stessi dati, stessa macchina, grafica software;
+#  3. "installer":      costruisce gli installer Mac e Windows, li controlla, INSTALLA e AVVIA quello Windows e quello Mac
+#                       (arm64) e prova avvio, regione, profili grafici, LOD lontano, errori in console.
+# Un installer che non e' stato avviato non viene dichiarato verificato: l'x64 del Mac non si avvia qui (runner arm64) ed e'
+# segnato come "costruito, non avviato".
+
+name: Build di prova (NESSUNA pubblicazione)
+
+on:
+  workflow_dispatch:
+    inputs:
+      secondi_benchmark:
+        description: "Secondi misurati per profilo nel confronto con la 0.15.7 (grafica software)"
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+env:
+  TAG_DATI: ticino-completo-dati
+  NOTA: "BUILD DI PROVA: nessuna pubblicazione, solo artefatti temporanei"
+
+jobs:
+  controlli:
+    name: controlli (dati, 11 verifiche, prove automatiche)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: anteprima/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Librerie di sistema, Node e Python
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgbm1 libnss3 libasound2t64 libgtk-3-0t64 libxss1 libxtst6 || true
+          pip install -r tools/geo/requirements.txt
+          (cd anteprima && npm ci)
+          npm --prefix tools/anteprima_prova install --no-save --no-package-lock playwright@1.63.0
+
+      - name: Scarica i dati geografici pubblicati (sola lettura)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p pacchetti
+          gh release download "$TAG_DATI" -D pacchetti -p cantone.tar.gz -p "regione_R_*.tar.gz"
+          ls pacchetti | wc -l
+
+      - name: Controlla gli SHA-256 dei dati scaricati (devono essere quelli pubblicati e verificati)
+        run: |
+          grep -E ' (regione_R_.*\.tar\.gz|cantone\.tar\.gz)$' docs/anteprima/ticino/pubblicato_dopo_sha256.txt > attesi.txt
+          wc -l < attesi.txt
+          (cd pacchetti && sha256sum -c ../attesi.txt)
+
+      - name: Scompatta le 19 regioni e la mappa del cantone
+        run: |
+          mkdir -p regioni/cantone
+          tar -xzf pacchetti/cantone.tar.gz -C regioni/cantone
+          for p in pacchetti/regione_R_*.tar.gz; do
+            id=$(basename "$p" .tar.gz); id=${id#regione_}
+            mkdir -p "regioni/$id"; tar -xzf "$p" -C "regioni/$id"
+          done
+          mkdir -p anteprima/cantone anteprima/dati
+          cp -r regioni/cantone/. anteprima/cantone/
+          cp -r regioni/R_2696_1106/. anteprima/dati/
+          df -h . | tail -1
+
+      - name: "11 verifiche geografiche di tutto il cantone"
+        working-directory: tools/geo
+        run: python -u verifica_cantone.py ../../regioni --json ../../verifica_cantone.json | tee ../../verifica_cantone.txt | tail -30
+
+      - name: Ponti e gallerie nei punti in comune (script indipendente)
+        working-directory: tools/geo
+        run: python -u verifica_opere_indipendente.py ../../regioni | tee ../../verifica_opere.txt | tail -30
+
+      - name: Prova del download con ripresa
+        run: node tools/anteprima_prova/prova_ripresa_download.mjs
+
+      - name: Prova dei luoghi
+        run: node tools/anteprima_prova/prova_luoghi.mjs
+
+      - name: "Quote delle strade (informativa, vedi il report: gli scalini preesistenti la fanno uscire con 1)"
+        continue-on-error: true
+        run: RADICE_APP="$PWD/anteprima" node tools/anteprima_prova/prova_quote.mjs | tee quote.txt
+
+      - name: Electron dal sorgente con i dati veri (avvio, download regione, HD in secondo piano se c'e', passaggio tra regioni)
+        run: |
+          mkdir -p uscita/ticino_regioni
+          xvfb-run -a node tools/anteprima_prova/prova_ticino_regioni.mjs "$PWD/anteprima" "$PWD/pacchetti" "$PWD/uscita/ticino_regioni" | tee uscita/ticino_regioni.log
+
+      - name: Regioni con i dati pubblicati (Locarno, Lugano, San Gottardo), profilo Media
+        run: |
+          mkdir -p uscita/regioni
+          xvfb-run -a node tools/anteprima_prova/prova_tutte_regioni.mjs "$PWD/anteprima" "$PWD/regioni" "$PWD/uscita/regioni" media R_2696_1106,R_2712_1090,R_2680_1154 | tee uscita/regioni.log
+
+      - name: Profili grafici e LOD lontano (Electron dal sorgente)
+        run: |
+          mkdir -p uscita/profili
+          xvfb-run -a node tools/anteprima_prova/prova_profili_lod.mjs "$PWD/anteprima/node_modules/electron/dist/electron" "$PWD/anteprima" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
+
+      - name: Riassunto
+        if: always()
+        run: |
+          {
+            echo "## Controlli ($NOTA)"
+            for f in verifica_cantone.txt verifica_opere.txt uscita/ticino_regioni.log uscita/regioni.log uscita/profili.log; do
+              echo "### $f"; echo '```'; tail -n 25 "$f" 2>/dev/null | cut -c1-220; echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controlli-risultati
+          path: |
+            verifica_cantone.json
+            verifica_cantone.txt
+            verifica_opere.txt
+            quote.txt
+            uscita/**/*.log
+            uscita/**/*.json
+            uscita/**/*.png
+            uscita/*.log
+          retention-days: 7
+
+  regressione:
+    name: regressione contro la 0.15.7 (main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Prepara le due copie (sviluppo e main) con gli stessi dati
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb || true
+          mkdir -p pacchetti
+          gh release download "$TAG_DATI" -D pacchetti -p cantone.tar.gz -p regione_R_2696_1106.tar.gz
+          git worktree add ../mrw-main origin/main
+          echo "main = $(node -p "require('../mrw-main/anteprima/package.json').version")  sviluppo = $(node -p "require('./anteprima/package.json').version")"
+          for d in anteprima ../mrw-main/anteprima; do
+            mkdir -p $d/cantone $d/dati
+            tar -xzf pacchetti/cantone.tar.gz -C $d/cantone
+            tar -xzf pacchetti/regione_R_2696_1106.tar.gz -C $d/dati
+            (cd $d && npm ci)
+          done
+          npm --prefix tools/anteprima_prova install --no-save --no-package-lock playwright@1.63.0
+          npx --prefix tools/anteprima_prova playwright install --with-deps chromium
+
+      - name: Benchmark in grafica software (sviluppo, poi main), stessa macchina
+        run: |
+          S="${{ inputs.secondi_benchmark }}"
+          mkdir -p misure/sviluppo misure/main
+          xvfb-run -a node tools/anteprima_prova/benchmark_profili.mjs --risoluzione 800x450 --secondi "$S" --uscita misure/sviluppo
+          RADICE_APP="$PWD/../mrw-main/anteprima" xvfb-run -a node tools/anteprima_prova/benchmark_profili.mjs --risoluzione 800x450 --secondi "$S" --uscita misure/main
+
+      - name: Confronto (chiamate, triangoli, errori; gli FPS in software non contano)
+        run: |
+          node - <<'EOF' | tee confronto.md
+          const fs = require("fs");
+          const carica = (d) => JSON.parse(fs.readFileSync(d + "/" + fs.readdirSync(d).find((f) => f.endsWith(".json")), "utf8"));
+          const a = carica("misure/main").risultati, b = carica("misure/sviluppo").risultati;
+          console.log("## Sviluppo (0.16.0) contro main (0.15.7), grafica software, Locarno, 800x450");
+          console.log("| Profilo | Chiamate main → sviluppo | Triangoli main → sviluppo | Heap JS MB | Caricamento s | Errori console |");
+          console.log("|---|---|---|---|---|---|");
+          let peggio = 0;
+          for (const y of b) {
+            const x = a.find((r) => r.qualita === y.qualita);
+            if (!x) continue;
+            const dc = (y.render.chiamate / x.render.chiamate - 1) * 100, dt = (y.render.triangoli / x.render.triangoli - 1) * 100;
+            peggio = Math.max(peggio, dc, dt);
+            console.log(`| ${y.qualita} | ${x.render.chiamate} → ${y.render.chiamate} (${dc.toFixed(1)} %) | ${x.render.triangoli} → ${y.render.triangoli} (${dt.toFixed(1)} %) | ${x.memoria_js.heapUsatoMB} → ${y.memoria_js.heapUsatoMB} | ${x.caricamento_s} → ${y.caricamento_s} | ${x.errori_console.length} → ${y.errori_console.length} |`);
+            if (y.errori_console.length) { console.log("ERRORI: " + JSON.stringify(y.errori_console.slice(0, 3))); process.exitCode = 1; }
+          }
+          console.log("\nPeggioramento massimo di chiamate/triangoli: " + peggio.toFixed(1) + " % (soglia di allarme 15 %; la 0.16.0 aggiunge incroci, erba, HD e LOD: circa +5 % atteso)");
+          if (peggio > 15) process.exitCode = 1;
+          EOF
+          cat confronto.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regressione-0157
+          path: |
+            misure
+            confronto.md
+          retention-days: 7
+
+  installer:
+    name: installer ${{ matrix.nome }} (costruzione, installazione, avvio)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            comando: build:mac
+            nome: mac
+          - os: windows-latest
+            comando: build:win
+            nome: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dati di partenza (mappa del cantone, regione di Locarno) e pacchetti per la prova di download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p scarico anteprima/cantone anteprima/dati pacchetti
+          gh release download "$TAG_DATI" -D scarico -p cantone.tar.gz -p regione_R_2696_1106.tar.gz -p regione_R_2712_1090.tar.gz -p regione_R_2712_1106.tar.gz
+          (cd scarico && sha256sum -c <(grep -E ' (cantone\.tar\.gz|regione_R_2696_1106\.tar\.gz|regione_R_2712_1090\.tar\.gz|regione_R_2712_1106\.tar\.gz)$' ../docs/anteprima/ticino/pubblicato_dopo_sha256.txt))
+          tar -xzf scarico/cantone.tar.gz -C anteprima/cantone
+          tar -xzf scarico/regione_R_2696_1106.tar.gz -C anteprima/dati
+          cp scarico/regione_R_2712_1090.tar.gz scarico/regione_R_2712_1106.tar.gz pacchetti/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: anteprima/package-lock.json
+
+      - name: Installa
+        working-directory: anteprima
+        run: npm ci
+
+      - name: Costruisci gli installer
+        working-directory: anteprima
+        run: npm run ${{ matrix.comando }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Controlla che dati e moduli siano dentro l'app
+        working-directory: anteprima
+        shell: bash
+        run: |
+          ls -la dist
+          trovati=$(find dist -name terreno.bin -path "*app/dati/*" | wc -l)
+          if [ "$trovati" -eq 0 ]; then echo "::error::nell'app mancano i dati (dati/terreno.bin)"; exit 1; fi
+          for file in cantone/cantone.json cantone/regioni.json cantone/stato.json dati/terreno.json regioni_main.js terzi/three/loaders/GLTFLoader.js terzi/three/objects/Sky.js terzi/three/environments/RoomEnvironment.js \
+                      node_modules/three/build/three.module.js src/gioco.js src/lontano.js modelli/SM450_Telaio.glb; do
+            if [ "$(find dist -path "*app/$file" | wc -l)" -eq 0 ]; then echo "::error::Nell'app manca $file"; exit 1; fi
+          done
+          for percorso in src/*.js; do
+            nome=$(basename "$percorso")
+            if [ "$(find dist -path "*app/src/$nome" | wc -l)" -eq 0 ]; then echo "::error::Nell'app manca src/$nome"; exit 1; fi
+          done
+          echo "contenuto dell'app OK"
+
+      - name: Salva gli installer (artefatto temporaneo, NON e' una release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.nome }}-PROVA-NON-UFFICIALE
+          path: |
+            anteprima/dist/*.dmg
+            anteprima/dist/*.exe
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Strumenti di prova
+        shell: bash
+        run: npm --prefix tools/anteprima_prova install --no-save --no-package-lock playwright@1.63.0
+
+      # ---------------- WINDOWS: installa in silenzio, avvia, prova ----------------
+      - name: "Windows: installa l'installer NSIS in silenzio"
+        if: matrix.nome == 'windows'
+        shell: pwsh
+        run: |
+          $inst = Get-ChildItem anteprima/dist -Filter "*Installazione.exe" | Select-Object -First 1
+          Write-Host "installer: $($inst.FullName) ($([math]::Round($inst.Length/1MB)) MB)"
+          $p = Start-Process -FilePath $inst.FullName -ArgumentList "/S", "/D=C:\mrw-prova" -Wait -PassThru
+          Write-Host "codice di uscita dell'installer: $($p.ExitCode)"
+          Get-ChildItem C:\mrw-prova | Select-Object -First 20 | Format-Table Name, Length
+          if (-not (Test-Path "C:\mrw-prova\MRW Anteprima Ticino.exe")) { throw "eseguibile installato non trovato" }
+          if (-not (Test-Path "C:\mrw-prova\resources\app\dati\terreno.bin")) { throw "dati non installati" }
+
+      - name: "Windows: app installata - avvio, profili grafici, LOD, errori in console"
+        if: matrix.nome == 'windows'
+        shell: bash
+        run: |
+          mkdir -p uscita/profili
+          node tools/anteprima_prova/prova_profili_lod.mjs "C:\\mrw-prova\\MRW Anteprima Ticino.exe" "C:\\mrw-prova\\resources\\app" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
+
+      - name: "Windows: app installata - download delle regioni, passaggio tra regioni, memoria"
+        if: matrix.nome == 'windows'
+        shell: bash
+        run: |
+          mkdir -p uscita/regioni
+          node tools/anteprima_prova/prova_ticino_regioni.mjs "C:\\mrw-prova\\resources\\app" "$PWD/pacchetti" "$PWD/uscita/regioni" "C:\\mrw-prova\\MRW Anteprima Ticino.exe" | tee uscita/regioni.log
+
+      - name: "Windows: versione portatile - avvio"
+        if: matrix.nome == 'windows'
+        shell: bash
+        env:
+          PROFILI: media
+        run: |
+          mkdir -p uscita/portatile
+          p=$(ls anteprima/dist/*Portatile.exe | head -1)
+          node tools/anteprima_prova/prova_profili_lod.mjs "$PWD/$p" "$PWD/anteprima" "$PWD/uscita/portatile" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/portatile.log
+
+      # ---------------- MAC: monta il dmg arm64, copia l'app, avvia, prova ----------------
+      - name: "Mac (arm64): monta il dmg e copia l'app"
+        if: matrix.nome == 'mac'
+        shell: bash
+        run: |
+          dmg=$(ls anteprima/dist/*arm64.dmg | head -1)
+          echo "dmg: $dmg ($(du -h "$dmg" | cut -f1))"
+          mkdir -p /tmp/mnt
+          hdiutil attach -nobrowse -readonly -mountpoint /tmp/mnt "$dmg"
+          ls /tmp/mnt
+          cp -R /tmp/mnt/*.app /Applications/
+          hdiutil detach /tmp/mnt || true
+          xattr -cr /Applications/*.app || true
+          ls /Applications | grep -i MRW
+          APP=$(ls -d /Applications/MRW*.app | head -1)
+          test -f "$APP/Contents/Resources/app/dati/terreno.bin" || { echo "::error::dati non presenti nell'app Mac"; exit 1; }
+          echo "APP=$APP" >> "$GITHUB_ENV"
+
+      - name: "Mac (arm64): app installata - avvio, profili grafici, LOD, errori in console"
+        if: matrix.nome == 'mac'
+        shell: bash
+        run: |
+          mkdir -p uscita/profili
+          nome=$(basename "$APP" .app)
+          node tools/anteprima_prova/prova_profili_lod.mjs "$APP/Contents/MacOS/$nome" "$APP/Contents/Resources/app" "$PWD/uscita/profili" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/profili.log
+
+      - name: "Mac (arm64): app installata - download delle regioni, passaggio tra regioni, memoria"
+        if: matrix.nome == 'mac'
+        shell: bash
+        run: |
+          mkdir -p uscita/regioni
+          nome=$(basename "$APP" .app)
+          node tools/anteprima_prova/prova_ticino_regioni.mjs "$APP/Contents/Resources/app" "$PWD/pacchetti" "$PWD/uscita/regioni" "$APP/Contents/MacOS/$nome" | tee uscita/regioni.log
+
+      - name: "Mac (x64): costruito, NON avviato"
+        if: matrix.nome == 'mac'
+        shell: bash
+        run: |
+          ls -la anteprima/dist/*x64.dmg
+          echo "::notice::Il dmg x64 e' stato costruito ma NON avviato: il runner e' arm64. Non e' verificato."
+
+      - name: Riassunto
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Installer ${{ matrix.nome }} ($NOTA)"
+            echo '```'; ls -la anteprima/dist/*.dmg anteprima/dist/*.exe 2>/dev/null; echo '```'
+            for f in uscita/profili.log uscita/regioni.log uscita/portatile.log; do
+              [ -f "$f" ] && { echo "### $f"; echo '```'; tail -n 30 "$f" | cut -c1-220; echo '```'; }
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prove-installer-${{ matrix.nome }}
+          path: |
+            uscita
+          retention-days: 7

@@ -40,7 +40,7 @@ const scheda = await finestra.evaluate(() => { const gl = window.__mrw.disegnato
 console.log("          rendering: " + scheda + " (grafica software in CI: gli FPS non contano)");
 
 const risultati = {};
-for (const q of ["bassa", "media", "alta", "ultra"]) {
+for (const q of (process.env.PROFILI || "bassa,media,alta,ultra").split(",")) {
   // il pulsante sta nel menu (Esc): se e' chiuso lo si apre; il cambio di profilo ricostruisce la scena e in software puo' richiedere minuti
   const pulsante = "button[data-qualita=" + q + "]";
   if (!(await finestra.locator(pulsante).isVisible())) { await finestra.keyboard.press("Escape"); await finestra.waitForTimeout(500); }
