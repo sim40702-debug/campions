@@ -1,0 +1,20 @@
+R_2664_1106 {"strade":3009,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":5515,"scalini":9,"peggioScalino":2.743,"pendenzaMax":0.579,"spigoloMax":0.606}
+R_2664_1122 {"strade":879,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":1143,"scalini":4,"peggioScalino":2.743,"pendenzaMax":1.155,"spigoloMax":0.98}
+R_2664_1138 {"strade":741,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":982,"scalini":0,"peggioScalino":0.021,"pendenzaMax":0.473,"spigoloMax":0.53}
+R_2680_1106 {"strade":1765,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":2028,"scalini":3,"peggioScalino":0.177,"pendenzaMax":0.616,"spigoloMax":0.667}
+R_2680_1122 {"strade":822,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":1012,"scalini":1,"peggioScalino":0.085,"pendenzaMax":0.23,"spigoloMax":0.34}
+R_2680_1138 {"strade":1107,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":1250,"scalini":1,"peggioScalino":0.208,"pendenzaMax":0.884,"spigoloMax":0.36}
+R_2680_1154 {"strade":1538,"nodiDiversi":1,"peggioNodo":0.023,"sovrapposti":1691,"scalini":7,"peggioScalino":0.208,"pendenzaMax":0.884,"spigoloMax":0.375}
+R_2696_1090 {"strade":8572,"nodiDiversi":1,"peggioNodo":0.908,"sovrapposti":15232,"scalini":23,"peggioScalino":2.486,"pendenzaMax":1.25,"spigoloMax":2.463}
+R_2696_1106 {"strade":4573,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":7123,"scalini":3,"peggioScalino":2.311,"pendenzaMax":1.25,"spigoloMax":2.463}
+R_2696_1122 {"strade":1195,"nodiDiversi":2,"peggioNodo":0.022,"sovrapposti":1493,"scalini":0,"peggioScalino":0.025,"pendenzaMax":0.265,"spigoloMax":0.413}
+R_2696_1138 {"strade":2281,"nodiDiversi":2,"peggioNodo":0.022,"sovrapposti":2770,"scalini":2,"peggioScalino":0.279,"pendenzaMax":0.351,"spigoloMax":0.275}
+R_2696_1154 {"strade":1195,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":1572,"scalini":0,"peggioScalino":0.045,"pendenzaMax":0.529,"spigoloMax":0.818}
+R_2712_1074 {"strade":16936,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":34941,"scalini":78,"peggioScalino":2.704,"pendenzaMax":1.495,"spigoloMax":1.218}
+R_2712_1090 {"strade":8481,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":15372,"scalini":40,"peggioScalino":2.61,"pendenzaMax":1.25,"spigoloMax":2.463}
+R_2712_1106 {"strade":6246,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":9857,"scalini":15,"peggioScalino":0.241,"pendenzaMax":2.971,"spigoloMax":3.163}
+R_2712_1122 {"strade":3254,"nodiDiversi":2,"peggioNodo":0.022,"sovrapposti":4868,"scalini":9,"peggioScalino":0.239,"pendenzaMax":0.269,"spigoloMax":0.413}
+R_2712_1138 {"strade":1990,"nodiDiversi":2,"peggioNodo":0.022,"sovrapposti":2690,"scalini":2,"peggioScalino":0.159,"pendenzaMax":1.672,"spigoloMax":3.314}
+R_2712_1154 {"strade":564,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":764,"scalini":0,"peggioScalino":0.045,"pendenzaMax":1.752,"spigoloMax":3.474}
+R_2728_1106 {"strade":2407,"nodiDiversi":0,"peggioNodo":0,"sovrapposti":3563,"scalini":5,"peggioScalino":0.917,"pendenzaMax":0.702,"spigoloMax":0.706}
+FINITO

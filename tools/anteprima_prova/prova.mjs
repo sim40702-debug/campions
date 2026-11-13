@@ -6,7 +6,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 
-const radice = path.resolve(import.meta.dirname, "../../anteprima");
+const radice = process.env.RADICE_APP ? path.resolve(process.env.RADICE_APP) : path.resolve(import.meta.dirname, "../../anteprima");   // RADICE_APP: prova su un'altra copia (per esempio una regione del cantone)
 const uscita = process.argv[2];
 fs.mkdirSync(uscita, { recursive: true });
 const TIPI = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".bin": "application/octet-stream", ".glb": "model/gltf-binary" };

@@ -69,6 +69,7 @@ jobs:
           pip install -r tools/geo/requirements.txt
           (cd anteprima && npm ci)
           npm --prefix tools/anteprima_prova install --no-save --no-package-lock playwright@1.63.0
+          npx --prefix tools/anteprima_prova playwright install --with-deps chromium
 
       - name: Scarica i dati geografici pubblicati (sola lettura)
         env:
@@ -331,15 +332,22 @@ jobs:
           mkdir -p uscita/regioni
           node tools/anteprima_prova/prova_ticino_regioni.mjs "C:\\mrw-prova\\resources\\app" "$PWD/pacchetti" "$PWD/uscita/regioni" "C:\\mrw-prova\\MRW Anteprima Ticino.exe" | tee uscita/regioni.log
 
-      - name: "Windows: versione portatile - avvio"
+      # Il portatile e' un lanciatore che estrae l'app e avvia un processo figlio: Playwright non puo' agganciarlo.
+      # Si controlla quindi solo che parta, che il processo dell'app resti in vita e non si chiuda da solo (NESSUN controllo
+      # dell'interfaccia: il portatile NON e' verificato come l'installer).
+      - name: "Windows: versione portatile - parte e resta in esecuzione 60 s (interfaccia non controllata)"
         if: matrix.nome == 'windows'
-        shell: bash
-        env:
-          PROFILI: media
+        shell: pwsh
         run: |
-          mkdir -p uscita/portatile
-          p=$(ls anteprima/dist/*Portatile.exe | head -1)
-          node tools/anteprima_prova/prova_profili_lod.mjs "$PWD/$p" "$PWD/anteprima" "$PWD/uscita/portatile" "$(node -p "require('./anteprima/package.json').version")" | tee uscita/portatile.log
+          $p = (Get-ChildItem anteprima/dist -Filter "*Portatile.exe" | Select-Object -First 1).FullName
+          Write-Host "portatile: $p"
+          $proc = Start-Process -FilePath $p -PassThru
+          Start-Sleep -Seconds 60
+          $vivo = -not $proc.HasExited
+          $figli = @(Get-Process | Where-Object { $_.ProcessName -like "MRW*" })
+          Write-Host "lanciatore ancora attivo: $vivo; processi MRW attivi: $($figli.Count)"
+          $figli | Stop-Process -Force -ErrorAction SilentlyContinue
+          if (-not $vivo -or $figli.Count -lt 2) { throw "il portatile non e' rimasto in esecuzione" }
 
       # ---------------- MAC: monta il dmg arm64, copia l'app, avvia, prova ----------------
       - name: "Mac (arm64): monta il dmg e copia l'app"
@@ -388,9 +396,9 @@ jobs:
         run: |
           {
             echo "## Installer ${{ matrix.nome }} ($NOTA)"
-            echo '```'; ls -la anteprima/dist/*.dmg anteprima/dist/*.exe 2>/dev/null; echo '```'
+            echo '```'; (ls -la anteprima/dist/*.dmg anteprima/dist/*.exe 2>/dev/null || true); echo '```'
             for f in uscita/profili.log uscita/regioni.log uscita/portatile.log; do
-              [ -f "$f" ] && { echo "### $f"; echo '```'; tail -n 30 "$f" | cut -c1-220; echo '```'; }
+              if [ -f "$f" ]; then echo "### $f"; echo '```'; tail -n 30 "$f" | cut -c1-220; echo '```'; fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
